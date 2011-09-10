@@ -1,0 +1,100 @@
+;;;
+;;; MyDLP EndPoint Mini Filter
+;;;
+;;; Copyright (c) 2010, Medra Teknoloji
+;;;
+
+[Version]
+Signature   = "$Windows NT$"
+Class       = "ActivityMonitor"                         ;This is determined by the work this filter driver does
+ClassGuid   = {b86dff51-a31e-4bac-b3cf-e8cfe75c9fc2}    ;This value is determined by the Class
+Provider    = %MyDLP%
+DriverVer   = 07/17/2011,1.0.0.0
+CatalogFile = MyDLPMF.cat
+
+
+[DestinationDirs]
+DefaultDestDir          = 12
+Scanner.DriverFiles     = 12            ;%windir%\system32\drivers
+
+
+;;
+;; Default install sections
+;;
+
+[DefaultInstall]
+OptionDesc          = %ServiceDescription%
+CopyFiles           = Scanner.DriverFiles
+
+[DefaultInstall.Services]
+AddService          = %ServiceName%,,Scanner.Service
+
+;;
+;; Default uninstall sections
+;;
+
+[DefaultUninstall]
+DelFiles            = Scanner.DriverFiles
+
+
+
+[DefaultUninstall.Services]
+DelService = Scanner,0x200      ;Ensure service is stopped before deleting
+
+;
+; Services Section
+;
+
+[Scanner.Service]
+DisplayName      = %ServiceName%
+Description      = %ServiceDescription%
+ServiceBinary    = %12%\%DriverName%.sys        ;%windir%\system32\drivers\
+Dependencies     = "FltMgr"
+ServiceType      = 2                            ;SERVICE_FILE_SYSTEM_DRIVER
+StartType        = 3                            ;SERVICE_DEMAND_START
+ErrorControl     = 1                            ;SERVICE_ERROR_NORMAL
+LoadOrderGroup   = "FSFilter Content Screener"
+AddReg           = Scanner.AddRegistry
+
+;
+; Registry Modifications
+;
+
+[Scanner.AddRegistry]
+HKR,"Instances","DefaultInstance",0x00000000,%DefaultInstance%
+HKR,"Instances\"%Instance1.Name%,"Altitude",0x00000000,%Instance1.Altitude%
+HKR,"Instances\"%Instance1.Name%,"Flags",0x00010001,%Instance1.Flags%
+
+;
+; Copy Files
+;
+
+[Scanner.DriverFiles]
+%DriverName%.sys
+
+
+
+[SourceDisksFiles]
+scanner.sys = 1,,
+
+
+[SourceDisksNames]
+1 = %DiskId1%,,,
+
+;;
+;; String Section
+;;
+
+[Strings]
+MyDLP                   = "MyDLP"
+ServiceDescription      = "MyDLP Mini Filter"
+ServiceName             = "MyDLPMF"
+DriverName              = "MyDLPMF"
+DiskId1                 = "Scanner Device Installation Disk"
+
+;Instances specific information.
+DefaultInstance         = "MyDLPMF Instance"
+Instance1.Name          = "MyDLPMF Instance"
+Instance1.Altitude      = "265000"
+Instance1.Flags         = 0x0          ; Allow all attachments
+

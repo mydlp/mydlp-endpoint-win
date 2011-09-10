@@ -1,0 +1,1 @@
+#define TRACE __FILE__ __LINE___
