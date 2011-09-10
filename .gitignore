@@ -11,7 +11,6 @@
 *.meta
 *.exe
 *.log
-*.rc
 objchk_wxp_x86/
 Debug/
 bin/
