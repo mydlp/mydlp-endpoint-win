@@ -20,7 +20,6 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-
 using MyDLP.EndPoint.Core;
 
 namespace MyDLP.EndPoint.Service
@@ -31,40 +30,31 @@ namespace MyDLP.EndPoint.Service
         public static MainController GetInstance()
         {
 
-            if (controller == null) {
+            if (controller == null)
+            {
                 controller = new MainController();
             }
             return controller;
         }
 
-        public void Start() 
+        public void Start()
         {
-            try
-            {
-                SvcController.StartService("MyDLPMF", 60000);
-            }
-            catch (Exception ex) 
-            {
-                Console.WriteLine(ex.Message + ex.StackTrace);
-            }
-            MyDLPEP.FilterListener.getInstance().StartListener();            
+
+            Logger.GetInstance().Debug("MyDLP-EP-Win started");
+            Logger.GetInstance().Debug("MyDLP-EP-Win try to install mydlpmf");
+            MyDLPEP.MiniFilterController.GetInstance().Start();
+            Logger.GetInstance().Debug("MyDLP-EP-Win start finished");
+            MyDLPEP.FilterListener.getInstance().StartListener();
 
         }
-        
+
         public void Stop()
         {
-            try
-            {
-                SvcController.StopService("MyDLPMF", 60000);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message + ex.StackTrace);
-            }
-        }       
+            MyDLPEP.MiniFilterController.GetInstance().Stop();
+            Logger.GetInstance().Info("MyDLP-EP-Win stopped");
+        }
 
         private static MainController controller = null;
-        
-        private MainController() { }       
+        private MainController() { }
     }
 }

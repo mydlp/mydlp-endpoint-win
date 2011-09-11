@@ -30,8 +30,35 @@ namespace MyDLP.EndPoint.Service
     static class Program
     {
         static void Main(string[] args)
-        {        
-                ServiceBase.Run(new MyDLPService());          
-        }       
-    }    
+        {
+
+            if (System.Environment.UserInteractive)
+            {
+                ManagedInstallerClass.InstallHelper(new string[] { Assembly.GetExecutingAssembly().Location });
+                try
+                {
+                    RegistryKey ckey =
+                    Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Services\MyDLP-EP-Win",
+                    true);
+
+                    if (ckey != null)
+                    {
+
+                        if (ckey.GetValue("Type") != null)
+                        {
+                            ckey.SetValue("Type", ((int)ckey.GetValue("Type") | 256));
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e.Message + " " + e.StackTrace);
+                }
+            }
+            else
+            {
+                ServiceBase.Run(new MyDLPService());
+            }
+        }
+    }
 }

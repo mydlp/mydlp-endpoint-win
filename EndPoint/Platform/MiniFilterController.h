@@ -25,10 +25,15 @@
 
 namespace MyDLPEP
 {
-	public ref class MiniFilterTestInstaller{
+	public ref class MiniFilterController{
+
+	private:
+		MiniFilterController( void );
+		static MiniFilterController ^controller = nullptr;
+
 	public:
-		MiniFilterTestInstaller( void ); 	
-		void InstallMiniFilter();	
-		
+		static MiniFilterController ^GetInstance();
+		void Start();
+		void Stop();
 	};
 }

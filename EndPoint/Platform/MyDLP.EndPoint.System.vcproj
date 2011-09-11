@@ -117,6 +117,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalIncludeDirectories="C:\WinDDK\7600.16385.1\inc\ddk;C:\WinDDK\7600.16385.1\inc\api;C:\WinDDK\7600.16385.1\inc\crt"
 				PreprocessorDefinitions="WIN32;NDEBUG"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="2"
@@ -134,8 +135,9 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="$(NoInherit)"
+				AdditionalDependencies="fltlib.lib Setupapi.lib"
 				LinkIncremental="1"
+				AdditionalLibraryDirectories="C:\WinDDK\7600.16385.1\lib\wxp\i386"
 				GenerateDebugInformation="true"
 				TargetMachine="1"
 			/>
@@ -198,7 +200,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\MiniFilterTestInstaller.cpp"
+				RelativePath=".\MiniFilterController.cpp"
 				>
 			</File>
 			<File
@@ -236,7 +238,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\MiniFilterTestInstaller.h"
+				RelativePath=".\MiniFilterController.h"
 				>
 			</File>
 			<File

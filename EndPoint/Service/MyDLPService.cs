@@ -42,7 +42,7 @@ namespace MyDLP.EndPoint.Service
                     
             controller.Start();
 
-            myDLPEventLog.WriteEntry("MyDLP service started");
+            myDLPEventLog.WriteEntry("MyDLP-EP-Win service started");
         }
 
         protected override void OnStop()
@@ -52,7 +52,7 @@ namespace MyDLP.EndPoint.Service
 
             controller.Stop();
 
-            myDLPEventLog.WriteEntry("MyDLP service stopped");
+            myDLPEventLog.WriteEntry("MyDLP-EP-Win service stopped");
         }
 
         private void InitializeLogSource()

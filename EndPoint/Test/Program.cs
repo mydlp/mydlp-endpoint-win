@@ -27,23 +27,14 @@ namespace MyDLP.EndPoint.Test
     {
         static void Main(string[] args)
         {
-            MyDLPEP.MiniFilterTestInstaller testInstaller = new MyDLPEP.MiniFilterTestInstaller();
-            testInstaller.InstallMiniFilter();
-            MyDLP.EndPoint.Service.MainController controller = 
+
+            MyDLP.EndPoint.Service.MainController controller =
                 MyDLP.EndPoint.Service.MainController.GetInstance();
-            
-            //restart MyDLPMF for testing purpose
-            MyDLP.EndPoint.Core.SvcController.RestartService("MyDLPMF",120000);
+
             controller.Start();
 
+            //block until input event to mimic service
             Console.ReadLine();
-
-           /* bool run = true;
-            while (run)
-            {
-               if( Console.ReadLine() == "q")
-                   run = false;
-            }*/
         }
     }
 }
