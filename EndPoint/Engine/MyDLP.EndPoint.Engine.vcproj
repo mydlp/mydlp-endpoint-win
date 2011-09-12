@@ -2,9 +2,10 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="MyDLP.EndPoint.MiniFilter"
-	ProjectGUID="{DD6E8D33-6BF2-438F-884E-FDB92B71D1A4}"
-	RootNamespace="MyDLPEM"
+	Name="MyDLP.EndPoint.Engine"
+	ProjectGUID="{1B81B50A-3BBB-4E12-8E94-76CC98E6E5D9}"
+	RootNamespace="MyDLPEndPointEngine"
+	Keyword="Win32Proj"
 	TargetFrameworkVersion="196613"
 	>
 	<Platforms>
@@ -20,7 +21,7 @@
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="1"
-			CharacterSet="2"
+			CharacterSet="1"
 			ExcludeBuckets="5;6;7;8;9;10;12;13;14;15;16;18;21"
 			>
 			<Tool
@@ -28,9 +29,8 @@
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
-				CommandLine="ddk_filter_build.bat&#x0D;&#x0A;"
-				AdditionalDependencies=""
-				Outputs="src\objchk_wxp_x86\i386\scanner.sys"
+				CommandLine="endpoint_engine_build.bat"
+				Outputs=".\mydlp\src\mydlp\mydlp_app.beam"
 			/>
 			<Tool
 				Name="VCXMLDataGeneratorTool"
@@ -44,9 +44,11 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
+				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
+				UsePrecompiledHeader="2"
 				WarningLevel="3"
 				DebugInformationFormat="4"
 			/>
@@ -61,7 +63,9 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				LinkIncremental="2"
 				GenerateDebugInformation="true"
+				SubSystem="1"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -91,17 +95,14 @@
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="1"
-			CharacterSet="2"
+			CharacterSet="1"
 			WholeProgramOptimization="1"
-			ExcludeBuckets="5;6;7;8;9;10;12;13;14;15;16;18;21"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
-				CommandLine="ddk_filter_build.bat&#x0D;&#x0A;"
-				Outputs="src\objchk_wxp_x86\i386\scanner.sys"
 			/>
 			<Tool
 				Name="VCXMLDataGeneratorTool"
@@ -116,8 +117,10 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
+				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
+				UsePrecompiledHeader="2"
 				WarningLevel="3"
 				DebugInformationFormat="3"
 			/>
@@ -132,7 +135,9 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				LinkIncremental="1"
 				GenerateDebugInformation="true"
+				SubSystem="1"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
 				TargetMachine="1"
@@ -164,27 +169,11 @@
 	</References>
 	<Files>
 		<File
-			RelativePath=".\ddk_filter_build.bat"
+			RelativePath=".\endpoint_engine_build.bat"
 			>
 		</File>
 		<File
-			RelativePath=".\src\mydlp_minifilter.c"
-			>
-		</File>
-		<File
-			RelativePath=".\src\mydlp_minifilter.h"
-			>
-		</File>
-		<File
-			RelativePath=".\MyDLPMiniFilter.inf"
-			>
-		</File>
-		<File
-			RelativePath=".\inc\scanuk.h"
-			>
-		</File>
-		<File
-			RelativePath=".\src\sources"
+			RelativePath=".\ReadMe.txt"
 			>
 		</File>
 	</Files>
