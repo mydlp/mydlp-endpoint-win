@@ -1,0 +1,3 @@
+[submodule "EndPoint/Engine/mydlp"]
+	path = EndPoint/Engine/mydlp
+	url = https://github.com/mydlp/mydlp.git
