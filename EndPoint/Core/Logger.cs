@@ -27,30 +27,42 @@ namespace MyDLP.EndPoint.Core
     {
         private static Logger logger;
         String logPath = @"c:\mydlpepwin.log";
-        public enum LogLevel { ERROR, INFO, DEBUG };
+        public enum LogLevel { ERROR = 0, INFO, DEBUG };
         LogLevel currentLevel = LogLevel.DEBUG;
         bool useWindowsLogger = false;
         bool useFileLogger = true;
+        bool consoleLogger = false;
 
         public static Logger GetInstance()
         {
             if (logger == null)
             {
                 logger = new Logger();
+
+                if (logger.currentLevel == LogLevel.DEBUG && Environment.UserInteractive == true)
+                {
+                    logger.consoleLogger = true;
+                }
             }
             return logger;
         }
 
         public void Debug(String entry)
         {
+            String logEntry = "DEBUG " + entry + " " + DateTime.UtcNow;
             if (currentLevel == LogLevel.DEBUG)
             {
                 if (useFileLogger)
                 {
                     using (System.IO.StreamWriter file = new System.IO.StreamWriter(logPath, true))
                     {
-                        file.WriteLine("DEBUG " + entry + " " + DateTime.UtcNow);
+                        file.WriteLine(logEntry);
                     }
+                }
+
+                if (consoleLogger)
+                {
+                    Console.WriteLine(logEntry);
                 }
                 //No debug log in windows event logger
             }
@@ -58,14 +70,20 @@ namespace MyDLP.EndPoint.Core
 
         public void Info(String entry)
         {
+            String logEntry = "INFO  " + entry + " " + DateTime.UtcNow;
             if (currentLevel == LogLevel.DEBUG || currentLevel == LogLevel.INFO)
             {
                 if (useFileLogger)
                 {
                     using (System.IO.StreamWriter file = new System.IO.StreamWriter(logPath, true))
                     {
-                        file.WriteLine("INFO " + entry + " " + DateTime.UtcNow);
+                        file.WriteLine(logEntry);
                     }
+                }
+
+                if (consoleLogger)
+                {
+                    Console.WriteLine(logEntry);
                 }
 
                 if (useWindowsLogger)
@@ -77,11 +95,17 @@ namespace MyDLP.EndPoint.Core
 
         public void Error(String entry)
         {
+            String logEntry = "ERROR " + entry + " " + DateTime.UtcNow;
             if (useFileLogger)
             {
                 using (System.IO.StreamWriter file = new System.IO.StreamWriter(logPath, true))
                 {
-                    file.WriteLine("ERROR " + entry + " " + DateTime.UtcNow);
+                    file.WriteLine(logEntry);
+                }
+
+                if (consoleLogger)
+                {
+                    Console.WriteLine(logEntry);
                 }
             }
 

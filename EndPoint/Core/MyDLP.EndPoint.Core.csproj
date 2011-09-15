@@ -37,6 +37,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Configuration.cs" />
+    <Compile Include="Engine.cs" />
     <Compile Include="FileOperation.cs" />
     <Compile Include="FileOperationController.cs" />
     <Compile Include="FileOperationTableEntry.cs" />

@@ -42,7 +42,7 @@ namespace MyDLP.SeapTestServer
 
         public Server()
         {
-            this.tcpListener = new TcpListener(IPAddress.Any,4000);
+            this.tcpListener = new TcpListener(IPAddress.Any, 4000);
             this.listenThread = new Thread(new ThreadStart(ListenForClients));
             this.listenThread.Start();
         }
@@ -78,7 +78,7 @@ namespace MyDLP.SeapTestServer
                 try
                 {
                     //blocks until a client sends a message
-                    bytesRead = clientStream.Read(message, 0, 4096);            
+                    bytesRead = clientStream.Read(message, 0, 4096);
                 }
                 catch
                 {
@@ -93,10 +93,10 @@ namespace MyDLP.SeapTestServer
                 }
 
                 //message has successfully been received
-                String request = System.Text.Encoding.ASCII.GetString(message,0,bytesRead);
-                Console.WriteLine("<Request length: " + request.Length + " request: "+ request +">");
+                String request = System.Text.Encoding.ASCII.GetString(message, 0, bytesRead);
+                Console.WriteLine("<Request length: " + request.Length + " request: " + request + ">");
                 String path = request.Split(' ')[2];
-                String op = request.Split(' ')[0];   
+                String op = request.Split(' ')[0];
                 String respString = "ALLOW";
 
                 if (op.Contains("WRITE"))
@@ -104,21 +104,18 @@ namespace MyDLP.SeapTestServer
                     if (path.ToLower().Contains("blockwrite"))
                         respString = "BLOCK";
                 }
-                else if (op.Contains("READ")) 
+                else if (op.Contains("READ"))
                 {
                     if (path.ToLower().Contains("blockread"))
-                        respString = "BLOCK";   
+                        respString = "BLOCK";
                 }
 
                 Byte[] response = System.Text.Encoding.ASCII.GetBytes(respString);
                 Console.WriteLine("<response length:" + response.Length + " response: " + response + ">");
-                clientStream.Write(response, 0, respString.Length);             
-
+                clientStream.Write(response, 0, respString.Length);
             }
 
             tcpClient.Close();
         }
     }
-
-
 }

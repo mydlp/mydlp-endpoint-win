@@ -35,6 +35,7 @@ namespace MyDLP.EndPoint.Test
 
             //block until input event to mimic service
             Console.ReadLine();
+            controller.Stop();
         }
     }
 }

@@ -30,7 +30,7 @@ namespace MyDLP.EndPoint.Core
         static SeapClient seapClient = null;
         Int32 port = 4000;
         String server = "127.0.0.1";
-        TcpClient client;    
+        TcpClient client;
         NetworkStream stream;
         Int32 responseLength = 256;
 
@@ -40,18 +40,18 @@ namespace MyDLP.EndPoint.Core
             SeapClient sClient = SeapClient.GetInstance();
             String response = sClient.sendMessage("WRITE PATH " + filePath);
             Console.WriteLine("Response:" + response);
-            if(response.Contains("ALLOW"))
+            if (response.Contains("ALLOW"))
             {
                 return FileOperation.Action.ALLOW;
             }
-            else if(response.Contains("BLOCK"))
-            {   
+            else if (response.Contains("BLOCK"))
+            {
                 return FileOperation.Action.BLOCK;
             }
-            else if(response.Contains("NOACTION"))
+            else if (response.Contains("NOACTION"))
             {
                 return FileOperation.Action.NOACTION;
-            }           
+            }
             //todo: Default Acion
             return FileOperation.Action.ALLOW;
         }
@@ -77,7 +77,7 @@ namespace MyDLP.EndPoint.Core
             return FileOperation.Action.ALLOW;
         }
 
-        private SeapClient() 
+        private SeapClient()
         {
             try
             {
@@ -100,12 +100,12 @@ namespace MyDLP.EndPoint.Core
                 }
                 return seapClient;
             }
-            catch (Exception) 
+            catch (Exception)
             {
                 throw;
             }
         }
-        
+
         public byte[] sendMessage(byte[] msg)
         {
             try
@@ -113,26 +113,26 @@ namespace MyDLP.EndPoint.Core
                 Byte[] response = new Byte[responseLength];
                 stream.Write(msg, 0, msg.Length);
                 stream.Read(response, 0, responseLength);
-                return response; 
+                return response;
             }
-            catch (Exception) 
+            catch (Exception)
             {
-                throw;             
+                throw;
             }
         }
 
         public String sendMessage(String msg)
         {
             try
-            {   
+            {
                 Byte[] data = System.Text.Encoding.ASCII.GetBytes(msg);
                 Byte[] response = new Byte[responseLength];
-                
-                Console.WriteLine("data length: " + data.Length + " data: " + data.Length); 
+
+                Console.WriteLine("data length: " + data.Length + " data: " + data.Length);
                 stream.Write(data, 0, msg.Length);
-                              
-                int readCount = stream.Read(response, 0, responseLength);               
-                String respMessage =  System.Text.Encoding.ASCII.GetString(response, 0, readCount);                
+
+                int readCount = stream.Read(response, 0, responseLength);
+                String respMessage = System.Text.Encoding.ASCII.GetString(response, 0, readCount);
                 Console.WriteLine("< resp length: " + respMessage.Length + " resp:" + respMessage + ">");
                 return respMessage;
             }

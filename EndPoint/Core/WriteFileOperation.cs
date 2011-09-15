@@ -25,15 +25,16 @@ namespace MyDLP.EndPoint.Core
 {
     public class WriteFileOperation : FileOperation
     {
-        public const int miniFilterBufferSize = 65536; 
-        String tempFilePath;      
-        
-        public WriteFileOperation(String path, DateTime date){
+        public const int miniFilterBufferSize = 65536;
+        String tempFilePath;
+
+        public WriteFileOperation(String path, DateTime date)
+        {
             type = FileOperation.OperationType.WRITE;
             this.path = path;
-            this.date = date;           
+            this.date = date;
         }
-        
+
         public override string ToString()
         {
             return "WRITE " + "path: " + path + " date: " + date + " temp: " + tempFilePath;
@@ -41,12 +42,13 @@ namespace MyDLP.EndPoint.Core
 
         public void createTempFile()
         {
-            tempFilePath = Path.GetTempFileName(); 
+            tempFilePath = Path.GetTempFileName();
         }
 
         public FileOperation.Action appendContent(byte[] content)
         {
-            if (tempFilePath == null) {
+            if (tempFilePath == null)
+            {
                 createTempFile();
             }
 
@@ -59,24 +61,25 @@ namespace MyDLP.EndPoint.Core
                 }
             }
 
-            if (content.Length < miniFilterBufferSize) {
-                return FinishWrite();                
+            if (content.Length < miniFilterBufferSize)
+            {
+                return FinishWrite();
             }
 
             return FileOperation.Action.ALLOW;
         }
 
         public FileOperation.Action FinishWrite()
-        {            
+        {
             FileOperationController.GetInstance().DeleteOperation(this);
             return DecideAction();
         }
 
-        public FileOperation.Action DecideAction() 
+        public FileOperation.Action DecideAction()
         {
             try
             {
-                return SeapClient.GetWriteDecisionByPath(path);                
+                return SeapClient.GetWriteDecisionByPath(path);
             }
             catch (Exception e)
             {

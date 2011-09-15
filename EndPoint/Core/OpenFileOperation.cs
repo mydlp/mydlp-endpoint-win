@@ -27,7 +27,8 @@ namespace MyDLP.EndPoint.Core
     {
         public const int suppressOpenInterval = 30;
         FileOperation.Action action = FileOperation.Action.UNDEFINED;
-        public OpenFileOperation(String path, DateTime date){
+        public OpenFileOperation(String path, DateTime date)
+        {
             type = FileOperation.OperationType.OPEN;
             this.path = path;
             this.date = date;
@@ -38,7 +39,7 @@ namespace MyDLP.EndPoint.Core
             return "OPEN " + "path: " + path + " date: " + date;
         }
 
-        public FileOperation.Action DecideAction() 
+        public FileOperation.Action DecideAction()
         {
             Console.WriteLine("DecideAction action");
             if (action != FileOperation.Action.UNDEFINED)
@@ -48,7 +49,7 @@ namespace MyDLP.EndPoint.Core
             }
             try
             {
-                action = SeapClient.GetReadDecisionByPath(path);        
+                action = SeapClient.GetReadDecisionByPath(path);
             }
             catch (Exception e)
             {

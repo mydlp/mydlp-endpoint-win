@@ -11,7 +11,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MyDLP.EndPoint.Platform", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyDLP.EndPoint.Test", "Test\MyDLP.EndPoint.Test.csproj", "{8A046CF3-1607-4D98-9334-E08735C2311F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyDLP.SeapTestServer", "MyDLP.SeapTestServer\MyDLP.SeapTestServer.csproj", "{EC8A1C77-EE2D-40F4-AC40-A79EA7DF574E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyDLP.SeapTestServer", "SeapTestServer\MyDLP.SeapTestServer.csproj", "{EC8A1C77-EE2D-40F4-AC40-A79EA7DF574E}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MyDLP.EndPoint.Engine", "Engine\MyDLP.EndPoint.Engine.vcproj", "{1B81B50A-3BBB-4E12-8E94-76CC98E6E5D9}"
 EndProject
@@ -86,7 +86,6 @@ Global
 		{EC8A1C77-EE2D-40F4-AC40-A79EA7DF574E}.Release|Win32.ActiveCfg = Release|Any CPU
 		{1B81B50A-3BBB-4E12-8E94-76CC98E6E5D9}.Debug|Any CPU.ActiveCfg = Debug|Win32
 		{1B81B50A-3BBB-4E12-8E94-76CC98E6E5D9}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
-		{1B81B50A-3BBB-4E12-8E94-76CC98E6E5D9}.Debug|Mixed Platforms.Build.0 = Debug|Win32
 		{1B81B50A-3BBB-4E12-8E94-76CC98E6E5D9}.Debug|Win32.ActiveCfg = Debug|Win32
 		{1B81B50A-3BBB-4E12-8E94-76CC98E6E5D9}.Debug|Win32.Build.0 = Debug|Win32
 		{1B81B50A-3BBB-4E12-8E94-76CC98E6E5D9}.Release|Any CPU.ActiveCfg = Release|Win32

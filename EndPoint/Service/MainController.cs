@@ -29,7 +29,6 @@ namespace MyDLP.EndPoint.Service
 
         public static MainController GetInstance()
         {
-
             if (controller == null)
             {
                 controller = new MainController();
@@ -39,12 +38,21 @@ namespace MyDLP.EndPoint.Service
 
         public void Start()
         {
-
+            Engine engine = new Engine();
+            engine.Start();
             Logger.GetInstance().Debug("MyDLP-EP-Win started");
-            Logger.GetInstance().Debug("MyDLP-EP-Win try to install mydlpmf");
-            MyDLPEP.MiniFilterController.GetInstance().Start();
-            Logger.GetInstance().Debug("MyDLP-EP-Win start finished");
-            MyDLPEP.FilterListener.getInstance().StartListener();
+            if (Configuration.GetRegistryConf() == false)
+            {
+                Logger.GetInstance().Error("Unable to get configuration exiting!");
+                //Environment.Exit(1);
+            }
+            else
+            {
+                Logger.GetInstance().Debug("MyDLP-EP-Win try to install mydlpmf");
+                MyDLPEP.MiniFilterController.GetInstance().Start();
+                Logger.GetInstance().Debug("MyDLP-EP-Win start finished");
+                MyDLPEP.FilterListener.getInstance().StartListener();
+            }
 
         }
 

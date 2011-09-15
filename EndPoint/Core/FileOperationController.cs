@@ -37,39 +37,39 @@ namespace MyDLP.EndPoint.Core
 
         //default timer period is 1 minute
         int tableTimerPeriod = 10000;
-                
+
         public FileOperation.Action HandleOpenOperation(string filePath)
         {
-            OpenFileOperation oop = new OpenFileOperation(filePath, System.DateTime.UtcNow);       
+            OpenFileOperation oop = new OpenFileOperation(filePath, System.DateTime.UtcNow);
             if (!operationTable.Contains(filePath))
             {
                 lock (operationTable)
                 {
                     operationTable.Add(filePath, new FileOperationTableEntry(oop));
                 }
-                Console.WriteLine("added here " + filePath + " " + operationTable.Contains(filePath) + System.DateTime.UtcNow);       
+                Logger.GetInstance().Debug("HandleOpenOperation added file: " + filePath);
                 return oop.DecideAction();
             }
-            else 
+            else
             {
-                return ((FileOperationTableEntry) operationTable[filePath]).Update(oop);
-                
+                return ((FileOperationTableEntry)operationTable[filePath]).Update(oop);
+
             }
-            
+
         }
 
         public void HandleCleanupOperation(string filePath)
         {
             if (operationTable.Contains(filePath) && ((FileOperationTableEntry)operationTable[filePath]).write != null)
             {
-               ((FileOperationTableEntry)operationTable[filePath]).write.FinishWrite();
+                ((FileOperationTableEntry)operationTable[filePath]).write.FinishWrite();
             }
         }
 
         public FileOperation.Action HandleWriteOperation(string filePath, byte[] content, int length)
         {
 
-            WriteFileOperation wop; 
+            WriteFileOperation wop;
 
             if (!operationTable.Contains(filePath))
             {
@@ -92,23 +92,23 @@ namespace MyDLP.EndPoint.Core
 
                 ((FileOperationTableEntry)operationTable[filePath]).Update(wop);
             }
-            return wop.appendContent(content);                     
+            return wop.appendContent(content);
         }
 
-        public void DeleteOperation(WriteFileOperation wop) 
+        public void DeleteOperation(WriteFileOperation wop)
         {
-            if (operationTable.Contains(wop.path)) 
+            if (operationTable.Contains(wop.path))
             {
 
-                FileOperationTableEntry entry = (FileOperationTableEntry) operationTable[wop.path];
+                FileOperationTableEntry entry = (FileOperationTableEntry)operationTable[wop.path];
                 entry.write = null;
-                if (entry.open == null) 
+                if (entry.open == null)
                 {
                     lock (operationTable)
                     {
                         operationTable.Remove(wop.path);
                     }
-                }                   
+                }
             }
         }
 
@@ -143,7 +143,7 @@ namespace MyDLP.EndPoint.Core
                     }
                     else
                     {
-                        Console.WriteLine(en);
+                        Logger.GetInstance().Debug("OnTimedTableEvent deleted " + en);
                     }
                 }
             }
@@ -152,7 +152,7 @@ namespace MyDLP.EndPoint.Core
                 controller.DeleteOperation(op);
                 Console.WriteLine("delete" + op);
             }
-            
+
             Console.WriteLine("======operationTable ends======");
         }
 
