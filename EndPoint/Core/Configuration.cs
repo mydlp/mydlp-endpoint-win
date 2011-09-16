@@ -11,6 +11,7 @@ namespace MyDLP.EndPoint.Core
         static String seapServer;
         static int seapPort;
         static Logger.LogLevel logLevel;
+        static String minifilterPath; 
 
         public static String Path
         {
@@ -44,11 +45,22 @@ namespace MyDLP.EndPoint.Core
             }
         }
 
+        public static String MinifilterPath
+        {
+            get
+            {
+                return minifilterPath;
+            }
+        }
+
+
         public static bool GetRegistryConf()
         {
             if (System.Environment.UserInteractive)
             {
                 //Use development conf
+                minifilterPath = "C:\\workspace\\mydlp-endpoint-win\\EndPoint\\MiniFilter\\src\\objchk_wxp_x86\\i386\\MyDLPMF.sys";
+            
 
                 return true;
             }
@@ -63,6 +75,7 @@ namespace MyDLP.EndPoint.Core
                     try
                     {
                         path = mydlpKey.GetValue("Path").ToString();
+                        minifilterPath = path; 
                     }
                     catch (Exception e)
                     {

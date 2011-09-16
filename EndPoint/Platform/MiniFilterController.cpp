@@ -24,6 +24,8 @@
 using namespace MyDLP::EndPoint::Core;
 using namespace Microsoft::Win32;
 using namespace System;
+using namespace System::Runtime::InteropServices;
+
 
 namespace MyDLPEP
 {
@@ -61,12 +63,16 @@ namespace MyDLPEP
 		{
 			Logger::GetInstance()->Debug("MyDLPMF service does not exist");
 			//String ^driverPath = "C:\\workspace\\mydlp-endpoint-win\\EndPoint\\MiniFilter\\src\\objchk_wxp_x86\\i386\\MyDLPMF.sys";
-			LPCTSTR driverPath = _T("C:\\workspace\\mydlp-endpoint-win\\EndPoint\\MiniFilter\\src\\objchk_wxp_x86\\i386\\MyDLPMF.sys");
+			//LPCTSTR driverPath = _T("C:\\workspace\\mydlp-endpoint-win\\EndPoint\\MiniFilter\\src\\objchk_wxp_x86\\i386\\MyDLPMF.sys");
+			String ^driverPath = MyDLP::EndPoint::Core::Configuration::MinifilterPath;	
+			IntPtr cPtr = Marshal::StringToHGlobalUni(driverPath);
 
 			hService = CreateService( hSCManager, DRV_NAME, DRV_NAME, SERVICE_ALL_ACCESS,
 									  SERVICE_FILE_SYSTEM_DRIVER, SERVICE_DEMAND_START, SERVICE_ERROR_NORMAL,
-									  driverPath, NULL, NULL, NULL, NULL, NULL );
-
+									  (LPCWSTR)cPtr.ToPointer(),NULL, NULL, NULL, NULL, NULL );
+			
+			Marshal::FreeHGlobal(cPtr);
+			
 			if( 0 == hService )
 			{
 				Logger::GetInstance()->Error("Unable to create service, win error no:" + gcnew Int32(GetLastError()));
