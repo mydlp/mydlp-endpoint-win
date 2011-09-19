@@ -1,4 +1,23 @@
-﻿using System;
+﻿//    Copyright (C) 2011 Huseyin Ozgur Batur <ozgur@medra.com.tr>
+//
+//--------------------------------------------------------------------------
+//    This file is part of MyDLP.
+//
+//    MyDLP is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    MyDLP is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with MyDLP.  If not, see <http://www.gnu.org/licenses/>.
+//--------------------------------------------------------------------------
+
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
@@ -26,35 +45,50 @@ namespace MyDLP.EndPoint.Core
 
 
         public void Stop()
-        {
-
-
+        {   //TODO:Handle process with pid files
+            KillProcByName("python");
+            KillProcByName("epmd");
+            KillProcByName("erl");
         }
+
+        public void KillProcByName(String procname)
+        {
+            try
+            {
+                Logger.GetInstance().Debug("Killing name:" + procname);
+                System.Diagnostics.Process[] process = System.Diagnostics.Process.GetProcessesByName(procname);
+                foreach (System.Diagnostics.Process p in process)
+                {
+                    Logger.GetInstance().Debug("Killing pid:" + p.Id + " name: " + p.ProcessName);
+                    p.Kill();
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.GetInstance().Error(e.Message + " " + e.StackTrace);
+            }
+        }
+
+
 
         public void ExecuteCommandAsync(string command)
         {
             try
             {
-                //Asynchronously start the Thread to process the Execute command request.
                 Thread objThread = new Thread(new ParameterizedThreadStart(ExecuteCommandSync));
-                //Make the thread as background thread.
-                //objThread.IsBackground = true;
-                //Set the Priority of the thread.
-                //objThread.Priority = ThreadPriority.AboveNormal;
-                //Start the thread.
                 objThread.Start(command);
             }
-            catch (ThreadStartException objException)
+            catch (ThreadStartException e)
             {
-                // Log the exception
+                Logger.GetInstance().Error(e.Message + " " + e.StackTrace);
             }
-            catch (ThreadAbortException objException)
+            catch (ThreadAbortException e)
             {
-                // Log the exception
+                Logger.GetInstance().Error(e.Message + " " + e.StackTrace);
             }
-            catch (Exception objException)
+            catch (Exception e)
             {
-                // Log the exception
+                Logger.GetInstance().Error(e.Message + " " + e.StackTrace);
             }
         }
 
@@ -75,9 +109,9 @@ namespace MyDLP.EndPoint.Core
                 Console.WriteLine(result);
                 Logger.GetInstance().Info(result);
             }
-            catch (Exception objException)
+            catch (Exception e)
             {
-                // Log the exception
+                Logger.GetInstance().Error(e.Message + " " + e.StackTrace);
             }
         }
     }

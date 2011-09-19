@@ -27,6 +27,9 @@ namespace MyDLP.EndPoint.Service
     public class MainController
     {
 
+
+        Engine engine;
+
         public static MainController GetInstance()
         {
             if (controller == null)
@@ -38,7 +41,7 @@ namespace MyDLP.EndPoint.Service
 
         public void Start()
         {
-            Engine engine = new Engine();
+            engine = new Engine();
             engine.Start();
             Logger.GetInstance().Debug("MyDLP-EP-Win started");
             if (Configuration.GetRegistryConf() == false)
@@ -60,6 +63,7 @@ namespace MyDLP.EndPoint.Service
         {
             MyDLPEP.MiniFilterController.GetInstance().Stop();
             Logger.GetInstance().Info("MyDLP-EP-Win stopped");
+            engine.Stop();
         }
 
         private static MainController controller = null;
