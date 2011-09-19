@@ -29,7 +29,7 @@
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
-				CommandLine="endpoint_engine_build.bat"
+				CommandLine="endpoint_engine_build.bat&#x0D;&#x0A;"
 				Outputs=".\mydlp\src\mydlp\mydlp_app.beam"
 			/>
 			<Tool
@@ -97,12 +97,15 @@
 			ConfigurationType="1"
 			CharacterSet="1"
 			WholeProgramOptimization="1"
+			ExcludeBuckets="5;6;7;8;9;10;12;13;14;15;16;18;21"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
+				CommandLine="endpoint_engine_build.bat"
+				Outputs=".\mydlp\src\mydlp\mydlp_app.beam"
 			/>
 			<Tool
 				Name="VCXMLDataGeneratorTool"
