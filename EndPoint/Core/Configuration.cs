@@ -26,17 +26,22 @@ namespace MyDLP.EndPoint.Core
 {
     public class Configuration
     {
-        static String path;
+        static String appPath;
         static String seapServer;
         static int seapPort;
         static Logger.LogLevel logLevel;
-        static String minifilterPath; 
+        static String minifilterPath;
+        static String pyBackendPath;
+        static String erlangPath;
+        static String pythonBinPaths;
+        static String erlangBinPaths;
+        static String pythonPath;
 
-        public static String Path
+        public static String AppPath
         {
             get
             {
-                return path;
+                return appPath;
             }
         }
 
@@ -72,6 +77,45 @@ namespace MyDLP.EndPoint.Core
             }
         }
 
+        public static String PyBackendPath
+        {
+            get
+            {
+                return pyBackendPath;
+            }
+        }
+
+        public static String ErlangPath
+        {
+            get
+            {
+                return erlangPath;
+            }
+        }
+
+        public static String ErlangBinPaths
+        {
+            get
+            {
+                return erlangBinPaths;
+            }
+        }
+
+        public static String PythonBinPaths
+        {
+            get
+            {
+                return pythonBinPaths;
+            }
+        }
+
+        public static String PythonPath
+        {
+            get
+            {
+                return pythonPath;
+            }
+        }
 
         public static bool GetRegistryConf()
         {
@@ -79,8 +123,12 @@ namespace MyDLP.EndPoint.Core
             {
                 //Use development conf
                 minifilterPath = "C:\\workspace\\mydlp-endpoint-win\\EndPoint\\MiniFilter\\src\\objchk_wxp_x86\\i386\\MyDLPMF.sys";
-            
-
+                pyBackendPath = @"C:\workspace\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\backend\py\";
+                erlangPath = @"C:\workspace\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\mydlp\";
+                erlangBinPaths = @"C:\workspace\mydlp-deployment-env\erl5.7.4\bin;C:\workspace\mydlp-deployment-env\erts-5.7.4\bin";
+                pythonBinPaths = @"C:\workspace\mydlp-deployment-env\Python26";
+                pythonPath = @"C:\workspace\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\thrift\gen-py";
+                appPath = @"C:\workspace\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\mydlp\";
                 return true;
             }
             else
@@ -93,12 +141,18 @@ namespace MyDLP.EndPoint.Core
                     //Get path
                     try
                     {
-                        path = mydlpKey.GetValue("Path").ToString();
-                        minifilterPath = path; 
+                        appPath = mydlpKey.GetValue("AppPath").ToString();
+                        minifilterPath = appPath + "MyDLPMF.sys";
+                        pyBackendPath = appPath + "engine\\py\\";
+                        erlangPath = appPath + "engine\\erl\\";
+                        erlangBinPaths = appPath + @"erl5.7.4\bin;" + appPath + @"erl5.7.4\erts-5.7.4\bin";
+                        pythonPath = appPath + "engine\\py\\";
+                        pythonBinPaths = appPath + "Python26";
+
                     }
                     catch (Exception e)
                     {
-                        Logger.GetInstance().Error("Unable to get registry value  HKLM/Software/MyDLP:Path "
+                        Logger.GetInstance().Error("Unable to get registry value  HKLM/Software/MyDLP:AppPath "
                             + e.Message + " " + e.StackTrace);
                         return false;
                     }
@@ -107,6 +161,7 @@ namespace MyDLP.EndPoint.Core
                     try
                     {
                         logLevel = (Logger.LogLevel)mydlpKey.GetValue("LogLevel");
+                        if (logLevel > Logger.LogLevel.DEBUG) logLevel = Logger.LogLevel.DEBUG;
                     }
                     catch (Exception e)
                     {
@@ -139,7 +194,7 @@ namespace MyDLP.EndPoint.Core
                         return false;
                     }
 
-                    Logger.GetInstance().Info("MyDLP Path: " + path);
+                    Logger.GetInstance().Info("MyDLP Path: " + appPath);
                     Logger.GetInstance().Info("MyDLP LogLevel: " + logLevel.ToString());
                     Logger.GetInstance().Info("MyDLP SeapServer: " + seapServer + ":" + seapPort);
 

@@ -26,15 +26,9 @@ namespace MyDLP.EndPoint.Core
 {
     public class Engine
     {
-        String pythonStartCmd = //@"echo %CD%&& cd ..\..\..\Engine\mydlp\src\backend\py\&& path %path%;" +
-            //@"C:\workspace\mydlp-deployment-env\Python26 && echo pp1 && " +
-            //@"set PYTHONPATH=..\..\..\Engine\mydlp\src\thrift\gen-py && " +
-            //@"echo pp2 && python MyDLPBackendServer.py mydlp-backend-py.pid && echo pp3";
-            @"cd C:\workspace\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\backend\py\ && Run.bat";
+        String pythonStartCmd = @"cd " + Configuration.PyBackendPath + " && Run.bat";
 
-        String erlStartCmd = //@"echo %CD%&& cd ..\..\..\Engine\mydlp\src\mydlp\&& path %path%;" +
-            //@"C:\workspace\mydlp-deployment-env\erl5.7.4\bin;C:\workspace\mydlp-deployment-env\erts-5.7.4\bin &&" +
-            @"cd C:\workspace\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\mydlp\ && Run.bat";
+        String erlStartCmd = @"cd " + Configuration.ErlangPath + " && Run.bat";
 
         public void Start()
         {
@@ -101,6 +95,27 @@ namespace MyDLP.EndPoint.Core
                 procStartInfo.RedirectStandardOutput = true;
                 procStartInfo.UseShellExecute = false;
                 procStartInfo.CreateNoWindow = true;
+
+                if (command.ToString() == pythonStartCmd)
+                {
+                    procStartInfo.EnvironmentVariables["path"] = procStartInfo.EnvironmentVariables["path"] + @";" + Configuration.PythonBinPaths;
+
+                    if (procStartInfo.EnvironmentVariables.ContainsKey("PYTHONPATH"))
+                    {
+                        procStartInfo.EnvironmentVariables["PYTHONPATH"] = procStartInfo.EnvironmentVariables["PYTHONPATH"] + ";" + Configuration.PythonPath;
+                    }
+                    else
+                    {
+                        procStartInfo.EnvironmentVariables.Add("PYTHONPATH", Configuration.PythonPath);
+                    }
+
+                }
+
+                if (command.ToString() == erlStartCmd)
+                {
+                    procStartInfo.EnvironmentVariables.Add("MYDLP_CONF", Configuration.AppPath.Replace(@"\", @"/") + "mydlp.conf");
+                    procStartInfo.EnvironmentVariables["path"] = procStartInfo.EnvironmentVariables["path"] + @";" + Configuration.ErlangBinPaths;
+                }
                 System.Diagnostics.Process proc = new System.Diagnostics.Process();
                 proc.StartInfo = procStartInfo;
                 proc.Start();

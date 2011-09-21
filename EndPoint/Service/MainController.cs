@@ -41,8 +41,6 @@ namespace MyDLP.EndPoint.Service
 
         public void Start()
         {
-            engine = new Engine();
-            engine.Start();
             Logger.GetInstance().Debug("MyDLP-EP-Win started");
             if (Configuration.GetRegistryConf() == false)
             {
@@ -51,9 +49,14 @@ namespace MyDLP.EndPoint.Service
             }
             else
             {
+                //start backend engine
+                engine = new Engine();
+                engine.Start();
+
                 Logger.GetInstance().Debug("MyDLP-EP-Win try to install mydlpmf");
                 MyDLPEP.MiniFilterController.GetInstance().Start();
                 Logger.GetInstance().Debug("MyDLP-EP-Win start finished");
+
                 MyDLPEP.FilterListener.getInstance().StartListener();
             }
 
