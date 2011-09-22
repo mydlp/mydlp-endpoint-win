@@ -58,7 +58,7 @@ namespace MyDLP.EndPoint.Core
                 throw;
             }
         }
-
+               
         public static void RestartService(string serviceName, int timeoutMilliseconds)
         {
             StopService(serviceName, timeoutMilliseconds /2);

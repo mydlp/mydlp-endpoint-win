@@ -26,15 +26,14 @@ namespace MyDLP.EndPoint.Core
 {
     public class Engine
     {
-        String pythonStartCmd = @"cd " + Configuration.PyBackendPath + " && Run.bat";
-
+        String pythonStartCmd = @"cd " + Configuration.PyBackendPath + " && Run.bat";        
         String erlStartCmd = @"cd " + Configuration.ErlangPath + " && Run.bat";
 
         public void Start()
         {
             ExecuteCommandAsync(pythonStartCmd);
-            //Thread.Sleep(2000);
             ExecuteCommandAsync(erlStartCmd);
+            RegisterAndStartErlSrv();
         }
 
 
@@ -43,6 +42,12 @@ namespace MyDLP.EndPoint.Core
             KillProcByName("python");
             KillProcByName("epmd");
             KillProcByName("erl");
+        }
+
+        public void RegisterAndStartErlSrv()
+        {
+            
+        
         }
 
         public void KillProcByName(String procname)
@@ -88,6 +93,7 @@ namespace MyDLP.EndPoint.Core
 
         public void ExecuteCommandSync(object command)
         {
+            //TODO:this is dity
             try
             {
                 System.Diagnostics.ProcessStartInfo procStartInfo =
@@ -108,18 +114,34 @@ namespace MyDLP.EndPoint.Core
                     {
                         procStartInfo.EnvironmentVariables.Add("PYTHONPATH", Configuration.PythonPath);
                     }
+                    Logger.GetInstance().Debug("Environment path:" + procStartInfo.EnvironmentVariables["path"]);
+                    Logger.GetInstance().Debug("Environment PYTHONPATH:" + procStartInfo.EnvironmentVariables["PYTHONPATH"]);
 
                 }
 
                 if (command.ToString() == erlStartCmd)
                 {
-                    procStartInfo.EnvironmentVariables.Add("MYDLP_CONF", Configuration.AppPath.Replace(@"\", @"/") + "mydlp.conf");
+                   
+                    if (System.Environment.UserInteractive)
+                    {
+                        procStartInfo.EnvironmentVariables.Add("MYDLP_CONF", Configuration.AppPath.Replace(@"\", @"/") + "mydlp-ep.conf");
+                    }
+                    else
+                    {
+                        procStartInfo.EnvironmentVariables.Add("MYDLP_CONF", Configuration.AppPath.Replace(@"\", @"/") + "mydlp.conf");
+                    }
+
+                    procStartInfo.EnvironmentVariables.Add("MYDLPBEAMDIR", Configuration.ErlangPath);
+
                     procStartInfo.EnvironmentVariables["path"] = procStartInfo.EnvironmentVariables["path"] + @";" + Configuration.ErlangBinPaths;
+                    Logger.GetInstance().Debug("Environment path:" + procStartInfo.EnvironmentVariables["path"]);
+                    Logger.GetInstance().Debug("Environment MYDLP_CONF:" + procStartInfo.EnvironmentVariables["MYDLP_CONF"]);
                 }
                 System.Diagnostics.Process proc = new System.Diagnostics.Process();
                 proc.StartInfo = procStartInfo;
-                proc.Start();
-                proc.WaitForExit();
+
+                Logger.GetInstance().Debug("Starting process:" + command);            
+                proc.Start();                
                 string result = proc.StandardOutput.ReadToEnd();
                 Console.WriteLine(result);
                 Logger.GetInstance().Info(result);

@@ -125,10 +125,12 @@ namespace MyDLP.EndPoint.Core
                 minifilterPath = "C:\\workspace\\mydlp-endpoint-win\\EndPoint\\MiniFilter\\src\\objchk_wxp_x86\\i386\\MyDLPMF.sys";
                 pyBackendPath = @"C:\workspace\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\backend\py\";
                 erlangPath = @"C:\workspace\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\mydlp\";
-                erlangBinPaths = @"C:\workspace\mydlp-deployment-env\erl5.7.4\bin;C:\workspace\mydlp-deployment-env\erts-5.7.4\bin";
+                erlangBinPaths = @"C:\workspace\mydlp-deployment-env\erl5.7.4\bin;C:\workspace\mydlp-deployment-env\erl5.7.4\erts-5.7.4\bin";
                 pythonBinPaths = @"C:\workspace\mydlp-deployment-env\Python26";
                 pythonPath = @"C:\workspace\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\thrift\gen-py";
                 appPath = @"C:\workspace\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\mydlp\";
+                seapServer = "127.0.0.1";
+                seapPort = 9099;
                 return true;
             }
             else
@@ -197,6 +199,7 @@ namespace MyDLP.EndPoint.Core
                     Logger.GetInstance().Info("MyDLP Path: " + appPath);
                     Logger.GetInstance().Info("MyDLP LogLevel: " + logLevel.ToString());
                     Logger.GetInstance().Info("MyDLP SeapServer: " + seapServer + ":" + seapPort);
+
 
                     return true;
                 }

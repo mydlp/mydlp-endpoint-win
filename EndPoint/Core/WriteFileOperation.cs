@@ -79,7 +79,7 @@ namespace MyDLP.EndPoint.Core
         {
             try
             {
-                return SeapClient.GetWriteDecisionByPath(path);
+                return SeapClient.GetWriteDecisionByPath(path, tempFilePath);
             }
             catch (Exception e)
             {

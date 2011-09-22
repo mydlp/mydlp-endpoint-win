@@ -28,30 +28,70 @@ namespace MyDLP.EndPoint.Core
     class SeapClient
     {
         static SeapClient seapClient = null;
-        Int32 port = 4000;
-        String server = "127.0.0.1";
+        Int32 port = Configuration.SeapPort;
+        String server = Configuration.SeapServer;
         TcpClient client;
         NetworkStream stream;
         Int32 responseLength = 256;
 
 
-        public static FileOperation.Action GetWriteDecisionByPath(String filePath)
-        {
+        public static FileOperation.Action GetWriteDecisionByPath(String filePath, String tempFilePath)
+        {        
             SeapClient sClient = SeapClient.GetInstance();
-            String response = sClient.sendMessage("WRITE PATH " + filePath);
-            Console.WriteLine("Response:" + response);
-            if (response.Contains("ALLOW"))
+            String response;
+            String[] splitResp;
+            int id; 
+
+            response = sClient.sendMessage("BEGIN");
+
+            if (response.Equals("ERR"))
             {
                 return FileOperation.Action.ALLOW;
             }
-            else if (response.Contains("BLOCK"))
+            else
+            {
+                splitResp = response.Split(' ');
+                if (splitResp[0].Equals("OK"))
+                {
+                    id = Int32.Parse(splitResp[1]);
+                }
+                else
+                {
+                    return FileOperation.Action.ALLOW;
+                }
+            }
+
+            response = sClient.sendMessage("PUSH " + id + " " + tempFilePath);
+            
+            splitResp = response.Split(' ');
+            if (!splitResp[0].Equals("OK"))
+            {
+                return FileOperation.Action.ALLOW;
+            }
+            
+            response = sClient.sendMessage("END " + id);
+
+            splitResp = response.Split(' ');
+            if (!splitResp[0].Equals("OK"))
+            {
+                return FileOperation.Action.ALLOW;
+            }
+
+            response = sClient.sendMessage("ACLQ " + id);
+            splitResp = response.Split(' ');
+            if (!splitResp[0].Equals("OK"))
+            {
+                return FileOperation.Action.ALLOW;
+            }
+            
+            if (splitResp[1].Equals("block"))
             {
                 return FileOperation.Action.BLOCK;
             }
-            else if (response.Contains("NOACTION"))
+            else if (splitResp[1].Equals("pass"))
             {
-                return FileOperation.Action.NOACTION;
-            }
+                return FileOperation.Action.ALLOW;
+            }          
             //todo: Default Acion
             return FileOperation.Action.ALLOW;
         }
@@ -123,6 +163,7 @@ namespace MyDLP.EndPoint.Core
 
         public String sendMessage(String msg)
         {
+            msg = msg + "\r\n";
             try
             {
                 Byte[] data = System.Text.Encoding.ASCII.GetBytes(msg);

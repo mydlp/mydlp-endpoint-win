@@ -54,9 +54,12 @@ namespace MyDLP.EndPoint.Core
             {
                 if (useFileLogger)
                 {
-                    using (System.IO.StreamWriter file = new System.IO.StreamWriter(logPath, true))
+                    lock (logPath)
                     {
-                        file.WriteLine(logEntry);
+                        using (System.IO.StreamWriter file = new System.IO.StreamWriter(logPath, true))
+                        {
+                            file.WriteLine(logEntry);
+                        }
                     }
                 }
 
@@ -73,11 +76,14 @@ namespace MyDLP.EndPoint.Core
             String logEntry = "INFO  " + entry + " " + DateTime.UtcNow;
             if (currentLevel == LogLevel.DEBUG || currentLevel == LogLevel.INFO)
             {
-                if (useFileLogger)
+                lock (logPath)
                 {
-                    using (System.IO.StreamWriter file = new System.IO.StreamWriter(logPath, true))
+                    if (useFileLogger)
                     {
-                        file.WriteLine(logEntry);
+                        using (System.IO.StreamWriter file = new System.IO.StreamWriter(logPath, true))
+                        {
+                            file.WriteLine(logEntry);
+                        }
                     }
                 }
 
@@ -98,9 +104,12 @@ namespace MyDLP.EndPoint.Core
             String logEntry = "ERROR " + entry + " " + DateTime.UtcNow;
             if (useFileLogger)
             {
-                using (System.IO.StreamWriter file = new System.IO.StreamWriter(logPath, true))
+                lock (logPath)
                 {
-                    file.WriteLine(logEntry);
+                    using (System.IO.StreamWriter file = new System.IO.StreamWriter(logPath, true))
+                    {
+                        file.WriteLine(logEntry);
+                    }
                 }
 
                 if (consoleLogger)
