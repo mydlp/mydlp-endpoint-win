@@ -128,7 +128,7 @@ namespace MyDLP.EndPoint.Core
                 erlangBinPaths = @"C:\workspace\mydlp-deployment-env\erl5.7.4\bin;C:\workspace\mydlp-deployment-env\erl5.7.4\erts-5.7.4\bin";
                 pythonBinPaths = @"C:\workspace\mydlp-deployment-env\Python26";
                 pythonPath = @"C:\workspace\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\thrift\gen-py";
-                appPath = @"C:\workspace\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\mydlp\";
+                appPath = @"C:\workspace\mydlp-development-env";
                 seapServer = "127.0.0.1";
                 seapPort = 9099;
                 return true;

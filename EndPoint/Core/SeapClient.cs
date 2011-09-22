@@ -99,19 +99,59 @@ namespace MyDLP.EndPoint.Core
         public static FileOperation.Action GetReadDecisionByPath(String filePath)
         {
             SeapClient sClient = SeapClient.GetInstance();
-            String response = sClient.sendMessage("READ PATH " + filePath);
-            Console.WriteLine("Response:" + response);
-            if (response.Contains("ALLOW"))
+            String response;
+            String[] splitResp;
+            int id; 
+
+            response = sClient.sendMessage("BEGIN");
+
+            if (response.Equals("ERR"))
             {
                 return FileOperation.Action.ALLOW;
             }
-            else if (response.Contains("BLOCK"))
+            else
+            {
+                splitResp = response.Split(' ');
+                if (splitResp[0].Equals("OK"))
+                {
+                    id = Int32.Parse(splitResp[1]);
+                }
+                else
+                {
+                    return FileOperation.Action.ALLOW;
+                }
+            }
+
+            response = sClient.sendMessage("PUSH " + id + " " + filePath);
+
+            splitResp = response.Split(' ');
+            if (!splitResp[0].Equals("OK"))
+            {
+                return FileOperation.Action.ALLOW;
+            }
+
+            response = sClient.sendMessage("END " + id);
+
+            splitResp = response.Split(' ');
+            if (!splitResp[0].Equals("OK"))
+            {
+                return FileOperation.Action.ALLOW;
+            }
+
+            response = sClient.sendMessage("ACLQ " + id);
+            splitResp = response.Split(' ');
+            if (!splitResp[0].Equals("OK"))
+            {
+                return FileOperation.Action.ALLOW;
+            }
+
+            if (splitResp[1].Equals("block"))
             {
                 return FileOperation.Action.BLOCK;
             }
-            else if (response.Contains("NOACTION"))
+            else if (splitResp[1].Equals("pass"))
             {
-                return FileOperation.Action.NOACTION;
+                return FileOperation.Action.ALLOW;
             }
             //todo: Default Acion
             return FileOperation.Action.ALLOW;

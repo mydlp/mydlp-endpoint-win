@@ -103,7 +103,7 @@ namespace MyDLP.EndPoint.Core
 
         public void ExecuteCommandSync(object command)
         {
-            //TODO:this is dity
+            //TODO:this is dirty
             try
             {
                 System.Diagnostics.ProcessStartInfo procStartInfo =
@@ -134,14 +134,16 @@ namespace MyDLP.EndPoint.Core
                    
                     if (System.Environment.UserInteractive)
                     {
-                        procStartInfo.EnvironmentVariables.Add("MYDLP_CONF", GetShortPath(Configuration.AppPath).Replace(@"\", @"/") + "mydlp-ep.conf");
+                        procStartInfo.EnvironmentVariables.Add("MYDLP_CONF", GetShortPath(Configuration.ErlangPath).Replace(@"\", @"/") + "mydlp-ep.conf");
                     }
                     else
                     {
-                        procStartInfo.EnvironmentVariables.Add("MYDLP_CONF", GetShortPath(Configuration.AppPath).Replace(@"\", @"/") + "mydlp.conf");
+                        procStartInfo.EnvironmentVariables.Add("MYDLP_CONF", GetShortPath(Configuration.AppPath).Replace(@"\", @"/") + "/mydlp.conf");
                     }
 
                     procStartInfo.EnvironmentVariables.Add("MYDLPBEAMDIR", GetShortPath(Configuration.ErlangPath));
+
+                    procStartInfo.EnvironmentVariables.Add("MYDLP_APPDIR", GetShortPath(Configuration.AppPath));
 
                     procStartInfo.EnvironmentVariables["path"] = procStartInfo.EnvironmentVariables["path"] + @";" + Configuration.ErlangBinPaths;
                     Logger.GetInstance().Debug("Environment path:" + procStartInfo.EnvironmentVariables["path"]);
