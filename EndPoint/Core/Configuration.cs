@@ -130,6 +130,7 @@ namespace MyDLP.EndPoint.Core
                 pythonPath = @"C:\workspace\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\thrift\gen-py";
                 appPath = @"C:\workspace\mydlp-development-env";
                 seapServer = "127.0.0.1";
+                //seapServer = "10.0.0.118";
                 seapPort = 9099;
                 return true;
             }

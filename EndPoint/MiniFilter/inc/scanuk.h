@@ -21,7 +21,8 @@ typedef enum _MSG_TYPE
 	NONE,
 	PREWRITE,
 	POSTCREATE,
-	PRECLEANUP
+	PRECLEANUP,
+	INIT
 } MSG_TYPE;
 
 
@@ -40,7 +41,7 @@ typedef struct _MYDLPMF_MINI_NOTIFICATION {
 
 	MSG_TYPE Type;
 	WCHAR FileName[MYDLPMF_FILENAME_BUFFER_SIZE];	
-	ULONG FileNameLength;
+	ULONG FileNameLength; //also pid during init. 
     ULONG BytesToScan; //just incase for alignment   
     UCHAR Contents[1];//just incase for alignment
     
@@ -56,6 +57,13 @@ typedef struct _MYDLPMF_REPLY {
 	} Action;
     
 } MYDLPMF_REPLY, *PMYDLPMF_REPLY;
+
+typedef struct _MYDLPMF_CONF_REPLY {
+
+	int pid;
+    
+} MYDLPMF_CONF_REPLY, *PMYDLPMF_CONF_REPLY;
+
 
 
 #endif //  __SCANUK_H__

@@ -17,6 +17,7 @@ typedef struct _MYDLPMF_DATA {
     PFLT_FILTER Filter;
     PFLT_PORT ServerPort;   
     PEPROCESS UserProcess; 
+	PEPROCESS ErlangProcess;
     PFLT_PORT ClientPort;
 
 } MYDLPMF_DATA, *PMYDLPMF_DATA;

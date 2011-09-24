@@ -52,11 +52,10 @@ namespace MyDLP.EndPoint.Service
                 //start backend engine
                 engine = new Engine();
                 engine.Start();
-
+                System.Threading.Thread.Sleep(3000);
                 Logger.GetInstance().Debug("MyDLP-EP-Win try to install mydlpmf");
                 MyDLPEP.MiniFilterController.GetInstance().Start();
                 Logger.GetInstance().Debug("MyDLP-EP-Win start finished");
-
                 MyDLPEP.FilterListener.getInstance().StartListener();
             }
 

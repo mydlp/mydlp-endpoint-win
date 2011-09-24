@@ -21,6 +21,7 @@ Copyright (C) 2011 Huseyin Ozgur Batur <ozgur@medra.com.tr>
 
 
 MYDLPMF_DATA MyDLPMFData;
+int initialized = 0; 
 
 PMYDLPMF_NOTIFICATION writeNotification = NULL;
 PMYDLPMF_NOTIFICATION miniNotification = NULL;
@@ -218,8 +219,11 @@ MyDLPMFPortConnect (
 
     ASSERT( MyDLPMFData.ClientPort == NULL );
     ASSERT( MyDLPMFData.UserProcess == NULL );
+	ASSERT( MyDLPMFData.ErlangProcess == NULL );
 
     MyDLPMFData.UserProcess = PsGetCurrentProcess();
+	//get pid later init
+	//PsLookupProcessByProcessId(1231,MyDLPMFData.ErlangProcess) 
     MyDLPMFData.ClientPort = ClientPort;
 
     DbgPrint( "!!! scanner.sys --- connected, port=0x%p\n", ClientPort );
@@ -396,13 +400,61 @@ MyDLPMFPreCreate (
 {
 	POBJECT_NAME_INFORMATION dosNameInfo = NULL;
 	NTSTATUS status = STATUS_SUCCESS;
+	PMYDLPMF_STREAM_HANDLE_CONTEXT context;
+	ULONG replyLength;
 
 	UNREFERENCED_PARAMETER( FltObjects );
     UNREFERENCED_PARAMETER( CompletionContext );
 
     PAGED_CODE();
+	DbgPrint("In Pre create");
+	if (!initialized){
+		DbgPrint("In initialization");
+		miniNotification->BytesToScan = 0;
+		miniNotification->Type = NONE;
+		/*status = FltGetStreamHandleContext( FltObjects->Instance,
+			FltObjects->FileObject,
+			&context );*/
 
-    if (IoThreadToProcess( Data->Thread ) == MyDLPMFData.UserProcess) {
+		DbgPrint("Before status crititical section %x", status);
+		//if (NT_SUCCESS( status )) {
+
+				DbgPrint("In crititical section");
+				// miniNotification Buffer critical section start 
+				ExAcquireFastMutexUnsafe(&MiniNotificationMutex);
+				
+				miniNotification->Type = INIT;
+				replyLength = sizeof( MYDLPMF_REPLY );
+			
+				status = FltSendMessage( MyDLPMFData.Filter,
+					&MyDLPMFData.ClientPort,
+					miniNotification,
+					sizeof( MYDLPMF_MINI_NOTIFICATION ),
+					miniNotification,
+					&replyLength,
+					NULL );		
+
+				if (STATUS_SUCCESS == status) {
+
+					HANDLE pid = ((PMYDLPMF_CONF_REPLY) miniNotification)->pid;
+					PsLookupProcessByProcessId(pid, &MyDLPMFData.ErlangProcess); 
+					initialized = 1;
+					DbgPrint("Initialized minifilter runtime conf pid: %d", pid);
+				}
+
+				ExReleaseFastMutexUnsafe(&MiniNotificationMutex);	
+				// miniNotification buffer critical section ends				
+		//}      
+	}
+
+    /*if (IoThreadToProcess( Data->Thread ) == MyDLPMFData.UserProcess) {
+
+        DbgPrint( "!!! scanner.sys -- allowing create for trusted process \n" );
+
+        return FLT_PREOP_SUCCESS_NO_CALLBACK;
+    }*/
+
+	 if (IoThreadToProcess( Data->Thread ) == MyDLPMFData.UserProcess || IoThreadToProcess( Data->Thread ) == MyDLPMFData.ErlangProcess) {
 
         DbgPrint( "!!! scanner.sys -- allowing create for trusted process \n" );
 

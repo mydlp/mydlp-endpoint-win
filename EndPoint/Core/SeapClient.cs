@@ -33,6 +33,7 @@ namespace MyDLP.EndPoint.Core
         String server = Configuration.SeapServer;
         TcpClient client;
         NetworkStream stream;
+        int timeout = 1000;
         int responseLength = 256;
         int tryCount = 0;
         const int tryLimit = 3;
@@ -187,9 +188,10 @@ namespace MyDLP.EndPoint.Core
                     return FileOperation.Action.ALLOW;
                 }
             }
-
+            //test
+            //filePath = "/home/kerem/mydlp.sql";
+            //filePath = @"C:\mydlpepwin.log";
             response = sClient.sendMessage("PUSHFILE " + id + " " + filePath);
-
             splitResp = response.Split(' ');
             if (!splitResp[0].Equals("OK"))
             {
@@ -197,7 +199,6 @@ namespace MyDLP.EndPoint.Core
             }
 
             response = sClient.sendMessage("END " + id);
-
             splitResp = response.Split(' ');
             if (!splitResp[0].Equals("OK"))
             {
@@ -229,7 +230,7 @@ namespace MyDLP.EndPoint.Core
             {
                 Logger.GetInstance().Info("Initialize seap client server: " + server + " port: " + port);
                 client = new TcpClient(server, port);
-                stream = client.GetStream();
+                stream = client.GetStream();              
             }
             catch (Exception)
             {
@@ -285,8 +286,8 @@ namespace MyDLP.EndPoint.Core
                     tryCount = 0;
                 }
                 String respMessage = System.Text.Encoding.ASCII.GetString(response, 0, readCount);
-                Logger.GetInstance().Debug("SeapClient read response:  <" + respMessage + ">");             
-                return respMessage;
+                Logger.GetInstance().Debug("SeapClient read response:  <" + respMessage.Trim() + ">");             
+                return respMessage.Trim();
             }
             catch (System.IO.IOException)
             {
@@ -311,9 +312,10 @@ namespace MyDLP.EndPoint.Core
 
         public String sendMessage(String msg)
         {
-            int readCount;
-            msg = msg + "\r\n";
+            Reconnect();
+            int readCount;          
             Logger.GetInstance().Debug("SeapClient send message: <" + msg + ">");
+            msg = msg + "\r\n";
             try
             {
                 Byte[] data = System.Text.Encoding.ASCII.GetBytes(msg);
@@ -325,8 +327,8 @@ namespace MyDLP.EndPoint.Core
                     tryCount = 0;
                 }
                 String respMessage = System.Text.Encoding.ASCII.GetString(response, 0, readCount);
-                Logger.GetInstance().Debug("SeapClient read response:  <" + respMessage + ">");             
-                return respMessage;
+                Logger.GetInstance().Debug("SeapClient read response:  <" + respMessage.Trim() + ">");             
+                return respMessage.Trim();
             }
             catch(System.IO.IOException)
             {

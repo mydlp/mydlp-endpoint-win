@@ -46,7 +46,8 @@ typedef enum _MSG_TYPE
 	NONE,
 	PREWRITE,
 	POSTCREATE,
-	PRECLEANUP
+	PRECLEANUP,
+	INIT
 } MSG_TYPE;
 
 /*typedef struct _MYDLPMF_NOTIFICATION {
@@ -119,19 +120,31 @@ typedef struct _MYDLPMF_MESSAGE {
 
 typedef struct _MYDLPMF_REPLY_MESSAGE {
 
-	//
-	//  Required structure header.
-	//
 
 	FILTER_REPLY_HEADER ReplyHeader;
 
-	//
-	//  Private scanner-specific fields begin here.
-	//
 
 	MYDLPMF_REPLY Reply;
 
 } MYDLPMF_REPLY_MESSAGE, *PMYDLPMF_REPLY_MESSAGE;
+
+
+typedef struct _MYDLPMF_CONF_REPLY {
+
+	int Pid;
+    
+} MYDLPMF_CONF_REPLY, *PMYDLPMF_CONF_REPLY;
+
+typedef struct _MYDLPMF_CONF_REPLY_MESSAGE {
+
+
+	FILTER_REPLY_HEADER ReplyHeader;
+
+
+	MYDLPMF_CONF_REPLY Reply;
+
+} MYDLPMF_CONF_REPLY_MESSAGE, *PMYDLPMF_CONF_REPLY_MESSAGE;
+
 
 //
 //  Default and Maximum number of threads.

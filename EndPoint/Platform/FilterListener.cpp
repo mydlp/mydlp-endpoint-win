@@ -156,6 +156,7 @@ DWORD ListenerWorker(__in PMYDLPMF_THREAD_CONTEXT Context)
 		printf("Start Listener\n");
 		PMYDLPMF_NOTIFICATION notification;
 		MYDLPMF_REPLY_MESSAGE replyMessage;
+		MYDLPMF_CONF_REPLY_MESSAGE confMessage;
 		PMYDLPMF_MESSAGE message = NULL;
 		LPOVERLAPPED pOvlp;
 		MyDLPEP::FilterListener ^listener;
@@ -164,6 +165,7 @@ DWORD ListenerWorker(__in PMYDLPMF_THREAD_CONTEXT Context)
 		HRESULT hr;
 		ULONG_PTR key;
 		unsigned int i = 0;
+		BOOL init = 0;
 
 	#pragma warning(push)
 	#pragma warning(disable:4127) // conditional expression is constant
@@ -196,38 +198,71 @@ DWORD ListenerWorker(__in PMYDLPMF_THREAD_CONTEXT Context)
 			} else if (notification->Type == PRECLEANUP) {	
 				listener = MyDLPEP::FilterListener::getInstance();
 				listener->HandleFileCleanup(notification->FileName);	
+			} else if (notification->Type ==INIT){					
+				init = 1;
 			}
 
-			result = FALSE;
-			replyMessage.ReplyHeader.Status = 0;
-			replyMessage.ReplyHeader.MessageId = message->MessageHeader.MessageId;
+			if (init == 0)
+			{
+				result = FALSE;
+				replyMessage.ReplyHeader.Status = 0;
+				replyMessage.ReplyHeader.MessageId = message->MessageHeader.MessageId;
 
-			if (action == FileOperation::Action::ALLOW )
-				replyMessage.Reply.Action = _MYDLPMF_REPLY::ActionType::ALLOW;
-			else if(action == FileOperation::Action::BLOCK)
-				replyMessage.Reply.Action = _MYDLPMF_REPLY::ActionType::BLOCK;
-			else if(action == FileOperation::Action::NOACTION)
-				replyMessage.Reply.Action = _MYDLPMF_REPLY::ActionType::NOACTION;
+				if (action == FileOperation::Action::ALLOW )
+					replyMessage.Reply.Action = _MYDLPMF_REPLY::ActionType::ALLOW;
+				else if(action == FileOperation::Action::BLOCK)
+					replyMessage.Reply.Action = _MYDLPMF_REPLY::ActionType::BLOCK;
+				else if(action == FileOperation::Action::NOACTION)
+					replyMessage.Reply.Action = _MYDLPMF_REPLY::ActionType::NOACTION;
 
-			/*if(!replyMessage.Reply.SafeToOpen)
-				printf("***Replying message, SafeToOpen: %d\n", replyMessage.Reply.SafeToOpen );*/
-		
-			hr = FilterReplyMessage( Context->Port, (PFILTER_REPLY_HEADER) &replyMessage, sizeof( replyMessage ) );
+				/*if(!replyMessage.Reply.SafeToOpen)
+					printf("***Replying message, SafeToOpen: %d\n", replyMessage.Reply.SafeToOpen );*/
+			
+				hr = FilterReplyMessage( Context->Port, (PFILTER_REPLY_HEADER) &replyMessage, sizeof( replyMessage ) );
 
-			if (SUCCEEDED(hr)) {
-				//printf("Replied message\n");
+				if (SUCCEEDED(hr)) {
+					//printf("Replied message\n");
 
-			} else {
+				} else {
 
-				printf("MyDLPMF: Error replying message. Error = 0x%X\n", hr);			
-				break;
+					printf("MyDLPMF: Error replying message. Error = 0x%X\n", hr);			
+					break;
+				}
+
+				memset(&message->Ovlp, 0, sizeof( OVERLAPPED));
+
+				hr = FilterGetMessage(Context->Port, &message->MessageHeader, FIELD_OFFSET( MYDLPMF_MESSAGE, Ovlp), &message->Ovlp);
+				if (hr != HRESULT_FROM_WIN32( ERROR_IO_PENDING )) {
+					break;
+				}
 			}
+			else
+			{
+				result = FALSE;
+				confMessage.ReplyHeader.Status = 0;
+				confMessage.ReplyHeader.MessageId = message->MessageHeader.MessageId;
 
-			memset(&message->Ovlp, 0, sizeof( OVERLAPPED));
+				Console::WriteLine("Erl pid:" + System::Diagnostics::Process::GetProcessesByName("erl")[0]->Id);	
+				confMessage.Reply.Pid = (int) System::Diagnostics::Process::GetProcessesByName("erl")[0]->Id;//1555; //System::Diagnostics::Process::GetProcessesByName("erl")[0]->Id;				
+			
+				hr = FilterReplyMessage( Context->Port, (PFILTER_REPLY_HEADER) &confMessage, sizeof( confMessage ) );
 
-			hr = FilterGetMessage(Context->Port, &message->MessageHeader, FIELD_OFFSET( MYDLPMF_MESSAGE, Ovlp), &message->Ovlp);
-			if (hr != HRESULT_FROM_WIN32( ERROR_IO_PENDING )) {
-				break;
+				if (SUCCEEDED(hr)) {
+					//printf("Replied message\n");
+
+				} else {
+
+					printf("MyDLPMF: Error replying message. Error = 0x%X\n", hr);			
+					break;
+				}
+
+				memset(&message->Ovlp, 0, sizeof( OVERLAPPED));
+
+				hr = FilterGetMessage(Context->Port, &message->MessageHeader, FIELD_OFFSET( MYDLPMF_MESSAGE, Ovlp), &message->Ovlp);
+				if (hr != HRESULT_FROM_WIN32( ERROR_IO_PENDING )) {
+					break;
+				}
+				
 			}
 		}
 
