@@ -748,9 +748,11 @@ MyDLPMFPreWrite (
 		writeNotification->Type = PREWRITE;		
 		writeNotification->BytesToScan = 0;		
 
+		DbgPrint("PreWrite start loop writeNotification->Type: %d,\n", writeNotification->Type);	
 		for(i = 0, writeLength = 0; writeLength < Data->Iopb->Parameters.Write.Length; 
 			writeLength += MYDLPMF_READ_BUFFER_SIZE, i++)
 		{
+			DbgPrint("PreWrite inside loop start writeNotification->Type: %d,\n", writeNotification->Type);	
 			writeNotification->BytesToScan = min( Data->Iopb->Parameters.Write.Length - writeLength, MYDLPMF_READ_BUFFER_SIZE );
 	
 			try  {
@@ -802,7 +804,7 @@ MyDLPMFPreWrite (
 									 sizeof( MYDLPMF_NOTIFICATION ) - (MYDLPMF_READ_BUFFER_SIZE - writeNotification->BytesToScan),
 									 writeNotification,
 									 &replyLength,
-									 NULL );
+									 NULL );			
 
 			if (STATUS_SUCCESS == status) {
 
@@ -828,10 +830,14 @@ MyDLPMFPreWrite (
 					returnStatus = FLT_PREOP_COMPLETE;
 				}
 			}
+			//important response corrupts write notfication
+			writeNotification->Type = PREWRITE;
+			DbgPrint("PreWrite inside loop end writeNotification->Type: %d,\n", writeNotification->Type);	
 		}
 
 
     } finally {
+
 
 		ExReleaseFastMutexUnsafe(&WriteNotificationMutex);	
 		/* writeNotification buffer critical section ends */

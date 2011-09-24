@@ -134,6 +134,7 @@ namespace MyDLP.EndPoint.Core
                    
                     if (System.Environment.UserInteractive)
                     {
+
                         procStartInfo.EnvironmentVariables.Add("MYDLP_CONF", GetShortPath(Configuration.ErlangPath).Replace(@"\", @"/") + "mydlp-ep.conf");
                     }
                     else

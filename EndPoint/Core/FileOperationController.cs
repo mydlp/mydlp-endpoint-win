@@ -62,13 +62,13 @@ namespace MyDLP.EndPoint.Core
         {
             if (operationTable.Contains(filePath) && ((FileOperationTableEntry)operationTable[filePath]).write != null)
             {
-                ((FileOperationTableEntry)operationTable[filePath]).write.FinishWrite();
+               // ((FileOperationTableEntry)operationTable[filePath]).write.FinishWrite();
             }
         }
 
         public FileOperation.Action HandleWriteOperation(string filePath, byte[] content, int length)
         {
-
+            Logger.GetInstance().Debug("HandleWriteOperation path:" + filePath + " length: " + length);
             WriteFileOperation wop;
 
             if (!operationTable.Contains(filePath))
@@ -132,7 +132,6 @@ namespace MyDLP.EndPoint.Core
         private void OnTimedTableEvent(object source, ElapsedEventArgs e)
         {
             ArrayList deletedOps = new ArrayList();
-            Console.WriteLine("======operationTable dump======");
             lock (operationTable)
             {
                 foreach (FileOperationTableEntry en in operationTable.Values)
@@ -143,17 +142,14 @@ namespace MyDLP.EndPoint.Core
                     }
                     else
                     {
-                        Logger.GetInstance().Debug("OnTimedTableEvent deleted " + en);
+                    //    Logger.GetInstance().Debug("OnTimedTableEvent deleted " + en);
                     }
                 }
             }
             foreach (OpenFileOperation op in deletedOps)
             {
                 controller.DeleteOperation(op);
-                Console.WriteLine("delete" + op);
             }
-
-            Console.WriteLine("======operationTable ends======");
         }
 
         public static FileOperationController GetInstance()

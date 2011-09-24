@@ -191,7 +191,7 @@ DWORD ListenerWorker(__in PMYDLPMF_THREAD_CONTEXT Context)
 				listener = MyDLPEP::FilterListener::getInstance();
 				action = listener->HandleFileOpen(notification->FileName);
 			} else if (notification->Type == PREWRITE) {			
-				listener = MyDLPEP::FilterListener::getInstance();
+				listener = MyDLPEP::FilterListener::getInstance();				
 				action = listener->HandleFileWrite(notification->FileName, notification->Contents, notification->BytesToScan);				
 			} else if (notification->Type == PRECLEANUP) {	
 				listener = MyDLPEP::FilterListener::getInstance();

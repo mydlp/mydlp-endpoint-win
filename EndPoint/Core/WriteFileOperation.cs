@@ -26,13 +26,20 @@ namespace MyDLP.EndPoint.Core
     public class WriteFileOperation : FileOperation
     {
         public const int miniFilterBufferSize = 65536;
+        public const int writeCacheLimit = 1048576; //1MB
         String tempFilePath;
+        MemoryStream cache;
+        int size;
+        bool cached;
 
         public WriteFileOperation(String path, DateTime date)
         {
             type = FileOperation.OperationType.WRITE;
             this.path = path;
             this.date = date;
+            cache = new MemoryStream();
+            cached = true;
+            size = 0;
         }
 
         public override string ToString()
@@ -47,22 +54,54 @@ namespace MyDLP.EndPoint.Core
 
         public FileOperation.Action appendContent(byte[] content)
         {
-            if (tempFilePath == null)
+            Logger.GetInstance().Debug("appendContent " + path);
+            if (cached && (size + content.Length > writeCacheLimit)) 
             {
-                createTempFile();
+                if (tempFilePath == null)
+                {
+                    createTempFile();
+                }
+
+                using (FileStream stream = new FileStream(tempFilePath, FileMode.Append))
+                {
+                    using (BinaryWriter writer = new BinaryWriter(stream))
+                    {
+                        writer.Write(cache.GetBuffer(),0,(int)cache.Length);
+                        writer.Close();
+                    }
+                }
+                Logger.GetInstance().Debug("appendContent cached set false " + path);
+                cached = false;
+                cache.Close();
             }
 
-            using (FileStream stream = new FileStream(tempFilePath, FileMode.Append))
+            if (cached)
             {
-                using (BinaryWriter writer = new BinaryWriter(stream))
+                
+                Logger.GetInstance().Debug("appendContent cached size:" + size + " content.length:" + content.Length);
+                cache.Write(content, 0, content.Length);
+                size += content.Length;
+            }
+            else
+            {
+                if (tempFilePath == null)
                 {
-                    writer.Write(content);
-                    writer.Close();
+                    createTempFile();
+                }
+
+                using (FileStream stream = new FileStream(tempFilePath, FileMode.Append))
+                {
+                    using (BinaryWriter writer = new BinaryWriter(stream))
+                    {
+                        writer.Write(content);
+                        writer.Close();
+                    }
                 }
             }
-
+            
             if (content.Length < miniFilterBufferSize)
             {
+                Logger.GetInstance().Debug("appendContent call finish content.Length:" + content.Length + " limit:" + miniFilterBufferSize);
                 return FinishWrite();
             }
 
@@ -77,14 +116,30 @@ namespace MyDLP.EndPoint.Core
 
         public FileOperation.Action DecideAction()
         {
-            try
+            if (cached)
             {
-                return SeapClient.GetWriteDecisionByPath(path, tempFilePath);
+                try
+                {
+                    return SeapClient.GetWriteDecisionByCache(path, cache);
+                }
+                catch(Exception e)
+                {
+                    Logger.GetInstance().Error("Exception" + e.Message + e.StackTrace);
+                    return Action.ALLOW;
+                }
+
             }
-            catch (Exception e)
+            else
             {
-                Console.WriteLine("Exception" + e.Message + e.StackTrace);
-                return Action.ALLOW;
+                try
+                {
+                    return SeapClient.GetWriteDecisionByPath(path, tempFilePath);
+                }
+                catch (Exception e)
+                {
+                    Logger.GetInstance().Error("Exception" + e.Message + e.StackTrace);
+                    return Action.ALLOW;
+                }
             }
         }
     }
