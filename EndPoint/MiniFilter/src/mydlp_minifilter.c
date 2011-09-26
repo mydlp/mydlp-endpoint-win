@@ -262,6 +262,8 @@ MyDLPMFPortDisconnect(
     FltCloseClientPort( MyDLPMFData.Filter, &MyDLPMFData.ClientPort );
 
     MyDLPMFData.UserProcess = NULL;
+	MyDLPMFData.ErlangProcess = NULL;
+	initialized = 0;
 }
 #pragma endregion 
 

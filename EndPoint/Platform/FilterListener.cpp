@@ -238,6 +238,7 @@ DWORD ListenerWorker(__in PMYDLPMF_THREAD_CONTEXT Context)
 			}
 			else
 			{
+				init = 0;
 				result = FALSE;
 				confMessage.ReplyHeader.Status = 0;
 				confMessage.ReplyHeader.MessageId = message->MessageHeader.MessageId;
