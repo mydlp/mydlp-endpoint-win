@@ -536,7 +536,7 @@ MyDLPMFPostCreate (
 		if (STATUS_SUCCESS == status)
 		{
 				action = ((PMYDLPMF_REPLY) miniNotification)->Action;
-				DbgPrint("GET action status: %s", action);
+				//DbgPrint("GET action status: %s", action);
 		}
 		else
 		{

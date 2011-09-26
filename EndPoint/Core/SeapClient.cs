@@ -162,8 +162,10 @@ namespace MyDLP.EndPoint.Core
             //todo: Default Acion
             return FileOperation.Action.ALLOW;
         }
+
         public static FileOperation.Action GetReadDecisionByPath(String filePath)
         {
+            //Logger.GetInstance().Debug("GetReadDecisionByPath path: " + Engine.GetShortPath(filePath));
             Logger.GetInstance().Debug("GetReadDecisionByPath path: " + filePath);
             SeapClient sClient = SeapClient.GetInstance();
             String response;
@@ -188,15 +190,30 @@ namespace MyDLP.EndPoint.Core
                     return FileOperation.Action.ALLOW;
                 }
             }
-            //test
-            //filePath = "/home/kerem/mydlp.sql";
-            //filePath = @"C:\mydlpepwin.log";
+
+            //response = sClient.sendMessage("PUSHFILE " + id + " " + Engine.GetShortPath(filePath));
             response = sClient.sendMessage("PUSHFILE " + id + " " + filePath);
             splitResp = response.Split(' ');
             if (!splitResp[0].Equals("OK"))
             {
                 return FileOperation.Action.ALLOW;
             }
+
+            //response = sClient.sendMessage("SETPROP " + id + " filename=" + Engine.GetShortPath(filePath));
+            response = sClient.sendMessage("SETPROP " + id + " filename=" + Path.GetFileName(filePath));
+            splitResp = response.Split(' ');
+            if (!splitResp[0].Equals("OK"))
+            {
+                return FileOperation.Action.ALLOW;
+            }
+
+            response = sClient.sendMessage("SETPROP " + id + " direction=in");
+            splitResp = response.Split(' ');
+            if (!splitResp[0].Equals("OK"))
+            {
+                return FileOperation.Action.ALLOW;
+            }
+
 
             response = sClient.sendMessage("END " + id);
             splitResp = response.Split(' ');

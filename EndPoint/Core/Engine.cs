@@ -53,7 +53,7 @@ namespace MyDLP.EndPoint.Core
             KillProcByName("erl");
         }
 
-        public String GetShortPath(String path)
+        public static String GetShortPath(String path)
         {
             StringBuilder shortPath = new StringBuilder(255);
             GetShortPathName(path, shortPath, shortPath.Capacity);
