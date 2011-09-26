@@ -33,7 +33,7 @@ namespace MyDLP.EndPoint.Core
         String server = Configuration.SeapServer;
         TcpClient client;
         NetworkStream stream;
-        int timeout = 1000;
+        int timeout = 5000;
         int responseLength = 256;
         int tryCount = 0;
         const int tryLimit = 3;
@@ -230,7 +230,9 @@ namespace MyDLP.EndPoint.Core
             {
                 Logger.GetInstance().Info("Initialize seap client server: " + server + " port: " + port);
                 client = new TcpClient(server, port);
-                stream = client.GetStream();              
+                stream = client.GetStream();
+                stream.ReadTimeout = timeout;
+                stream.WriteTimeout = timeout;
             }
             catch (Exception)
             {
@@ -243,8 +245,10 @@ namespace MyDLP.EndPoint.Core
             try
             {
                 Logger.GetInstance().Info("Reconnect seap client server: " + server + " port: " + port);
-                client = new TcpClient(server, port);
+                client = new TcpClient(server, port);                
                 stream = client.GetStream();
+                stream.ReadTimeout = timeout;
+                stream.WriteTimeout = timeout;
             }
             catch (Exception)
             {
@@ -293,7 +297,7 @@ namespace MyDLP.EndPoint.Core
             {
                 if (tryCount <= tryLimit)
                 {
-                    Logger.GetInstance().Debug("IO Exception try reconnect");
+                    Logger.GetInstance().Debug("IO Exception try reconnect try count:" + tryCount);
                     tryCount++;
                     Reconnect();
                     return sendMessage(cmd, msg);
