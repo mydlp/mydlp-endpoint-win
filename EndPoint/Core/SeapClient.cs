@@ -41,6 +41,7 @@ namespace MyDLP.EndPoint.Core
 
         public static FileOperation.Action GetWriteDecisionByPath(String filePath, String tempFilePath)
         {
+            /*
             Logger.GetInstance().Debug("GetWriteDecisionByPath filePath:" + filePath + " tempFilePath:" + tempFilePath);
             SeapClient sClient = SeapClient.GetInstance();
             String response;
@@ -98,11 +99,13 @@ namespace MyDLP.EndPoint.Core
                 return FileOperation.Action.ALLOW;
             }
             //todo: Default Acion
+            */
             return FileOperation.Action.ALLOW;
         }
 
         public static FileOperation.Action GetWriteDecisionByCache(String filePath, MemoryStream cache) 
         {
+            /*
             Logger.GetInstance().Debug("GetWriteDecisionByCache path: " + filePath +" length:" + cache.Length);
             SeapClient sClient = SeapClient.GetInstance();
             String response;
@@ -160,6 +163,7 @@ namespace MyDLP.EndPoint.Core
                 return FileOperation.Action.ALLOW;
             }
             //todo: Default Acion
+             */
             return FileOperation.Action.ALLOW;
         }
 
