@@ -155,7 +155,7 @@ namespace MyDLP.EndPoint.Core
             Process[] processes = Process.GetProcessesByName("erl");
             if (processes.Length == 0)
             {
-                //ger werl.exe pid 
+                //ger werl.exe pid
                 processes = Process.GetProcessesByName("werl");
                 if (processes.Length == 0)
                 {
