@@ -191,8 +191,8 @@ namespace MyDLP.EndPoint.Core
                 }
             }
 
-            //response = sClient.sendMessage("PUSHFILE " + id + " " + Engine.GetShortPath(filePath));
-            response = sClient.sendMessage("PUSHFILE " + id + " " + filePath);
+            response = sClient.sendMessage("PUSHFILE " + id + " " + Engine.GetShortPath(filePath));
+            //response = sClient.sendMessage("PUSHFILE " + id + " " + filePath);
             splitResp = response.Split(' ');
             if (!splitResp[0].Equals("OK"))
             {
@@ -339,7 +339,7 @@ namespace MyDLP.EndPoint.Core
             msg = msg + "\r\n";
             try
             {
-                Byte[] data = System.Text.Encoding.ASCII.GetBytes(msg);
+                Byte[] data = System.Text.Encoding.UTF8.GetBytes(msg);
                 Byte[] response = new Byte[responseLength];
                 lock (seapClient)
                 {

@@ -41,7 +41,7 @@
             // 
             this.myDLPServiceInstaller.Description = "MyDLP EP Win";
             this.myDLPServiceInstaller.DisplayName = "MyDLP EP Win";
-            this.myDLPServiceInstaller.ServiceName = "MyDLP-EP-Win";
+            this.myDLPServiceInstaller.ServiceName = "mydlp-ep-win";
             this.myDLPServiceInstaller.StartType = System.ServiceProcess.ServiceStartMode.Automatic;
             // 
             // ProjectInstaller

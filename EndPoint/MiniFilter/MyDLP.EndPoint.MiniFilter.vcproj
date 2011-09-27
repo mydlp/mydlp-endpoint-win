@@ -101,7 +101,7 @@
 			<Tool
 				Name="VCCustomBuildTool"
 				CommandLine="ddk_filter_build.bat&#x0D;&#x0A;"
-				Outputs="src\objchk_wxp_x86\i386\scanner.sys"
+				Outputs="src\objchk_wxp_x86\i386\MyDLPMF.sys;src\objchk_wxp_x86\i386\vc90.pdb;src\objchk_wxp_x86\i386\MyDLPMF.pdb"
 			/>
 			<Tool
 				Name="VCXMLDataGeneratorTool"

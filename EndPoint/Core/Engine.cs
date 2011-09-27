@@ -40,6 +40,7 @@ namespace MyDLP.EndPoint.Core
         String pythonStartCmd = @"cd " + Configuration.PyBackendPath + " && Run.bat";
         String erlStartCmd = @"cd " + Configuration.ErlangPath + " && Run.bat";
         String vs2005InstallCmd = @"cd " + Configuration.AppPath + "\\erl5.7.4 && vcredist_x86.exe /q:a /c:\"msiexec /i vcredist.msi /qn /l*v %temp%\\vcredist_x86.log\"";
+        String erlStartInteractiveCmd = @"cd " + Configuration.ErlangPath + " && InteractiveRun.bat";
 
         public void Start()
         {
@@ -58,7 +59,15 @@ namespace MyDLP.EndPoint.Core
             }
 
             ExecuteCommandAsync(pythonStartCmd);
-            ExecuteCommandAsync(erlStartCmd);
+
+            if (System.Environment.UserInteractive)
+            {
+                ExecuteCommandAsync(erlStartInteractiveCmd);
+            }
+            else
+            {
+                ExecuteCommandAsync(erlStartCmd);
+            }
         }
 
 
@@ -67,6 +76,7 @@ namespace MyDLP.EndPoint.Core
             KillProcByName("python");
             KillProcByName("epmd");
             KillProcByName("erl");
+            KillProcByName("werl");
         }
 
         public static String GetShortPath(String path)
