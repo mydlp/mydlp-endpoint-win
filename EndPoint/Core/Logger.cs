@@ -26,7 +26,7 @@ namespace MyDLP.EndPoint.Core
     public class Logger
     {
         private static Logger logger;
-        String logPath = @"c:\mydlpepwin.log";
+        String logPath = Configuration.GetLogPath();
         public enum LogLevel { ERROR = 0, INFO, DEBUG };
         LogLevel currentLevel = LogLevel.DEBUG;
         bool useWindowsLogger = false;

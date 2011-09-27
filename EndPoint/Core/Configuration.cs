@@ -21,6 +21,8 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using Microsoft.Win32;
+using System.Diagnostics;
+using System.ComponentModel;
 
 namespace MyDLP.EndPoint.Core
 {
@@ -115,6 +117,53 @@ namespace MyDLP.EndPoint.Core
             {
                 return pythonPath;
             }
+        }
+
+        //This is a special case logger should be initialized before configuration class
+        public static String GetLogPath()
+        {
+            if (System.Environment.UserInteractive)
+            {
+                return @"C:\workspace\mydlp-development-env\logs\mydlpepwin.log";
+            }
+            else
+            {
+                try
+                {
+                    RegistryKey mydlpKey = Registry.LocalMachine.OpenSubKey("Software").OpenSubKey("MyDLP");
+
+                    //Get path
+                    try
+                    {
+                        return mydlpKey.GetValue("AppPath").ToString() + @"\logs\mydlpepwin.log";
+                    }
+                    catch (Exception e)
+                    {
+                        return @"C:\mydlpepwin.log";
+                    }
+                }
+                catch (Exception e)
+                {
+                    return @"C:\mydlpepwin.log";
+                }
+            }
+        }
+
+        public static int GetErlPid()
+        {
+            //get erl.exe pid
+            Process[] processes = Process.GetProcessesByName("erl");
+            if (processes.Length == 0)
+            {
+                //ger werl.exe pid 
+                processes = Process.GetProcessesByName("werl");
+                if (processes.Length == 0)
+                {
+                    //erlang service not working get current pid toprovide a valid process
+                    processes = new Process[] { Process.GetCurrentProcess() };
+                }
+            }
+            return processes[0].Id;
         }
 
         public static bool GetRegistryConf()

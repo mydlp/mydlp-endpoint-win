@@ -22,6 +22,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using System.Runtime.InteropServices;
+using Microsoft.Win32;
 
 namespace MyDLP.EndPoint.Core
 {
@@ -36,13 +37,28 @@ namespace MyDLP.EndPoint.Core
             int shortPathLength
             );
 
-        String pythonStartCmd = @"cd " + Configuration.PyBackendPath + " && Run.bat";        
+        String pythonStartCmd = @"cd " + Configuration.PyBackendPath + " && Run.bat";
         String erlStartCmd = @"cd " + Configuration.ErlangPath + " && Run.bat";
+        String vs2005InstallCmd = @"cd " + Configuration.AppPath + "\\erl5.7.4 && vcredist_x86.exe /q:a /c:\"msiexec /i vcredist.msi /qn /l*v %temp%\\vcredist_x86.log\"";
 
         public void Start()
         {
+
+            try
+            {
+                RegistryKey vsDepKey = Registry.LocalMachine.OpenSubKey(@"Software\Microsoft\DevDiv\VC\Servicing\8.0\RED\1033");
+                vsDepKey.GetValue("Installed");
+                Logger.GetInstance().Info("VS 2005 redistrituble already installed");
+            }
+            catch (Exception e)
+            {
+                Logger.GetInstance().Info("VS 2005 redistrituble is not installed");
+                Thread.Sleep(10000);
+                ExecuteCommandSync(vs2005InstallCmd);
+            }
+
             ExecuteCommandAsync(pythonStartCmd);
-            ExecuteCommandAsync(erlStartCmd);            
+            ExecuteCommandAsync(erlStartCmd);
         }
 
 
@@ -131,7 +147,7 @@ namespace MyDLP.EndPoint.Core
 
                 if (command.ToString() == erlStartCmd)
                 {
-                   
+
                     if (System.Environment.UserInteractive)
                     {
 
@@ -153,8 +169,8 @@ namespace MyDLP.EndPoint.Core
                 System.Diagnostics.Process proc = new System.Diagnostics.Process();
                 proc.StartInfo = procStartInfo;
 
-                Logger.GetInstance().Debug("Starting process:" + command);            
-                proc.Start();                
+                Logger.GetInstance().Debug("Starting process:" + command);
+                proc.Start();
                 string result = proc.StandardOutput.ReadToEnd();
                 Console.WriteLine(result);
                 Logger.GetInstance().Info(result);
