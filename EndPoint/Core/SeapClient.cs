@@ -339,7 +339,7 @@ namespace MyDLP.EndPoint.Core
             msg = msg + "\r\n";
             try
             {
-                Byte[] data = System.Text.Encoding.ASCII.GetBytes(msg);
+                Byte[] data = System.Text.Encoding.UTF8.GetBytes(msg);
                 Byte[] response = new Byte[responseLength];
                 lock (seapClient)
                 {

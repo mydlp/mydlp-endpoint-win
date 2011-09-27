@@ -184,9 +184,10 @@ DWORD ListenerWorker(__in PMYDLPMF_THREAD_CONTEXT Context)
 			}
 
 			notification = &message->Notification;
-			assert(notification->BytesToScan <= MYDLPMF_READ_BUFFER_SIZE);
-			__analysis_assume(notification->BytesToScan <= MYDLPMF_READ_BUFFER_SIZE);
-			
+			if (notification->Type !=INIT){
+				assert(notification->BytesToScan <= MYDLPMF_READ_BUFFER_SIZE);
+				__analysis_assume(notification->BytesToScan <= MYDLPMF_READ_BUFFER_SIZE);
+			}
 			FileOperation::Action action = FileOperation::Action::ALLOW; 	
 
 			if(notification->Type == POSTCREATE) {		
@@ -243,8 +244,9 @@ DWORD ListenerWorker(__in PMYDLPMF_THREAD_CONTEXT Context)
 				confMessage.ReplyHeader.Status = 0;
 				confMessage.ReplyHeader.MessageId = message->MessageHeader.MessageId;
 
-				Console::WriteLine("Erl pid:" + System::Diagnostics::Process::GetProcessesByName("erl")[0]->Id);	
-				confMessage.Reply.Pid = (int) System::Diagnostics::Process::GetProcessesByName("erl")[0]->Id;//1555; //System::Diagnostics::Process::GetProcessesByName("erl")[0]->Id;				
+				Console::WriteLine("Erl pid:" + System::Diagnostics::Process::GetProcessesByName("werl")[0]->Id);	
+				confMessage.Reply.Pid = (int) System::Diagnostics::Process::GetProcessesByName("werl")[0]->Id;//1555; //System::Diagnostics::Process::GetProcessesByName("erl")[0]->Id;
+
 			
 				hr = FilterReplyMessage( Context->Port, (PFILTER_REPLY_HEADER) &confMessage, sizeof( confMessage ) );
 

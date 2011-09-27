@@ -38,11 +38,16 @@ namespace MyDLP.EndPoint.Core
 
         String pythonStartCmd = @"cd " + Configuration.PyBackendPath + " && Run.bat";        
         String erlStartCmd = @"cd " + Configuration.ErlangPath + " && Run.bat";
+        String erlStartInteractiveCmd = @"cd " + Configuration.ErlangPath + " && InteractiveRun.bat";
 
         public void Start()
         {
             ExecuteCommandAsync(pythonStartCmd);
-            ExecuteCommandAsync(erlStartCmd);            
+
+            if (System.Environment.UserInteractive)
+                ExecuteCommandAsync(erlStartInteractiveCmd);
+            else
+                ExecuteCommandAsync(erlStartCmd);
         }
 
 
@@ -51,6 +56,7 @@ namespace MyDLP.EndPoint.Core
             KillProcByName("python");
             KillProcByName("epmd");
             KillProcByName("erl");
+            KillProcByName("werl");
         }
 
         public static String GetShortPath(String path)
