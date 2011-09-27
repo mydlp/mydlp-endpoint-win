@@ -191,8 +191,8 @@ namespace MyDLP.EndPoint.Core
                 }
             }
 
-            //response = sClient.sendMessage("PUSHFILE " + id + " " + Engine.GetShortPath(filePath));
-            response = sClient.sendMessage("PUSHFILE " + id + " " + filePath);
+            response = sClient.sendMessage("PUSHFILE " + id + " " + Engine.GetShortPath(filePath));
+            //response = sClient.sendMessage("PUSHFILE " + id + " " + filePath);
             splitResp = response.Split(' ');
             if (!splitResp[0].Equals("OK"))
             {
