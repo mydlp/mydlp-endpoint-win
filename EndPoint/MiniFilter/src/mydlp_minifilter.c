@@ -504,8 +504,7 @@ MyDLPMFPostCreate (
 						dosNameInfo->Name.Length + 1*sizeof(WCHAR));
 		miniNotification->FileNameLength = dosNameInfo->Name.Length + 1*sizeof(WCHAR);
 		
-		if(dosNameInfo != NULL)
-			ExFreePool(dosNameInfo);
+
 
 		//Check if file is not a directory
 		if ((Data->Iopb->Parameters.Create.Options & FILE_NON_DIRECTORY_FILE) && dosNameInfo->Name.Length > 2*sizeof(WCHAR))
@@ -522,6 +521,9 @@ MyDLPMFPostCreate (
 			return FLT_POSTOP_FINISHED_PROCESSING;
 			//DbgPrint("Unknown file: %ws\n", dosNameInfo->Name.Buffer);
 		}
+
+		if(dosNameInfo != NULL)
+			ExFreePool(dosNameInfo);
 
 		replyLength = sizeof( MYDLPMF_REPLY );
 
