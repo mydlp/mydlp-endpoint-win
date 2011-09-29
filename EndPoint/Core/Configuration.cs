@@ -91,7 +91,7 @@ namespace MyDLP.EndPoint.Core
             return processes[0].Id;
         }
 
-        public static Boolean SetErlConf() 
+        public static Boolean SetErlConf()
         {
             try
             {
@@ -128,7 +128,7 @@ namespace MyDLP.EndPoint.Core
                 appPath = @"C:\workspace\mydlp-development-env";
                 seapServer = "127.0.0.1";
                 managementServer = "127.0.0.1";
-                archiveInbound = false; 
+                archiveInbound = false;
                 seapPort = 9099;
                 mydlpConfPath = Configuration.ErlangPath + "mydlp-ep.conf";
                 return true;

@@ -158,8 +158,8 @@ namespace MyDLP.EndPoint.Core
 
                 if (command.ToString() == erlStartCmd)
                 {
-                    procStartInfo.EnvironmentVariables.Add("MYDLP_CONF", GetShortPath(Configuration.MydlpConfPath).Replace(@"\", @"/"));               
-                
+                    procStartInfo.EnvironmentVariables.Add("MYDLP_CONF", GetShortPath(Configuration.MydlpConfPath).Replace(@"\", @"/"));
+
                     procStartInfo.EnvironmentVariables.Add("MYDLPBEAMDIR", GetShortPath(Configuration.ErlangPath));
 
                     procStartInfo.EnvironmentVariables.Add("MYDLP_APPDIR", GetShortPath(Configuration.AppPath));
