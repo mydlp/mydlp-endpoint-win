@@ -60,6 +60,7 @@ namespace MyDLP.EndPoint.Core
 
             ExecuteCommandAsync(pythonStartCmd);
 
+            Configuration.SetErlConf();
             if (System.Environment.UserInteractive)
             {
                 ExecuteCommandAsync(erlStartInteractiveCmd);
@@ -157,17 +158,8 @@ namespace MyDLP.EndPoint.Core
 
                 if (command.ToString() == erlStartCmd)
                 {
-
-                    if (System.Environment.UserInteractive)
-                    {
-
-                        procStartInfo.EnvironmentVariables.Add("MYDLP_CONF", GetShortPath(Configuration.ErlangPath).Replace(@"\", @"/") + "mydlp-ep.conf");
-                    }
-                    else
-                    {
-                        procStartInfo.EnvironmentVariables.Add("MYDLP_CONF", GetShortPath(Configuration.AppPath).Replace(@"\", @"/") + "/mydlp.conf");
-                    }
-
+                    procStartInfo.EnvironmentVariables.Add("MYDLP_CONF", GetShortPath(Configuration.MydlpConfPath).Replace(@"\", @"/"));               
+                
                     procStartInfo.EnvironmentVariables.Add("MYDLPBEAMDIR", GetShortPath(Configuration.ErlangPath));
 
                     procStartInfo.EnvironmentVariables.Add("MYDLP_APPDIR", GetShortPath(Configuration.AppPath));
