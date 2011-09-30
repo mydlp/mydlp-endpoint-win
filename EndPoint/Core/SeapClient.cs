@@ -34,7 +34,7 @@ namespace MyDLP.EndPoint.Core
         TcpClient client;
         NetworkStream stream;
         int timeout = 5000;
-        int responseLength = 256;
+        int responseLength = 512;
         int tryCount = 0;
         const int tryLimit = 3;
 
@@ -273,6 +273,15 @@ namespace MyDLP.EndPoint.Core
             try
             {
                 Logger.GetInstance().Info("Reconnect seap client server: " + server + " port: " + port);
+                try
+                {
+                    client.Close();
+                }
+                catch (Exception e)
+                {
+                    Logger.GetInstance().Info("Reconnect unable to close client: " + e.Message + " " + e.StackTrace);
+                }
+
                 client = new TcpClient(server, port);                
                 stream = client.GetStream();
                 stream.ReadTimeout = timeout;
@@ -305,10 +314,10 @@ namespace MyDLP.EndPoint.Core
             Byte[] data = System.Text.Encoding.ASCII.GetBytes(cmd);
             Byte[] end = System.Text.Encoding.ASCII.GetBytes("\r\n");
             Logger.GetInstance().Debug("SeapClient send message: <" + cmd + ">");
+            Byte[] response = new Byte[responseLength];
             int readCount;
             try
-            {
-                Byte[] response = new Byte[responseLength];
+            {                
                 lock (seapClient)
                 {
                     stream.Write(data, 0, data.Length);
@@ -321,14 +330,16 @@ namespace MyDLP.EndPoint.Core
                 Logger.GetInstance().Debug("SeapClient read response:  <" + respMessage.Trim() + ">");             
                 return respMessage.Trim();
             }
-            catch (System.IO.IOException)
+            catch (System.IO.IOException e)
             {
-                if (tryCount <= tryLimit)
+                if (tryCount < tryLimit)
                 {
-                    Logger.GetInstance().Debug("IO Exception try reconnect try count:" + tryCount);
+                    Logger.GetInstance().Debug("IO Exception try reconnect try count:" + tryCount + " " + e.Message + " " + e.StackTrace);
                     tryCount++;
+                    //consume error message
+                    readCount = stream.Read(response, 0, responseLength);
                     Reconnect();
-                    return sendMessage(cmd, msg);
+                    return sendMessage(cmd.TrimEnd(), msg);
                 }
                 else 
                 {
@@ -343,15 +354,14 @@ namespace MyDLP.EndPoint.Core
         }
 
         public String sendMessage(String msg)
-        {
-            Reconnect();
+        {            
             int readCount;          
             Logger.GetInstance().Debug("SeapClient send message: <" + msg + ">");
+            Byte[] response = new Byte[responseLength];
             msg = msg + "\r\n";
             try
             {
                 Byte[] data = System.Text.Encoding.ASCII.GetBytes(msg);
-                Byte[] response = new Byte[responseLength];
                 lock (seapClient)
                 {
                     stream.Write(data, 0, msg.Length);
@@ -364,12 +374,14 @@ namespace MyDLP.EndPoint.Core
             }
             catch(System.IO.IOException)
             {
-                if (tryCount <= tryLimit)
+                if (tryCount < tryLimit)
                 {
                     Logger.GetInstance().Debug("IO Exception try reconnect");
                     tryCount++;
+                    //consume error message
+                    readCount = stream.Read(response, 0, responseLength);
                     Reconnect();
-                    return sendMessage(msg);
+                    return sendMessage(msg.TrimEnd());
                 }
                 else 
                 {
