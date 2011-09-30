@@ -334,10 +334,17 @@ namespace MyDLP.EndPoint.Core
             {
                 if (tryCount < tryLimit)
                 {
-                    Logger.GetInstance().Debug("IO Exception try reconnect try count:" + tryCount + " " + e.Message + " " + e.StackTrace);
+                    Logger.GetInstance().Debug("IO Exception try reconnect try count:" + tryCount);
                     tryCount++;
-                    //consume error message
-                    readCount = stream.Read(response, 0, responseLength);
+                    //consume &discard error message
+                    try
+                    {
+                        readCount = stream.Read(response, 0, responseLength);
+                    }
+                    catch
+                    {
+                        Logger.GetInstance().Debug("SeapClient discard not possible");  
+                    }
                     Reconnect();
                     return sendMessage(cmd.TrimEnd(), msg);
                 }
@@ -376,10 +383,16 @@ namespace MyDLP.EndPoint.Core
             {
                 if (tryCount < tryLimit)
                 {
-                    Logger.GetInstance().Debug("IO Exception try reconnect");
+                    Logger.GetInstance().Debug("IO Exception try reconnect try count:" + tryCount);
                     tryCount++;
-                    //consume error message
-                    readCount = stream.Read(response, 0, responseLength);
+                    try
+                    {
+                        readCount = stream.Read(response, 0, responseLength);
+                    }
+                    catch
+                    {
+                        Logger.GetInstance().Debug("SeapClient discard not possible");       
+                    }
                     Reconnect();
                     return sendMessage(msg.TrimEnd());
                 }

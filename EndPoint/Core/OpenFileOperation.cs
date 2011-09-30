@@ -40,11 +40,10 @@ namespace MyDLP.EndPoint.Core
         }
 
         public FileOperation.Action DecideAction()
-        {
-            Console.WriteLine("DecideAction action");
+        {           
             if (action != FileOperation.Action.UNDEFINED)
             {
-                Console.WriteLine(action);
+                //Logger.GetInstance().Debug(action + " " + path);
                 return action;
             }
             try
