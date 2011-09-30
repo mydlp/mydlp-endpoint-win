@@ -173,81 +173,88 @@ namespace MyDLP.EndPoint.Core
 
         public static FileOperation.Action GetReadDecisionByPath(String filePath)
         {
-            //Logger.GetInstance().Debug("GetReadDecisionByPath path: " + Engine.GetShortPath(filePath));
-            Logger.GetInstance().Debug("GetReadDecisionByPath path: " + filePath);
-            SeapClient sClient = SeapClient.GetInstance();
-            String response;
-            String[] splitResp;
-            long id;
-
-            response = sClient.sendMessage("BEGIN");
-
-            if (response.Equals("ERR"))
+            try
             {
-                return FileOperation.Action.ALLOW;
-            }
-            else
-            {
-                splitResp = response.Split(' ');
-                if (splitResp[0].Equals("OK"))
+                //Logger.GetInstance().Debug("GetReadDecisionByPath path: " + Engine.GetShortPath(filePath));
+                Logger.GetInstance().Debug("GetReadDecisionByPath path: " + filePath);
+                SeapClient sClient = SeapClient.GetInstance();
+                String response;
+                String[] splitResp;
+                long id;
+
+                response = sClient.sendMessage("BEGIN");
+
+                if (response.Equals("ERR"))
                 {
-                    id = Int64.Parse(splitResp[1]);
+                    return FileOperation.Action.ALLOW;
                 }
                 else
+                {
+                    splitResp = response.Split(' ');
+                    if (splitResp[0].Equals("OK"))
+                    {
+                        id = Int64.Parse(splitResp[1]);
+                    }
+                    else
+                    {
+                        return FileOperation.Action.ALLOW;
+                    }
+                }
+
+                response = sClient.sendMessage("PUSHFILE " + id + " " + Engine.GetShortPath(filePath));
+                //response = sClient.sendMessage("PUSHFILE " + id + " " + filePath);
+                splitResp = response.Split(' ');
+                if (!splitResp[0].Equals("OK"))
+                {
+                    return FileOperation.Action.ALLOW;
+                }
+
+                //response = sClient.sendMessage("SETPROP " + id + " filename=" + Engine.GetShortPath(filePath));
+                response = sClient.sendMessage("SETPROP " + id + " filename=" + Path.GetFileName(filePath));
+                splitResp = response.Split(' ');
+                if (!splitResp[0].Equals("OK"))
+                {
+                    return FileOperation.Action.ALLOW;
+                }
+
+                response = sClient.sendMessage("SETPROP " + id + " direction=in");
+                splitResp = response.Split(' ');
+                if (!splitResp[0].Equals("OK"))
+                {
+                    return FileOperation.Action.ALLOW;
+                }
+
+
+                response = sClient.sendMessage("END " + id);
+                splitResp = response.Split(' ');
+                if (!splitResp[0].Equals("OK"))
+                {
+                    return FileOperation.Action.ALLOW;
+                }
+
+                response = sClient.sendMessage("ACLQ " + id);
+                splitResp = response.Split(' ');
+                if (!splitResp[0].Equals("OK"))
+                {
+                    return FileOperation.Action.ALLOW;
+                }
+
+                sClient.sendMessage("DESTROY " + id);
+
+                if (splitResp[1].Equals("block"))
+                {
+                    return FileOperation.Action.BLOCK;
+                }
+                else if (splitResp[1].Equals("pass"))
                 {
                     return FileOperation.Action.ALLOW;
                 }
             }
-
-            response = sClient.sendMessage("PUSHFILE " + id + " " + Engine.GetShortPath(filePath));
-            //response = sClient.sendMessage("PUSHFILE " + id + " " + filePath);
-            splitResp = response.Split(' ');
-            if (!splitResp[0].Equals("OK"))
+            catch 
             {
-                return FileOperation.Action.ALLOW;
+                //todo: Default Acion
+                return FileOperation.Action.ALLOW;            
             }
-
-            //response = sClient.sendMessage("SETPROP " + id + " filename=" + Engine.GetShortPath(filePath));
-            response = sClient.sendMessage("SETPROP " + id + " filename=" + Path.GetFileName(filePath));
-            splitResp = response.Split(' ');
-            if (!splitResp[0].Equals("OK"))
-            {
-                return FileOperation.Action.ALLOW;
-            }
-
-            response = sClient.sendMessage("SETPROP " + id + " direction=in");
-            splitResp = response.Split(' ');
-            if (!splitResp[0].Equals("OK"))
-            {
-                return FileOperation.Action.ALLOW;
-            }
-
-
-            response = sClient.sendMessage("END " + id);
-            splitResp = response.Split(' ');
-            if (!splitResp[0].Equals("OK"))
-            {
-                return FileOperation.Action.ALLOW;
-            }
-
-            response = sClient.sendMessage("ACLQ " + id);
-            splitResp = response.Split(' ');
-            if (!splitResp[0].Equals("OK"))
-            {
-                return FileOperation.Action.ALLOW;
-            }
-
-            sClient.sendMessage("DESTROY " + id);           
-
-            if (splitResp[1].Equals("block"))
-            {
-                return FileOperation.Action.BLOCK;
-            }
-            else if (splitResp[1].Equals("pass"))
-            {
-                return FileOperation.Action.ALLOW;
-            }
-
             //todo: Default Acion
             return FileOperation.Action.ALLOW;
         }
