@@ -89,6 +89,8 @@ namespace MyDLP.EndPoint.Core
             {
                 return FileOperation.Action.ALLOW;
             }
+            
+            sClient.sendMessage("DESTROY " + id);           
 
             if (splitResp[1].Equals("block"))
             {
@@ -153,6 +155,8 @@ namespace MyDLP.EndPoint.Core
             {
                 return FileOperation.Action.ALLOW;
             }
+            
+            sClient.sendMessage("DESTROY " + id);           
 
             if (splitResp[1].Equals("block"))
             {
@@ -233,6 +237,8 @@ namespace MyDLP.EndPoint.Core
                 return FileOperation.Action.ALLOW;
             }
 
+            sClient.sendMessage("DESTROY " + id);           
+
             if (splitResp[1].Equals("block"))
             {
                 return FileOperation.Action.BLOCK;
@@ -241,6 +247,7 @@ namespace MyDLP.EndPoint.Core
             {
                 return FileOperation.Action.ALLOW;
             }
+
             //todo: Default Acion
             return FileOperation.Action.ALLOW;
         }
