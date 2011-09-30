@@ -173,11 +173,13 @@ namespace MyDLP.EndPoint.Core
 
         public static FileOperation.Action GetReadDecisionByPath(String filePath)
         {
+            SeapClient sClient = SeapClient.GetInstance();
+            sClient.tryCount = 0;  
             try
             {
                 //Logger.GetInstance().Debug("GetReadDecisionByPath path: " + Engine.GetShortPath(filePath));
                 Logger.GetInstance().Debug("GetReadDecisionByPath path: " + filePath);
-                SeapClient sClient = SeapClient.GetInstance();
+               
                 String response;
                 String[] splitResp;
                 long id;
@@ -318,6 +320,7 @@ namespace MyDLP.EndPoint.Core
 
         public String sendMessage(String cmd, MemoryStream msg)
         {
+            Reconnect();
             Byte[] data = System.Text.Encoding.ASCII.GetBytes(cmd);
             Byte[] end = System.Text.Encoding.ASCII.GetBytes("\r\n");
             Logger.GetInstance().Debug("SeapClient send message: <" + cmd + ">");
@@ -330,6 +333,7 @@ namespace MyDLP.EndPoint.Core
                     stream.Write(data, 0, data.Length);
                     stream.Write(msg.GetBuffer(), 0, (int) msg.Length);
                     stream.Write(end, 0, end.Length);
+                    stream.Flush();
                     readCount = stream.Read(response, 0, responseLength);
                     tryCount = 0;
                 }
@@ -339,6 +343,7 @@ namespace MyDLP.EndPoint.Core
             }
             catch (System.IO.IOException e)
             {
+                /*
                 if (tryCount < tryLimit)
                 {
                     Logger.GetInstance().Debug("IO Exception try reconnect try count:" + tryCount);
@@ -352,13 +357,22 @@ namespace MyDLP.EndPoint.Core
                     {
                         Logger.GetInstance().Debug("SeapClient discard not possible");  
                     }
-                    Reconnect();
+                    try
+                    {
+                        Reconnect();
+                    }
+                    catch
+                    {
+                        Logger.GetInstance().Debug("REconnect failed");
+                    }
                     return sendMessage(cmd.TrimEnd(), msg);
                 }
                 else 
                 {
+                    Logger.GetInstance().Debug("IO Exception exceded try reconnect try count:" + tryCount);
                     throw;
-                }
+                }*/
+                throw;
             }
             catch (Exception)
             {
@@ -368,7 +382,8 @@ namespace MyDLP.EndPoint.Core
         }
 
         public String sendMessage(String msg)
-        {            
+        {
+            Reconnect();        
             int readCount;          
             Logger.GetInstance().Debug("SeapClient send message: <" + msg + ">");
             Byte[] response = new Byte[responseLength];
@@ -378,7 +393,10 @@ namespace MyDLP.EndPoint.Core
                 Byte[] data = System.Text.Encoding.ASCII.GetBytes(msg);
                 lock (seapClient)
                 {
+                    if (stream.DataAvailable == true)
+                        readCount = stream.Read(response, 0, responseLength);
                     stream.Write(data, 0, msg.Length);
+                    stream.Flush();
                     readCount = stream.Read(response, 0, responseLength);
                     tryCount = 0;
                 }
@@ -388,7 +406,7 @@ namespace MyDLP.EndPoint.Core
             }
             catch(System.IO.IOException)
             {
-                if (tryCount < tryLimit)
+                /*if (tryCount < tryLimit)
                 {
                     Logger.GetInstance().Debug("IO Exception try reconnect try count:" + tryCount);
                     tryCount++;
@@ -400,13 +418,21 @@ namespace MyDLP.EndPoint.Core
                     {
                         Logger.GetInstance().Debug("SeapClient discard not possible");       
                     }
-                    Reconnect();
+                    try
+                    {
+                        Reconnect();
+                    }
+                    catch
+                    {
+                        Logger.GetInstance().Debug("REconnect failed");
+                    }
                     return sendMessage(msg.TrimEnd());
                 }
                 else 
                 {
                     throw;
-                }
+                }*/
+                throw;
             }
             catch (Exception)
             {
