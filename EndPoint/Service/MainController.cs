@@ -21,14 +21,19 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using MyDLP.EndPoint.Core;
+using System.Diagnostics;
+using System.Timers;
+using System.ServiceProcess;
 
 namespace MyDLP.EndPoint.Service
 {
     public class MainController
     {
-
-
         Engine engine;
+        Timer watchdogTimer;
+        public static EventLog serviceLogger;
+
+        int watchdogTimerPeriod = 120000;     
 
         public static MainController GetInstance()
         {
@@ -39,9 +44,17 @@ namespace MyDLP.EndPoint.Service
             return controller;
         }
 
+        public static void SetServiceLogger(EventLog eventLog)
+        {
+            serviceLogger = eventLog;
+        }
+
         public void Start()
         {
-            Logger.GetInstance().Debug("MyDLP-EP-Win started");
+            //notify logger that we are in main service
+            Logger.GetInstance().InitializeMainLogger(serviceLogger);   
+
+            Logger.GetInstance().Debug("mydlpepwin service started");
             if (Configuration.GetRegistryConf() == false)
             {
                 Logger.GetInstance().Error("Unable to get configuration exiting!");
@@ -53,11 +66,16 @@ namespace MyDLP.EndPoint.Service
                 engine = new Engine();
                 engine.Start();
                 System.Threading.Thread.Sleep(3000);
+                Configuration.setPids();
                 Logger.GetInstance().Debug("MyDLP-EP-Win try to install mydlpmf");
                 MyDLPEP.MiniFilterController.GetInstance().Start();
                 Logger.GetInstance().Debug("MyDLP-EP-Win start finished");
                 MyDLPEP.FilterListener.getInstance().StartListener();
             }
+
+            watchdogTimer = new Timer(watchdogTimerPeriod);
+            watchdogTimer.Elapsed += new ElapsedEventHandler(OnTimedWatchdogEvent);
+            watchdogTimer.Enabled = true;
 
         }
 
@@ -66,6 +84,23 @@ namespace MyDLP.EndPoint.Service
             MyDLPEP.MiniFilterController.GetInstance().Stop();
             Logger.GetInstance().Info("MyDLP-EP-Win stopped");
             engine.Stop();
+        }
+
+        private void OnTimedWatchdogEvent(object source, ElapsedEventArgs e)
+        {
+            ServiceController service = new ServiceController("mydlpepwatchdog");
+            try
+            {
+                if (!service.Status.Equals(ServiceControllerStatus.Running) && !service.Status.Equals(ServiceControllerStatus.StartPending))
+                {
+                    Logger.GetInstance().Debug("watchdog dead!, starting mydlpepwatchdog");
+                    service.Start();
+                }
+            }
+            catch
+            {
+                //todo:
+            }
         }
 
         private static MainController controller = null;

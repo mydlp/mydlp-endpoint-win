@@ -1,6 +1,6 @@
 ﻿namespace MyDLP.EndPoint.Service
 {
-    partial class MyDLPService
+    partial class WatchdogService
     {
         /// <summary> 
         /// Required designer variable.
@@ -33,12 +33,13 @@
             // 
             // myDLPEventLog
             // 
+            this.myDLPEventLog.EnableRaisingEvents = true;
             this.myDLPEventLog.Log = "Application";
-            this.myDLPEventLog.Source = "MyDLPEPWIN";
+            this.myDLPEventLog.Source = "MyDLPEPWatchdog";
             // 
-            // MyDLPService
+            // WatchdogService
             // 
-            this.ServiceName = "MyDLPEP";
+            this.ServiceName = "mydlpepwatchdog";
             ((System.ComponentModel.ISupportInitialize)(this.myDLPEventLog)).EndInit();
 
         }

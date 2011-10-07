@@ -37,6 +37,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="WatchdogConfiguration.cs" />
     <Compile Include="Configuration.cs" />
     <Compile Include="Engine.cs" />
     <Compile Include="FileOperation.cs" />

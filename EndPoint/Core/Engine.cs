@@ -23,6 +23,7 @@ using System.Text;
 using System.Threading;
 using System.Runtime.InteropServices;
 using Microsoft.Win32;
+using System.Diagnostics;
 
 namespace MyDLP.EndPoint.Core
 {
@@ -39,12 +40,12 @@ namespace MyDLP.EndPoint.Core
 
         String pythonStartCmd = @"cd " + Configuration.PyBackendPath + " && Run.bat";
         String erlStartCmd = @"cd " + Configuration.ErlangPath + " && Run.bat";
-        String vs2005InstallCmd = @"cd " + Configuration.AppPath + "\\erl5.7.4 && vcredist_x86.exe /q:a /c:\"msiexec /i vcredist.msi /qn /l*v %temp%\\vcredist_x86.log\"";
+        //String vs2005InstallCmd = @"cd " + Configuration.AppPath + "\\erl5.7.4 && vcredist_x86.exe /q:a /c:\"msiexec /i vcredist.msi /qn /l*v %temp%\\vcredist_x86.log\"";
         String erlStartInteractiveCmd = @"cd " + Configuration.ErlangPath + " && InteractiveRun.bat";
 
         public void Start()
         {
-
+            /*
             try
             {
                 RegistryKey vsDepKey = Registry.LocalMachine.OpenSubKey(@"Software\Microsoft\DevDiv\VC\Servicing\8.0\RED\1033");
@@ -56,7 +57,7 @@ namespace MyDLP.EndPoint.Core
                 Logger.GetInstance().Info("VS 2005 redistrituble is not installed");
                 Thread.Sleep(10000);
                 ExecuteCommandSync(vs2005InstallCmd);
-            }
+            }*/
 
             ExecuteCommandAsync(pythonStartCmd);
 
@@ -76,8 +77,24 @@ namespace MyDLP.EndPoint.Core
         {   //TODO:Handle process with pid files
             KillProcByName("python");
             KillProcByName("epmd");
-            KillProcByName("erl");
-            KillProcByName("werl");
+            if (Configuration.ErlPid != 0)
+            {
+                try
+                {
+                    Process p = Process.GetProcessById(Configuration.ErlPid);
+                    p.Kill();
+                }
+                catch 
+                {
+                    KillProcByName("erl");
+                    KillProcByName("werl");                
+                }
+            }
+            else
+            {
+                KillProcByName("erl");
+                KillProcByName("werl");
+            }
         }
 
         public static String GetShortPath(String path)

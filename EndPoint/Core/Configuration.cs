@@ -34,7 +34,7 @@ namespace MyDLP.EndPoint.Core
         static String seapServer;
         static String managementServer;
         static int seapPort;
-        static Logger.LogLevel logLevel;
+        static Logger.LogLevel logLevel = Logger.LogLevel.DEBUG;
         static String minifilterPath;
         static String pyBackendPath;
         static String erlangPath;
@@ -42,9 +42,12 @@ namespace MyDLP.EndPoint.Core
         static String erlangBinPaths;
         static String pythonPath;
         static String mydlpConfPath;
+        static int erlPid = 0;
+        static int pythonPid = 0;
         static bool archiveInbound;
+       
+        //This is a special case logger should be initialized before configuration class             
 
-        //This is a special case logger should be initialized before configuration class
         public static String GetLogPath()
         {
             if (System.Environment.UserInteractive)
@@ -71,6 +74,40 @@ namespace MyDLP.EndPoint.Core
                 {
                     return @"C:\mydlpepwin.log";
                 }
+            }
+        }
+
+        public static void InitLogLevel()
+        {
+            try
+            {
+                RegistryKey mydlpKey = Registry.LocalMachine.OpenSubKey("Software").OpenSubKey("MyDLP");
+
+                if (System.Environment.UserInteractive)
+                {
+                    logLevel = Logger.LogLevel.DEBUG;
+                }
+                else
+                {
+                    //Get loglevel
+                    try
+                    {
+                        logLevel = (Logger.LogLevel)mydlpKey.GetValue("LogLevel");
+                        if (logLevel > Logger.LogLevel.DEBUG) logLevel = Logger.LogLevel.DEBUG;
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.GetInstance().Error("Unable to get registry value  HKLM/Software/MyDLP:LogLevel "
+                             + e.Message + " " + e.StackTrace);
+                        logLevel = Logger.LogLevel.DEBUG;
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.GetInstance().Error("Unable to get registry key HKLM/Software/MyDLP "
+                     + e.Message + " " + e.StackTrace);
+                logLevel = Logger.LogLevel.DEBUG;
             }
         }
 
@@ -112,6 +149,20 @@ namespace MyDLP.EndPoint.Core
                 Logger.GetInstance().Debug("SetErlConf " + e.Message + "\n" + e.StackTrace);
                 return false;
             }
+        }
+
+        //this will run after erl and python started
+        public static void setPids()
+        {
+            try
+            {
+                string text = System.IO.File.ReadAllText(appPath + @"\run\mydlp.pid");
+                erlPid = Int32.Parse(text.Trim());
+            }
+            catch 
+            {
+                erlPid = 0;
+            }        
         }
 
         public static bool GetRegistryConf()
@@ -177,20 +228,7 @@ namespace MyDLP.EndPoint.Core
                              + e.Message + " " + e.StackTrace);
                         return false;
                     }
-
-                    //Get loglevel
-                    try
-                    {
-                        logLevel = (Logger.LogLevel)mydlpKey.GetValue("LogLevel");
-                        if (logLevel > Logger.LogLevel.DEBUG) logLevel = Logger.LogLevel.DEBUG;
-                    }
-                    catch (Exception e)
-                    {
-                        Logger.GetInstance().Error("Unable to get registry value  HKLM/Software/MyDLP:LogLevel "
-                             + e.Message + " " + e.StackTrace);
-                        return false;
-                    }
-
+                    
                     //Get seapServer
                     try
                     {
@@ -350,6 +388,22 @@ namespace MyDLP.EndPoint.Core
             get
             {
                 return mydlpConfPath;
+            }
+        }
+
+        public static int ErlPid
+        {
+            get
+            {
+                return erlPid;
+            }
+        }
+
+        public static int PythonPid
+        {
+            get
+            {
+                return pythonPid;
             }
         }
     }

@@ -20,18 +20,42 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Diagnostics; 
 
 namespace MyDLP.EndPoint.Core
 {
     public class Logger
     {
         private static Logger logger;
-        String logPath = Configuration.GetLogPath();
+        EventLog eventLogger; 
+        String logPath;
         public enum LogLevel { ERROR = 0, INFO, DEBUG };
-        LogLevel currentLevel = LogLevel.DEBUG;
+        LogLevel currentLevel;
         bool useWindowsLogger = false;
         bool useFileLogger = true;
         bool consoleLogger = false;
+
+
+        private Logger()
+        {
+            logPath = Configuration.GetLogPath();
+            Configuration.InitLogLevel();
+            currentLevel = Configuration.LogLevel;
+            useWindowsLogger = false;
+            useFileLogger = true;
+            consoleLogger = false;
+        }
+
+        public void InitializeWatchdogLogger(System.Diagnostics.EventLog eventLog)
+        {
+            logger.eventLogger = eventLog;
+            logger.logPath = WatchdogConfiguration.GetLogPath();
+        }
+
+        public void InitializeMainLogger(System.Diagnostics.EventLog eventLog)
+        {
+            logger.eventLogger = eventLog;          
+        }
 
         public static Logger GetInstance()
         {
@@ -49,7 +73,7 @@ namespace MyDLP.EndPoint.Core
 
         public void Debug(String entry)
         {
-            String logEntry = "DEBUG " + entry + " " + DateTime.UtcNow;
+            String logEntry = DateTime.Now + " DEBUG " + entry;
             if (currentLevel == LogLevel.DEBUG)
             {
                 if (useFileLogger)
@@ -57,8 +81,8 @@ namespace MyDLP.EndPoint.Core
                     lock (logPath)
                     {
                         using (System.IO.StreamWriter file = new System.IO.StreamWriter(logPath, true))
-                        {
-                            file.WriteLine(logEntry);
+                        {                            
+                            file.WriteLine(logEntry);                          
                         }
                     }
                 }
@@ -73,7 +97,7 @@ namespace MyDLP.EndPoint.Core
 
         public void Info(String entry)
         {
-            String logEntry = "INFO  " + entry + " " + DateTime.UtcNow;
+            String logEntry = DateTime.Now + " INFO  " + entry;
             if (currentLevel == LogLevel.DEBUG || currentLevel == LogLevel.INFO)
             {
                 lock (logPath)
@@ -81,7 +105,7 @@ namespace MyDLP.EndPoint.Core
                     if (useFileLogger)
                     {
                         using (System.IO.StreamWriter file = new System.IO.StreamWriter(logPath, true))
-                        {
+                        {                           
                             file.WriteLine(logEntry);
                         }
                     }
@@ -100,14 +124,14 @@ namespace MyDLP.EndPoint.Core
         }
 
         public void Error(String entry)
-        {
-            String logEntry = "ERROR " + entry + " " + DateTime.UtcNow;
+        {          
+            String logEntry = DateTime.Now + " ERROR " + entry;
             if (useFileLogger)
             {
                 lock (logPath)
                 {
                     using (System.IO.StreamWriter file = new System.IO.StreamWriter(logPath, true))
-                    {
+                    {                        
                         file.WriteLine(logEntry);
                     }
                 }

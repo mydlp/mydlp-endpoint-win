@@ -38,7 +38,7 @@ namespace MyDLP.EndPoint.Service
                 try
                 {
                     RegistryKey ckey =
-                    Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Services\mydlpepwin",
+                    Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Services\mydlpepwatchdog",
                     true);
 
                     if (ckey != null)
@@ -57,7 +57,7 @@ namespace MyDLP.EndPoint.Service
             }
             else
             {
-                ServiceBase.Run(new MyDLPService());
+                ServiceBase.Run(new WatchdogService());
             }
         }
     }

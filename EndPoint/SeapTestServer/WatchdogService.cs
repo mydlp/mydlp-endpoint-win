@@ -27,9 +27,9 @@ using System.Text;
 
 namespace MyDLP.EndPoint.Service
 {
-    public partial class MyDLPService : ServiceBase
+    public partial class WatchdogService : ServiceBase
     {
-        public MyDLPService()
+        public WatchdogService()
         {
             InitializeComponent();
             InitializeLogSource();
@@ -37,23 +37,22 @@ namespace MyDLP.EndPoint.Service
 
         protected override void OnStart(string[] args)
         {
-            MainController.SetServiceLogger(myDLPEventLog);        
-            MainController controller = 
-                MainController.GetInstance();
+            WatchdogController controller = 
+                WatchdogController.GetInstance();
                     
             controller.Start();
 
-            myDLPEventLog.WriteEntry("MyDLP-EP-Win service started");
+            myDLPEventLog.WriteEntry("mydlp-watchdog service started");
         }
 
         protected override void OnStop()
         {
-            MainController controller =
-                MainController.GetInstance();
+            WatchdogController controller =
+                WatchdogController.GetInstance();
 
             controller.Stop();
 
-            myDLPEventLog.WriteEntry("MyDLP-EP-Win service stopped");
+            myDLPEventLog.WriteEntry("mydlp-watchdog service stopped");
         }
 
         private void InitializeLogSource()
@@ -65,6 +64,11 @@ namespace MyDLP.EndPoint.Service
                     myDLPEventLog.Log 
                     );
             }
+        }
+
+        private void myDLPEventLog_EntryWritten(object sender, EntryWrittenEventArgs e)
+        {
+
         }
     }
 }

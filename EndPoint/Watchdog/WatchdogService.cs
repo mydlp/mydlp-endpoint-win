@@ -19,45 +19,45 @@
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Diagnostics;
 using System.ServiceProcess;
 using System.Text;
-using System.Configuration.Install;
-using Microsoft.Win32;
-using System.Reflection;
 
 namespace MyDLP.EndPoint.Service
 {
-    static class Program
+    public partial class WatchdogService : ServiceBase
     {
-        static void Main(string[] args)
+        public WatchdogService()
         {
+            InitializeComponent();
+            InitializeLogSource();
+        }
 
-            if (System.Environment.UserInteractive)
+        protected override void OnStart(string[] args)
+        {    
+            WatchdogController.SetServiceLogger(myDLPEventLog);        
+            WatchdogController controller = 
+                WatchdogController.GetInstance(); 
+            controller.Start();            
+        }
+
+        protected override void OnStop()
+        {
+            WatchdogController controller =
+                WatchdogController.GetInstance();
+            controller.Stop();          
+        }
+
+        private void InitializeLogSource()
+        {
+            if (!System.Diagnostics.EventLog.SourceExists(myDLPEventLog.Source))
             {
-                ManagedInstallerClass.InstallHelper(new string[] { Assembly.GetExecutingAssembly().Location });
-                try
-                {
-                    RegistryKey ckey =
-                    Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Services\mydlpepwin",
-                    true);
-
-                    if (ckey != null)
-                    {
-
-                        if (ckey.GetValue("Type") != null)
-                        {
-                            ckey.SetValue("Type", ((int)ckey.GetValue("Type") | 256));
-                        }
-                    }
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine(e.Message + " " + e.StackTrace);
-                }
-            }
-            else
-            {
-                ServiceBase.Run(new MyDLPService());
+                System.Diagnostics.EventLog.CreateEventSource(
+                    myDLPEventLog.Source,
+                    myDLPEventLog.Log 
+                    );
             }
         }
     }

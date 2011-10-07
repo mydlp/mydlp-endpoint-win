@@ -5,11 +5,11 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>9.0.21022</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{90AD317F-4749-4543-A89E-1D8C0F8AAD42}</ProjectGuid>
+    <ProjectGuid>{90DE2F81-D9D4-4B91-B790-A7EB249A7438}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>MyDLP.EndPoint.Service</RootNamespace>
-    <AssemblyName>MyDLP.EndPoint.Service</AssemblyName>
+    <RootNamespace>MyDLP.EndPoint.Watchdog</RootNamespace>
+    <AssemblyName>MyDLP.EndPoint.Watchdog</AssemblyName>
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <StartupObject>MyDLP.EndPoint.Service.Program</StartupObject>
@@ -58,12 +58,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="MainController.cs" />
-    <Compile Include="MyDLPService.cs">
+    <Compile Include="WatchdogController.cs" />
+    <Compile Include="WatchdogService.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="MyDLPService.Designer.cs">
-      <DependentUpon>MyDLPService.cs</DependentUpon>
+    <Compile Include="WatchdogService.Designer.cs">
+      <DependentUpon>WatchdogService.cs</DependentUpon>
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="ProjectInstaller.cs">
@@ -75,8 +75,8 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="MyDLPService.resx">
-      <DependentUpon>MyDLPService.cs</DependentUpon>
+    <EmbeddedResource Include="WatchdogService.resx">
+      <DependentUpon>WatchdogService.cs</DependentUpon>
       <SubType>Designer</SubType>
     </EmbeddedResource>
     <EmbeddedResource Include="ProjectInstaller.resx">
@@ -106,13 +106,6 @@
       <Project>{AFB11AD3-C835-438B-B2F8-B5BB7F798E3D}</Project>
       <Name>MyDLP.EndPoint.Core</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Platform\MyDLP.EndPoint.System.vcproj">
-      <Project>{D0F4FD82-7881-458A-AD47-293BF6FA76D8}</Project>
-      <Name>MyDLP.EndPoint.Platform</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <WCFMetadata Include="Service References\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
