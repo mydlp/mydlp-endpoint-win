@@ -53,7 +53,6 @@ namespace MyDLP.EndPoint.Core
 
                 if (fop.date - open.date > new TimeSpan(0, 0, OpenFileOperation.suppressOpenInterval))
                 {
-                    Console.WriteLine("here");
                     open.date = fop.date;
                  //   return open.DecideAction();                    
                 }

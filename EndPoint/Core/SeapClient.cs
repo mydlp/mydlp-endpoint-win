@@ -132,7 +132,7 @@ namespace MyDLP.EndPoint.Core
                     return FileOperation.Action.ALLOW;
                 }
             }
-            String cmd = "PUSH " + id + " " + cache.Length + "\r\n";
+            String cmd = "PUSH " + id + " " + cache.Length;
 
             response = sClient.sendMessage(cmd, cache);
             splitResp = response.Split(' ');
