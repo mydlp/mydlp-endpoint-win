@@ -73,9 +73,14 @@ namespace MyDLP.EndPoint.Service
                 MyDLPEP.FilterListener.getInstance().StartListener();
             }
 
-            watchdogTimer = new Timer(watchdogTimerPeriod);
-            watchdogTimer.Elapsed += new ElapsedEventHandler(OnTimedWatchdogEvent);
-            watchdogTimer.Enabled = true;
+            //Keep watchdog tied up during debugging
+            if (System.Environment.UserInteractive == false)
+            {
+                //enable watchdog check
+                watchdogTimer = new Timer(watchdogTimerPeriod);
+                watchdogTimer.Elapsed += new ElapsedEventHandler(OnTimedWatchdogEvent);
+                watchdogTimer.Enabled = true;
+            }
 
         }
 
