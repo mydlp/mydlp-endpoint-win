@@ -67,6 +67,15 @@ namespace MyDLP.EndPoint.Core
                 }
             }
 
+
+            //response = sClient.sendMessage("SETPROP " + id + " filename=" + Engine.GetShortPath(filePath));
+            response = sClient.sendMessage("SETPROP " + id + " filename=" + Path.GetFileName(filePath));
+            splitResp = response.Split(' ');
+            if (!splitResp[0].Equals("OK"))
+            {
+                return FileOperation.Action.ALLOW;
+            }
+
             response = sClient.sendMessage("PUSHFILE " + id + " " + tempFilePath);
 
             splitResp = response.Split(' ');
@@ -320,7 +329,7 @@ namespace MyDLP.EndPoint.Core
         public String sendMessage(String cmd, MemoryStream msg)
         {
             Reconnect();
-            Byte[] data = System.Text.Encoding.ASCII.GetBytes(cmd);
+            Byte[] cmdBin = System.Text.Encoding.ASCII.GetBytes(cmd);
             Byte[] end = System.Text.Encoding.ASCII.GetBytes("\r\n");
             Logger.GetInstance().Debug("SeapClient send message: <" + cmd + ">");
             Byte[] response = new Byte[responseLength];
@@ -329,9 +338,12 @@ namespace MyDLP.EndPoint.Core
             {                
                 lock (seapClient)
                 {
-                    stream.Write(data, 0, data.Length);
-                    stream.Write(msg.GetBuffer(), 0, (int) msg.Length);
+                    stream.Write(cmdBin, 0, cmdBin.Length);
                     stream.Write(end, 0, end.Length);
+                    stream.Write(msg.GetBuffer(), 0, (int) msg.Length);
+                    //Logger.GetInstance().Debug("SeapClient send data: <" + System.Text.Encoding.ASCII.GetString(msg.GetBuffer()) + ">");                     
+                    //this not necessary
+                    //stream.Write(end, 0, end.Length);
                     stream.Flush();
                     readCount = stream.Read(response, 0, responseLength);
                     tryCount = 0;

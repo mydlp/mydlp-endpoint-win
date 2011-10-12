@@ -44,6 +44,7 @@ namespace MyDLP.EndPoint.Core
         static String mydlpConfPath;
         static int erlPid = 0;
         static int pythonPid = 0;
+        static long logLimit;
         static bool archiveInbound;
        
         //This is a special case logger should be initialized before configuration class             
@@ -182,6 +183,7 @@ namespace MyDLP.EndPoint.Core
                 archiveInbound = false;
                 seapPort = 9099;
                 mydlpConfPath = Configuration.ErlangPath + "mydlp-ep.conf";
+                logLimit = 10485760; // 10MB
                 return true;
             }
             else
@@ -266,6 +268,9 @@ namespace MyDLP.EndPoint.Core
                         return false;
                     }
 
+                    //Todo LogLimit registry conf
+                    logLimit = 10485760; // 10MB
+
                     Logger.GetInstance().Info("MyDLP Path: " + appPath);
                     Logger.GetInstance().Info("MyDLP LogLevel: " + logLevel.ToString());
                     Logger.GetInstance().Info("MyDLP SeapServer: " + seapServer + ":" + seapPort);
@@ -273,6 +278,7 @@ namespace MyDLP.EndPoint.Core
                     Logger.GetInstance().Info("MyDLP ArchiveInbound: " + archiveInbound);
                     Logger.GetInstance().Info("MyDLP AppPath: " + appPath);
                     Logger.GetInstance().Info("MyDLP ConfPath: " + mydlpConfPath);
+                    Logger.GetInstance().Info("MyDLP LogLimit: " + logLimit);
 
                     return true;
                 }
@@ -404,6 +410,14 @@ namespace MyDLP.EndPoint.Core
             get
             {
                 return pythonPid;
+            }
+        }
+
+        public static long LogLimit
+        {
+            get
+            {
+                return logLimit;
             }
         }
     }

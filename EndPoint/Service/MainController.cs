@@ -101,6 +101,8 @@ namespace MyDLP.EndPoint.Service
                     Logger.GetInstance().Debug("watchdog dead!, starting mydlpepwatchdog");
                     service.Start();
                 }
+
+                Logger.GetInstance().CheckLogLimit();
             }
             catch
             {

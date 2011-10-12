@@ -18,6 +18,7 @@
 //--------------------------------------------------------------------------
 
 using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Text;
 using System.Diagnostics; 
@@ -71,6 +72,19 @@ namespace MyDLP.EndPoint.Core
             return logger;
         }
 
+        public void CheckLogLimit()
+        {
+            lock (logPath)
+            {
+                FileInfo f = new FileInfo(logPath);
+                long s1 = f.Length;
+                if (s1 > Configuration.LogLimit) 
+                {
+                    f.Delete();
+                }
+            }        
+        }
+
         public void Debug(String entry)
         {
             String logEntry = DateTime.Now + " DEBUG " + entry;
@@ -80,7 +94,7 @@ namespace MyDLP.EndPoint.Core
                 {
                     lock (logPath)
                     {
-                        using (System.IO.StreamWriter file = new System.IO.StreamWriter(logPath, true))
+                        using (System.IO.StreamWriter file = new System.IO.StreamWriter(logPath, true, System.Text.Encoding.UTF8))
                         {                            
                             file.WriteLine(logEntry);                          
                         }
@@ -104,7 +118,7 @@ namespace MyDLP.EndPoint.Core
                 {
                     if (useFileLogger)
                     {
-                        using (System.IO.StreamWriter file = new System.IO.StreamWriter(logPath, true))
+                        using (System.IO.StreamWriter file = new System.IO.StreamWriter(logPath, true, System.Text.Encoding.UTF8))
                         {                           
                             file.WriteLine(logEntry);
                         }
@@ -130,7 +144,7 @@ namespace MyDLP.EndPoint.Core
             {
                 lock (logPath)
                 {
-                    using (System.IO.StreamWriter file = new System.IO.StreamWriter(logPath, true))
+                    using (System.IO.StreamWriter file = new System.IO.StreamWriter(logPath, true, System.Text.Encoding.UTF8))
                     {                        
                         file.WriteLine(logEntry);
                     }
@@ -146,7 +160,6 @@ namespace MyDLP.EndPoint.Core
             {
                 //TODO:windows event log
             }
-
         }
     }
 }
