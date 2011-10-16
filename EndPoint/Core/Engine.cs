@@ -168,6 +168,7 @@ namespace MyDLP.EndPoint.Core
                     {
                         procStartInfo.EnvironmentVariables.Add("PYTHONPATH", Configuration.PythonPath);
                     }
+                    procStartInfo.EnvironmentVariables.Add("MYDLP_APPDIR", GetShortPath(Configuration.AppPath));
                     Logger.GetInstance().Debug("Environment path:" + procStartInfo.EnvironmentVariables["path"]);
                     Logger.GetInstance().Debug("Environment PYTHONPATH:" + procStartInfo.EnvironmentVariables["PYTHONPATH"]);
 
