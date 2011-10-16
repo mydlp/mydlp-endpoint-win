@@ -33,7 +33,7 @@ namespace MyDLP.EndPoint.Core
         String server = Configuration.SeapServer;
         TcpClient client;
         NetworkStream stream;
-        int timeout = 5000;
+        int timeout = 50000;
         int responseLength = 512;
         int tryCount = 0;
         const int tryLimit = 3;
@@ -70,6 +70,13 @@ namespace MyDLP.EndPoint.Core
 
             //response = sClient.sendMessage("SETPROP " + id + " filename=" + Engine.GetShortPath(filePath));
             response = sClient.sendMessage("SETPROP " + id + " filename=" + Path.GetFileName(filePath));
+            splitResp = response.Split(' ');
+            if (!splitResp[0].Equals("OK"))
+            {
+                return FileOperation.Action.ALLOW;
+            }
+
+            response = sClient.sendMessage("SETPROP " + id + " burn_after_reading=true");
             splitResp = response.Split(' ');
             if (!splitResp[0].Equals("OK"))
             {
@@ -141,6 +148,14 @@ namespace MyDLP.EndPoint.Core
                     return FileOperation.Action.ALLOW;
                 }
             }
+
+            response = sClient.sendMessage("SETPROP " + id + " filename=" + Path.GetFileName(filePath));
+            splitResp = response.Split(' ');
+            if (!splitResp[0].Equals("OK"))
+            {
+                return FileOperation.Action.ALLOW;
+            }
+
             String cmd = "PUSH " + id + " " + cache.Length;
 
             response = sClient.sendMessage(cmd, cache);
