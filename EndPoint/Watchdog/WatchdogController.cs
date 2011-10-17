@@ -82,13 +82,13 @@ namespace MyDLP.EndPoint.Service
                     Process p = Process.GetProcessById(Configuration.ErlPid);
                     if (p.HasExited)
                     {
-                        Logger.GetInstance().Debug("service has exited");
+                        Logger.GetInstance().Error("service has exited");
                         error = true;
                     }
                 }
                 catch (Exception ex)
                 {
-                    Logger.GetInstance().Debug("erl service exception " + Configuration.ErlPid + " " + ex.Message);
+                    Logger.GetInstance().Error("erl service exception " + Configuration.ErlPid + " " + ex.Message);
                     error = true;
                 }
             }
@@ -97,14 +97,14 @@ namespace MyDLP.EndPoint.Service
                 if (!CheckProcRunningByName("erl") || !CheckProcRunningByName("werl"))
                 {
                     error = true;
-                    Logger.GetInstance().Debug("no erl or werl named process");
+                    Logger.GetInstance().Error("no erl or werl named process");
                 }
             }
 
             if (!CheckProcRunningByName("python")) 
             {
                 error = true;
-                Logger.GetInstance().Debug("no python process");
+                Logger.GetInstance().Error("no python process");
             }
 
             ServiceController service = new ServiceController("mydlpepwin");
@@ -113,16 +113,16 @@ namespace MyDLP.EndPoint.Service
                 if (!service.Status.Equals(ServiceControllerStatus.Running) && !service.Status.Equals(ServiceControllerStatus.StartPending))
                 {
                     error = true;
-                    Logger.GetInstance().Debug("service status not running or not pending start");
+                    Logger.GetInstance().Error("service status not running or not pending start");
                 }
 
                 if (error)
                 {
-                    Logger.GetInstance().Debug("Starting service");
+                    Logger.GetInstance().Info("Starting service");
                     if(service.Status.Equals(ServiceControllerStatus.Running))
                     {
-                    service.Stop();
-                    service.WaitForStatus(ServiceControllerStatus.Stopped);
+                        service.Stop();
+                        service.WaitForStatus(ServiceControllerStatus.Stopped);
                     }
                     service.Start();
                     service.WaitForStatus(ServiceControllerStatus.Running);
@@ -133,7 +133,7 @@ namespace MyDLP.EndPoint.Service
             }
             catch (Exception ex)
             {                
-                Logger.GetInstance().Debug("service exception" + ex.Message);
+                Logger.GetInstance().Error("service exception" + ex.Message);
                 Logger.GetInstance().Error("mydlpepwin service not found reinstall MyDLP Endpoint");
                 Environment.Exit(1);
             }           

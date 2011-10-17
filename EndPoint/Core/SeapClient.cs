@@ -308,7 +308,7 @@ namespace MyDLP.EndPoint.Core
         {
             try
             {
-                Logger.GetInstance().Info("Reconnect seap client server: " + server + " port: " + port);
+                Logger.GetInstance().Debug("Reconnect seap client server: " + server + " port: " + port);
                 try
                 {
                     client.Close();

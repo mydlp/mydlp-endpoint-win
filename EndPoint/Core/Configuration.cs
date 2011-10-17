@@ -147,7 +147,7 @@ namespace MyDLP.EndPoint.Core
             }
             catch (Exception e)
             {
-                Logger.GetInstance().Debug("SetErlConf " + e.Message + "\n" + e.StackTrace);
+                Logger.GetInstance().Error("SetErlConf " + e.Message + "\n" + e.StackTrace);
                 return false;
             }
         }

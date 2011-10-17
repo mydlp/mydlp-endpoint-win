@@ -74,20 +74,23 @@ namespace MyDLP.EndPoint.Core
 
         public void CheckLogLimit()
         {
+            logger.Debug("CheckLogLimit limit: " + Configuration.LogLimit);
             lock (logPath)
             {
+         
                 FileInfo f = new FileInfo(logPath);
                 long s1 = f.Length;
                 if (s1 > Configuration.LogLimit) 
                 {
                     f.Delete();
+                    logger.Debug("CheckLogLimit, log limit exceeded deleted log file");                    
                 }
             }        
         }
 
         public void Debug(String entry)
         {
-            String logEntry = DateTime.Now + " DEBUG " + entry;
+            String logEntry = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + " DEBUG "  + entry;
             if (currentLevel == LogLevel.DEBUG)
             {
                 if (useFileLogger)
@@ -111,7 +114,7 @@ namespace MyDLP.EndPoint.Core
 
         public void Info(String entry)
         {
-            String logEntry = DateTime.Now + " INFO  " + entry;
+            String logEntry = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + " INFO  " + entry;
             if (currentLevel == LogLevel.DEBUG || currentLevel == LogLevel.INFO)
             {
                 lock (logPath)
@@ -138,8 +141,8 @@ namespace MyDLP.EndPoint.Core
         }
 
         public void Error(String entry)
-        {          
-            String logEntry = DateTime.Now + " ERROR " + entry;
+        {
+            String logEntry = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + " ERROR " + entry;
             if (useFileLogger)
             {
                 lock (logPath)
