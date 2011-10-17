@@ -45,13 +45,8 @@ namespace MyDLPEP
 	}
 
 	void MiniFilterController::Start()
-	{
-		System::Console::WriteLine("Installing minifilter");
-		Logger::GetInstance()->Debug("Installing minifilter");
-
-		//InstallHinf fails on non interactive services
-		//InstallHinfSection(NULL, NULL,L"DefaultInstall 128 C:\\workspace\\mydlp-endpoint-win\\EndPoint\\MiniFilter\\src\\objchk_wxp_x86\\i386\\MyDLPMiniFilter.inf" ,0);
-
+	{		
+		Logger::GetInstance()->Debug("Installing mydlpmf service");
 		const LPCTSTR DRV_NAME = _T("MyDLPMF");
 		const LPCTSTR DRV_FILE_NAME = _T("MyDLPMF.sys");
 		RegistryKey ^key = nullptr;
@@ -59,11 +54,9 @@ namespace MyDLPEP
 		SC_HANDLE hSCManager = OpenSCManager( NULL, NULL, SC_MANAGER_ALL_ACCESS );
 		SC_HANDLE hService = OpenService( hSCManager , DRV_NAME, SERVICE_ALL_ACCESS);
 
-		if( hService == 0)
+		if (hService == 0)
 		{
 			Logger::GetInstance()->Debug("MyDLPMF service does not exist");
-			//String ^driverPath = "C:\\workspace\\mydlp-endpoint-win\\EndPoint\\MiniFilter\\src\\objchk_wxp_x86\\i386\\MyDLPMF.sys";
-			//LPCTSTR driverPath = _T("C:\\workspace\\mydlp-endpoint-win\\EndPoint\\MiniFilter\\src\\objchk_wxp_x86\\i386\\MyDLPMF.sys");
 			String ^driverPath = MyDLP::EndPoint::Core::Configuration::MinifilterPath;	
 			IntPtr cPtr = Marshal::StringToHGlobalUni(driverPath);
 
@@ -116,8 +109,8 @@ namespace MyDLPEP
 		key->SetValue("DependOnService", gcnew array<String ^>{"FltMgr"}, RegistryValueKind::MultiString);
 		key->SetValue("Description", "MyDLP Windows Endpoint MiniFilter", RegistryValueKind::String);
 
-		Logger::GetInstance()->Info("Starting MyDLPMF service" );
-		if( !StartService( hService, 0, NULL ))
+		Logger::GetInstance()->Debug("Starting mydlpmf service");
+		if (!StartService( hService, 0, NULL ))
 		{
 			if( GetLastError() != ERROR_SERVICE_ALREADY_RUNNING )
 			{
@@ -128,6 +121,10 @@ namespace MyDLPEP
 				return;
 			} else
 				Logger::GetInstance()->Error("MyLDLPMF service already running");
+		}
+		else 
+		{
+			Logger::GetInstance()->Info("mydlpmf service started");
 		}
 
 		CloseServiceHandle(hService);
@@ -141,8 +138,25 @@ namespace MyDLPEP
 		SC_HANDLE hSCManager = OpenSCManager( NULL, NULL, SC_MANAGER_ALL_ACCESS );
 		SC_HANDLE hService = OpenService( hSCManager , DRV_NAME, SERVICE_ALL_ACCESS );
 		SERVICE_STATUS  stSrvStatus = {0};
-		ControlService( hService, SERVICE_CONTROL_STOP, &stSrvStatus );
+		BOOL stopped = ControlService( hService, SERVICE_CONTROL_STOP, &stSrvStatus );
+		if (stopped)
+		{
+			Logger::GetInstance()->Info("mydlpmf service stopped");
+		}
+		else
+		{
+			Logger::GetInstance()->Error("Unabled to stop mydlpmf service, win error no" + gcnew Int32(GetLastError()));
+		}
+
 		BOOL bDeleted = DeleteService(hService);
+		if (bDeleted)
+		{
+			Logger::GetInstance()->Info("mydlpmf service removed");
+		}
+		else 
+		{
+			Logger::GetInstance()->Error("Unable to remove mydlpmf service, win error no" + gcnew Int32(GetLastError()));
+		}
 		CloseServiceHandle(hService);
 		CloseServiceHandle(hSCManager);
 	}

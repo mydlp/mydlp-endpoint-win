@@ -40,27 +40,11 @@ namespace MyDLP.EndPoint.Core
 
         String pythonStartCmd = @"cd " + Configuration.PyBackendPath + " && Run.bat";
         String erlStartCmd = @"cd " + Configuration.ErlangPath + " && Run.bat";
-        //String vs2005InstallCmd = @"cd " + Configuration.AppPath + "\\erl5.8.5 && vcredist_x86.exe /q:a /c:\"msiexec /i vcredist.msi /qn /l*v %temp%\\vcredist_x86.log\"";
         String erlStartInteractiveCmd = @"cd " + Configuration.ErlangPath + " && InteractiveRun.bat";
 
         public void Start()
-        {
-            /*
-            try
-            {
-                RegistryKey vsDepKey = Registry.LocalMachine.OpenSubKey(@"Software\Microsoft\DevDiv\VC\Servicing\8.0\RED\1033");
-                vsDepKey.GetValue("Installed");
-                Logger.GetInstance().Info("VS 2005 redistrituble already installed");
-            }
-            catch (Exception e)
-            {
-                Logger.GetInstance().Info("VS 2005 redistrituble is not installed");
-                Thread.Sleep(10000);
-                ExecuteCommandSync(vs2005InstallCmd);
-            }*/
-
+        {            
             ExecuteCommandAsync(pythonStartCmd);
-
             Configuration.SetErlConf();
             if (System.Environment.UserInteractive)
             {
@@ -71,7 +55,6 @@ namespace MyDLP.EndPoint.Core
                 ExecuteCommandAsync(erlStartCmd);
             }
         }
-
 
         public void Stop()
         {   //TODO:Handle process with pid files
@@ -122,8 +105,6 @@ namespace MyDLP.EndPoint.Core
             }
         }
 
-
-
         public void ExecuteCommandAsync(string command)
         {
             try
@@ -169,7 +150,8 @@ namespace MyDLP.EndPoint.Core
                         procStartInfo.EnvironmentVariables.Add("PYTHONPATH", Configuration.PythonPath);
                     }
                     procStartInfo.EnvironmentVariables.Add("MYDLP_APPDIR", GetShortPath(Configuration.AppPath));
-                    Logger.GetInstance().Debug("Environment path:" + procStartInfo.EnvironmentVariables["path"]);
+
+                    Logger.GetInstance().Debug("Environment path for python:" + procStartInfo.EnvironmentVariables["path"]);
                     Logger.GetInstance().Debug("Environment PYTHONPATH:" + procStartInfo.EnvironmentVariables["PYTHONPATH"]);
 
                 }
@@ -177,23 +159,22 @@ namespace MyDLP.EndPoint.Core
                 if (command.ToString() == erlStartCmd)
                 {
                     procStartInfo.EnvironmentVariables.Add("MYDLP_CONF", GetShortPath(Configuration.MydlpConfPath).Replace(@"\", @"/"));
-
                     procStartInfo.EnvironmentVariables.Add("MYDLPBEAMDIR", GetShortPath(Configuration.ErlangPath));
-
-                    procStartInfo.EnvironmentVariables.Add("MYDLP_APPDIR", GetShortPath(Configuration.AppPath));
-
+                    procStartInfo.EnvironmentVariables.Add("MYDLP_APPDIR", GetShortPath(Configuration.AppPath));                                        
                     procStartInfo.EnvironmentVariables["path"] = procStartInfo.EnvironmentVariables["path"] + @";" + Configuration.ErlangBinPaths;
-                    Logger.GetInstance().Debug("Environment path:" + procStartInfo.EnvironmentVariables["path"]);
+
+                    Logger.GetInstance().Debug("Environment path for erlang:" + procStartInfo.EnvironmentVariables["path"]);
                     Logger.GetInstance().Debug("Environment MYDLP_CONF:" + procStartInfo.EnvironmentVariables["MYDLP_CONF"]);
+                    Logger.GetInstance().Debug("Environment MYDLP_APPDIR:" + procStartInfo.EnvironmentVariables["MYDLP_APPDIR"]);
                 }
+
                 System.Diagnostics.Process proc = new System.Diagnostics.Process();
                 proc.StartInfo = procStartInfo;
-
                 Logger.GetInstance().Debug("Starting process:" + command);
                 proc.Start();
                 string result = proc.StandardOutput.ReadToEnd();
                 Console.WriteLine(result);
-                Logger.GetInstance().Info(result);
+                Logger.GetInstance().Debug(result);
             }
             catch (Exception e)
             {

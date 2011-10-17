@@ -54,7 +54,8 @@ namespace MyDLP.EndPoint.Service
             //notify logger that we are in main service
             Logger.GetInstance().InitializeMainLogger(serviceLogger);   
 
-            Logger.GetInstance().Debug("mydlpepwin service started");
+            Logger.GetInstance().Debug("Starting mydlpepwin service");
+
             if (Configuration.GetRegistryConf() == false)
             {
                 Logger.GetInstance().Error("Unable to get configuration exiting!");
@@ -67,16 +68,20 @@ namespace MyDLP.EndPoint.Service
                 engine.Start();
                 System.Threading.Thread.Sleep(3000);
                 Configuration.setPids();
-                Logger.GetInstance().Debug("MyDLP-EP-Win try to install mydlpmf");
+
+                Logger.GetInstance().Debug("mydlpepwin tries to install mydlpmf");
                 MyDLPEP.MiniFilterController.GetInstance().Start();
-                Logger.GetInstance().Debug("MyDLP-EP-Win start finished");
+
                 MyDLPEP.FilterListener.getInstance().StartListener();
+                Logger.GetInstance().Info("mydlpepwin service started");
             }
 
             //Keep watchdog tied up during debugging
             if (System.Environment.UserInteractive == false)
             {
                 //enable watchdog check
+
+                Logger.GetInstance().Info("Watchdog check enabled");
                 watchdogTimer = new Timer(watchdogTimerPeriod);
                 watchdogTimer.Elapsed += new ElapsedEventHandler(OnTimedWatchdogEvent);
                 watchdogTimer.Enabled = true;
@@ -87,22 +92,22 @@ namespace MyDLP.EndPoint.Service
         public void Stop()
         {
             MyDLPEP.MiniFilterController.GetInstance().Stop();
-            Logger.GetInstance().Info("MyDLP-EP-Win stopped");
             engine.Stop();
+            Logger.GetInstance().Info("mydlpepwin service stopped");
         }
 
         private void OnTimedWatchdogEvent(object source, ElapsedEventArgs e)
         {
+            Logger.GetInstance().CheckLogLimit();
+
             ServiceController service = new ServiceController("mydlpepwatchdog");
             try
             {
                 if (!service.Status.Equals(ServiceControllerStatus.Running) && !service.Status.Equals(ServiceControllerStatus.StartPending))
                 {
-                    Logger.GetInstance().Debug("watchdog dead!, starting mydlpepwatchdog");
+                    Logger.GetInstance().Info("Watchdog isdead!, starting mydlpepwatchdog");
                     service.Start();
-                }
-
-                Logger.GetInstance().CheckLogLimit();
+                }                
             }
             catch
             {
