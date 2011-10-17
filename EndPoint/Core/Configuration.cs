@@ -174,7 +174,7 @@ namespace MyDLP.EndPoint.Core
                 minifilterPath = "C:\\workspace\\mydlp-endpoint-win\\EndPoint\\MiniFilter\\src\\objchk_wxp_x86\\i386\\MyDLPMF.sys";
                 pyBackendPath = @"C:\workspace\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\backend\py\";
                 erlangPath = @"C:\workspace\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\mydlp\";
-                erlangBinPaths = @"C:\workspace\mydlp-deployment-env\erl5.7.4\bin;C:\workspace\mydlp-deployment-env\erl5.7.4\erts-5.7.4\bin";
+                erlangBinPaths = @"C:\workspace\mydlp-deployment-env\erl5.8.5\bin;C:\workspace\mydlp-deployment-env\erl5.8.5\erts-5.8.5\bin";
                 pythonBinPaths = @"C:\workspace\mydlp-deployment-env\Python26";
                 pythonPath = @"C:\workspace\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\thrift\gen-py";
                 appPath = @"C:\workspace\mydlp-development-env";
@@ -200,7 +200,7 @@ namespace MyDLP.EndPoint.Core
                         minifilterPath = appPath + "MyDLPMF.sys";
                         pyBackendPath = appPath + "engine\\py\\";
                         erlangPath = appPath + "engine\\erl\\";
-                        erlangBinPaths = appPath + @"erl5.7.4\bin;" + appPath + @"erl5.7.4\erts-5.7.4\bin";
+                        erlangBinPaths = appPath + @"erl5.8.5\bin;" + appPath + @"erl5.8.5\erts-5.8.5\bin";
                         pythonPath = appPath + "engine\\py\\";
                         pythonBinPaths = appPath + "Python26";
                         mydlpConfPath = Configuration.AppPath + @"\mydlp.conf";

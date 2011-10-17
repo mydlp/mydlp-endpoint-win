@@ -40,7 +40,7 @@ namespace MyDLP.EndPoint.Core
 
         String pythonStartCmd = @"cd " + Configuration.PyBackendPath + " && Run.bat";
         String erlStartCmd = @"cd " + Configuration.ErlangPath + " && Run.bat";
-        //String vs2005InstallCmd = @"cd " + Configuration.AppPath + "\\erl5.7.4 && vcredist_x86.exe /q:a /c:\"msiexec /i vcredist.msi /qn /l*v %temp%\\vcredist_x86.log\"";
+        //String vs2005InstallCmd = @"cd " + Configuration.AppPath + "\\erl5.8.5 && vcredist_x86.exe /q:a /c:\"msiexec /i vcredist.msi /qn /l*v %temp%\\vcredist_x86.log\"";
         String erlStartInteractiveCmd = @"cd " + Configuration.ErlangPath + " && InteractiveRun.bat";
 
         public void Start()
