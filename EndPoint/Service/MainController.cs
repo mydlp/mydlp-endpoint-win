@@ -64,9 +64,10 @@ namespace MyDLP.EndPoint.Service
             else
             {
                 //start backend engine
+
+                Configuration.StartTime = DateTime.Now;
                 engine = new Engine();
                 engine.Start();
-                System.Threading.Thread.Sleep(3000);
                 Configuration.setPids();
 
                 Logger.GetInstance().Debug("mydlpepwin tries to install mydlpmf");

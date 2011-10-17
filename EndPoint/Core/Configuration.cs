@@ -46,6 +46,7 @@ namespace MyDLP.EndPoint.Core
         static int pythonPid = 0;
         static long logLimit;
         static bool archiveInbound;
+        static DateTime startTime;
        
         //This is a special case logger should be initialized before configuration class             
 
@@ -155,15 +156,47 @@ namespace MyDLP.EndPoint.Core
         //this will run after erl and python started
         public static void setPids()
         {
+            int tryLimit = 30;
+            int tryCount = 0;
+
+            String path = appPath + @"\run\mydlp.pid";
             try
             {
-                string text = System.IO.File.ReadAllText(appPath + @"\run\mydlp.pid");
+                DateTime dt = File.GetLastWriteTime(path);
+                while (dt <= Configuration.StartTime && tryCount < tryLimit)
+                {
+                    System.Threading.Thread.Sleep(3000);
+                    dt = File.GetLastWriteTime(path);
+                    tryCount++;
+                }                
+                string text = System.IO.File.ReadAllText(path);
                 erlPid = Int32.Parse(text.Trim());
             }
             catch 
             {
-                erlPid = 0;
-            }        
+                erlPid = GetErlPid();
+            }
+
+            tryCount = 0;
+            path = appPath + @"\run\backend-py.pid";
+            try
+            {
+                DateTime dt = File.GetLastWriteTime(path);
+                while (dt <= Configuration.StartTime && tryCount < tryLimit)
+                {
+                    System.Threading.Thread.Sleep(3000);
+                    dt = File.GetLastWriteTime(path);
+                }
+                string text = System.IO.File.ReadAllText(path);
+                pythonPid = Int32.Parse(text.Trim());
+            }
+            catch
+            {
+                pythonPid = 0;
+            }
+
+            Logger.GetInstance().Debug("Configuration.PythonPid = " + Configuration.PythonPid);
+            Logger.GetInstance().Debug("Configuration.ErlPid = " + Configuration.ErlPid);
         }
 
         public static bool GetRegistryConf()
@@ -288,6 +321,19 @@ namespace MyDLP.EndPoint.Core
                         + e.Message + " " + e.StackTrace);
                     return false;
                 }
+            }
+        }
+
+        public static DateTime StartTime
+        {
+            get
+            {
+                return startTime;
+            }
+
+            set 
+            {
+                startTime = value;
             }
         }
 

@@ -58,8 +58,28 @@ namespace MyDLP.EndPoint.Core
 
         public void Stop()
         {   //TODO:Handle process with pid files
-            KillProcByName("python");
+            Logger.GetInstance().Debug("Kill python by pid:" + Configuration.PythonPid);
+            if (Configuration.PythonPid != 0)
+            {
+                try
+                {
+                    Process p = Process.GetProcessById(Configuration.PythonPid);
+                    p.Kill();
+                }
+                catch
+                {
+                    Logger.GetInstance().Debug("Kill python by pid failed:" + Configuration.PythonPid);
+                    KillProcByName("python");
+                }
+            }
+            else 
+            {
+                KillProcByName("python");
+            }
+
             KillProcByName("epmd");
+
+            Logger.GetInstance().Debug("Kill erlang by pid:" + Configuration.PythonPid);
             if (Configuration.ErlPid != 0)
             {
                 try
@@ -69,6 +89,7 @@ namespace MyDLP.EndPoint.Core
                 }
                 catch
                 {
+                    Logger.GetInstance().Debug("Kill erlang by pid failed:" + Configuration.ErlPid);
                     KillProcByName("erl");
                     KillProcByName("werl");
                 }

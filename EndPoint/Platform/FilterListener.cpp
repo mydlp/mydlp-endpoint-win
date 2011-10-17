@@ -248,7 +248,7 @@ DWORD ListenerWorker(__in PMYDLPMF_THREAD_CONTEXT Context)
 				confMessage.ReplyHeader.Status = 0;
 				confMessage.ReplyHeader.MessageId = message->MessageHeader.MessageId;
 
-				confMessage.Reply.Pid = MyDLP::EndPoint::Core::Configuration::GetErlPid();
+				confMessage.Reply.Pid = MyDLP::EndPoint::Core::Configuration::ErlPid;
 				hr = FilterReplyMessage( Context->Port, (PFILTER_REPLY_HEADER) &confMessage, sizeof( confMessage ) );
 
 				if (SUCCEEDED(hr)) {
