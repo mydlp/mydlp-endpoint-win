@@ -38,7 +38,6 @@ namespace MyDLP.EndPoint.Core
         int tryCount = 0;
         const int tryLimit = 3;
 
-
         public static FileOperation.Action GetWriteDecisionByPath(String filePath, String tempFilePath)
         {
             
@@ -69,7 +68,8 @@ namespace MyDLP.EndPoint.Core
 
 
             //response = sClient.sendMessage("SETPROP " + id + " filename=" + Engine.GetShortPath(filePath));
-            response = sClient.sendMessage("SETPROP " + id + " filename=" + Path.GetFileName(filePath));
+            response = sClient.sendMessage("SETPROP " + id + 
+                    " filename=" + qpEncode(Path.GetFileName(filePath)));
             splitResp = response.Split(' ');
             if (!splitResp[0].Equals("OK"))
             {
@@ -83,7 +83,7 @@ namespace MyDLP.EndPoint.Core
                 return FileOperation.Action.ALLOW;
             }
 
-            response = sClient.sendMessage("PUSHFILE " + id + " " + tempFilePath);
+            response = sClient.sendMessage("PUSHFILE " + id + " " + qpEncode(tempFilePath));
 
             splitResp = response.Split(' ');
             if (!splitResp[0].Equals("OK"))
@@ -149,7 +149,8 @@ namespace MyDLP.EndPoint.Core
                 }
             }
 
-            response = sClient.sendMessage("SETPROP " + id + " filename=" + Path.GetFileName(filePath));
+            response = sClient.sendMessage("SETPROP " + id + 
+                    " filename=" + qpEncode(Path.GetFileName(filePath)));
             splitResp = response.Split(' ');
             if (!splitResp[0].Equals("OK"))
             {
@@ -226,7 +227,9 @@ namespace MyDLP.EndPoint.Core
                     }
                 }
 
-                response = sClient.sendMessage("PUSHFILE " + id + " " + Engine.GetShortPath(filePath));
+                response = sClient.sendMessage("PUSHFILE " + id + " " + 
+                    qpEncode(Engine.GetShortPath(filePath)));
+                    //qpEncode(filePath));
                 //response = sClient.sendMessage("PUSHFILE " + id + " " + filePath);
                 splitResp = response.Split(' ');
                 if (!splitResp[0].Equals("OK"))
@@ -235,7 +238,8 @@ namespace MyDLP.EndPoint.Core
                 }
 
                 //response = sClient.sendMessage("SETPROP " + id + " filename=" + Engine.GetShortPath(filePath));
-                response = sClient.sendMessage("SETPROP " + id + " filename=" + Path.GetFileName(filePath));
+                response = sClient.sendMessage("SETPROP " + id + 
+                    " filename=" + qpEncode(Path.GetFileName(filePath)));
                 splitResp = response.Split(' ');
                 if (!splitResp[0].Equals("OK"))
                 {
@@ -464,6 +468,30 @@ namespace MyDLP.EndPoint.Core
             {
                 throw;
             }
+        }
+
+        protected static String qpEncode(String inStr)
+        {
+            byte[] utfBytes = System.Text.Encoding.UTF8.GetBytes(inStr);
+            return _qpEncode(utfBytes);
+        }
+
+        protected static String _qpEncode(byte[] utfBytes)
+        {
+            String ret = "";
+            for (int i = 0; i < utfBytes.Length; i++)
+            {
+                byte curr = utfBytes[i];
+                if (curr == 61)
+                    ret += "=3D";
+                else if (curr == 9 || //tab
+                            curr == 32 || //space
+                            (33 <= curr && curr <= 126))
+                    ret += ((char)curr).ToString();
+                else
+                    ret += ("=" + BitConverter.ToString(new byte[1] { curr }));
+            }
+            return ret;
         }
 
     }
