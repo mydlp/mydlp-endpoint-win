@@ -33,7 +33,7 @@ namespace MyDLP.EndPoint.Service
         Timer watchdogTimer;
         public static EventLog serviceLogger;
 
-        int watchdogTimerPeriod = 120000;     
+        int watchdogTimerPeriod = 120000;
 
         public static MainController GetInstance()
         {
@@ -52,7 +52,7 @@ namespace MyDLP.EndPoint.Service
         public void Start()
         {
             //notify logger that we are in main service
-            Logger.GetInstance().InitializeMainLogger(serviceLogger);   
+            Logger.GetInstance().InitializeMainLogger(serviceLogger);
 
             Logger.GetInstance().Debug("Starting mydlpepwin service");
 
@@ -107,7 +107,7 @@ namespace MyDLP.EndPoint.Service
                 {
                     Logger.GetInstance().Info("Watchdog isdead!, starting mydlpepwatchdog");
                     service.Start();
-                }                
+                }
             }
             catch
             {

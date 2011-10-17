@@ -43,7 +43,7 @@ namespace MyDLP.EndPoint.Core
         String erlStartInteractiveCmd = @"cd " + Configuration.ErlangPath + " && InteractiveRun.bat";
 
         public void Start()
-        {            
+        {
             ExecuteCommandAsync(pythonStartCmd);
             Configuration.SetErlConf();
             if (System.Environment.UserInteractive)
@@ -67,10 +67,10 @@ namespace MyDLP.EndPoint.Core
                     Process p = Process.GetProcessById(Configuration.ErlPid);
                     p.Kill();
                 }
-                catch 
+                catch
                 {
                     KillProcByName("erl");
-                    KillProcByName("werl");                
+                    KillProcByName("werl");
                 }
             }
             else
@@ -160,7 +160,7 @@ namespace MyDLP.EndPoint.Core
                 {
                     procStartInfo.EnvironmentVariables.Add("MYDLP_CONF", GetShortPath(Configuration.MydlpConfPath).Replace(@"\", @"/"));
                     procStartInfo.EnvironmentVariables.Add("MYDLPBEAMDIR", GetShortPath(Configuration.ErlangPath));
-                    procStartInfo.EnvironmentVariables.Add("MYDLP_APPDIR", GetShortPath(Configuration.AppPath));                                        
+                    procStartInfo.EnvironmentVariables.Add("MYDLP_APPDIR", GetShortPath(Configuration.AppPath));
                     procStartInfo.EnvironmentVariables["path"] = procStartInfo.EnvironmentVariables["path"] + @";" + Configuration.ErlangBinPaths;
 
                     Logger.GetInstance().Debug("Environment path for erlang:" + procStartInfo.EnvironmentVariables["path"]);

@@ -40,7 +40,7 @@ namespace MyDLP.EndPoint.Core
 
         public static FileOperation.Action GetWriteDecisionByPath(String filePath, String tempFilePath)
         {
-            
+
             //Logger.GetInstance().Debug("GetWriteDecisionByPath filePath:" + filePath + " tempFilePath:" + tempFilePath);
             SeapClient sClient = SeapClient.GetInstance();
             String response;
@@ -68,7 +68,7 @@ namespace MyDLP.EndPoint.Core
 
 
             //response = sClient.sendMessage("SETPROP " + id + " filename=" + Engine.GetShortPath(filePath));
-            response = sClient.sendMessage("SETPROP " + id + 
+            response = sClient.sendMessage("SETPROP " + id +
                     " filename=" + qpEncode(Path.GetFileName(filePath)));
             splitResp = response.Split(' ');
             if (!splitResp[0].Equals("OK"))
@@ -105,8 +105,8 @@ namespace MyDLP.EndPoint.Core
             {
                 return FileOperation.Action.ALLOW;
             }
-            
-            sClient.sendMessage("DESTROY " + id);           
+
+            sClient.sendMessage("DESTROY " + id);
 
             if (splitResp[1].Equals("block"))
             {
@@ -117,13 +117,13 @@ namespace MyDLP.EndPoint.Core
                 return FileOperation.Action.ALLOW;
             }
             //todo: Default Acion
-            
+
             return FileOperation.Action.ALLOW;
         }
 
-        public static FileOperation.Action GetWriteDecisionByCache(String filePath, MemoryStream cache) 
+        public static FileOperation.Action GetWriteDecisionByCache(String filePath, MemoryStream cache)
         {
-            
+
             //Logger.GetInstance().Debug("GetWriteDecisionByCache path: " + filePath +" length:" + cache.Length);
             SeapClient sClient = SeapClient.GetInstance();
             String response;
@@ -149,7 +149,7 @@ namespace MyDLP.EndPoint.Core
                 }
             }
 
-            response = sClient.sendMessage("SETPROP " + id + 
+            response = sClient.sendMessage("SETPROP " + id +
                     " filename=" + qpEncode(Path.GetFileName(filePath)));
             splitResp = response.Split(' ');
             if (!splitResp[0].Equals("OK"))
@@ -180,8 +180,8 @@ namespace MyDLP.EndPoint.Core
             {
                 return FileOperation.Action.ALLOW;
             }
-            
-            sClient.sendMessage("DESTROY " + id);           
+
+            sClient.sendMessage("DESTROY " + id);
 
             if (splitResp[1].Equals("block"))
             {
@@ -198,12 +198,12 @@ namespace MyDLP.EndPoint.Core
         public static FileOperation.Action GetReadDecisionByPath(String filePath)
         {
             SeapClient sClient = SeapClient.GetInstance();
-            sClient.tryCount = 0;  
+            sClient.tryCount = 0;
             try
             {
                 //Logger.GetInstance().Debug("GetReadDecisionByPath path: " + Engine.GetShortPath(filePath));
                 Logger.GetInstance().Debug("GetReadDecisionByPath path: " + filePath);
-               
+
                 String response;
                 String[] splitResp;
                 long id;
@@ -227,9 +227,9 @@ namespace MyDLP.EndPoint.Core
                     }
                 }
 
-                response = sClient.sendMessage("PUSHFILE " + id + " " + 
+                response = sClient.sendMessage("PUSHFILE " + id + " " +
                     qpEncode(Engine.GetShortPath(filePath)));
-                    //qpEncode(filePath));
+                //qpEncode(filePath));
                 //response = sClient.sendMessage("PUSHFILE " + id + " " + filePath);
                 splitResp = response.Split(' ');
                 if (!splitResp[0].Equals("OK"))
@@ -238,7 +238,7 @@ namespace MyDLP.EndPoint.Core
                 }
 
                 //response = sClient.sendMessage("SETPROP " + id + " filename=" + Engine.GetShortPath(filePath));
-                response = sClient.sendMessage("SETPROP " + id + 
+                response = sClient.sendMessage("SETPROP " + id +
                     " filename=" + qpEncode(Path.GetFileName(filePath)));
                 splitResp = response.Split(' ');
                 if (!splitResp[0].Equals("OK"))
@@ -279,10 +279,10 @@ namespace MyDLP.EndPoint.Core
                     return FileOperation.Action.ALLOW;
                 }
             }
-            catch 
+            catch
             {
                 //todo: Default Acion
-                return FileOperation.Action.ALLOW;            
+                return FileOperation.Action.ALLOW;
             }
             //todo: Default Acion
             return FileOperation.Action.ALLOW;
@@ -304,7 +304,7 @@ namespace MyDLP.EndPoint.Core
             }
         }
 
-        private void Reconnect() 
+        private void Reconnect()
         {
             try
             {
@@ -318,7 +318,7 @@ namespace MyDLP.EndPoint.Core
                     Logger.GetInstance().Info("Reconnect unable to close client: " + e.Message + " " + e.StackTrace);
                 }
 
-                client = new TcpClient(server, port);                
+                client = new TcpClient(server, port);
                 stream = client.GetStream();
                 stream.ReadTimeout = timeout;
                 stream.WriteTimeout = timeout;
@@ -354,12 +354,12 @@ namespace MyDLP.EndPoint.Core
             Byte[] response = new Byte[responseLength];
             int readCount;
             try
-            {                
+            {
                 lock (seapClient)
                 {
                     stream.Write(cmdBin, 0, cmdBin.Length);
                     stream.Write(end, 0, end.Length);
-                    stream.Write(msg.GetBuffer(), 0, (int) msg.Length);
+                    stream.Write(msg.GetBuffer(), 0, (int)msg.Length);
                     //Logger.GetInstance().Debug("SeapClient send data: <" + System.Text.Encoding.ASCII.GetString(msg.GetBuffer()) + ">");                     
                     //this not necessary
                     //stream.Write(end, 0, end.Length);
@@ -368,7 +368,7 @@ namespace MyDLP.EndPoint.Core
                     tryCount = 0;
                 }
                 String respMessage = System.Text.Encoding.ASCII.GetString(response, 0, readCount);
-                Logger.GetInstance().Debug("SeapClient read response:  <" + respMessage.Trim() + ">");             
+                Logger.GetInstance().Debug("SeapClient read response:  <" + respMessage.Trim() + ">");
                 return respMessage.Trim();
             }
             catch (System.IO.IOException e)
@@ -413,8 +413,8 @@ namespace MyDLP.EndPoint.Core
 
         public String sendMessage(String msg)
         {
-            Reconnect();        
-            int readCount;          
+            Reconnect();
+            int readCount;
             Logger.GetInstance().Debug("SeapClient send message: <" + msg + ">");
             Byte[] response = new Byte[responseLength];
             msg = msg + "\r\n";
@@ -431,10 +431,10 @@ namespace MyDLP.EndPoint.Core
                     tryCount = 0;
                 }
                 String respMessage = System.Text.Encoding.ASCII.GetString(response, 0, readCount);
-                Logger.GetInstance().Debug("SeapClient read response:  <" + respMessage.Trim() + ">");             
+                Logger.GetInstance().Debug("SeapClient read response:  <" + respMessage.Trim() + ">");
                 return respMessage.Trim();
             }
-            catch(System.IO.IOException)
+            catch (System.IO.IOException)
             {
                 /*if (tryCount < tryLimit)
                 {
