@@ -40,6 +40,8 @@ namespace MyDLP.EndPoint.Core
 
         public static FileOperation.Action GetWriteDecisionByPath(String filePath, String tempFilePath)
         {
+            if (tempFilePath.Equals("") || Engine.GetShortPath(tempFilePath).Equals(""))
+                return FileOperation.Action.ALLOW;
 
             //Logger.GetInstance().Debug("GetWriteDecisionByPath filePath:" + filePath + " tempFilePath:" + tempFilePath);
             SeapClient sClient = SeapClient.GetInstance();
@@ -123,7 +125,6 @@ namespace MyDLP.EndPoint.Core
 
         public static FileOperation.Action GetWriteDecisionByCache(String filePath, MemoryStream cache)
         {
-
             //Logger.GetInstance().Debug("GetWriteDecisionByCache path: " + filePath +" length:" + cache.Length);
             SeapClient sClient = SeapClient.GetInstance();
             String response;
@@ -197,11 +198,15 @@ namespace MyDLP.EndPoint.Core
 
         public static FileOperation.Action GetReadDecisionByPath(String filePath)
         {
+            String shortFilePath = Engine.GetShortPath(filePath);
+            if ( filePath.Equals("") || shortFilePath.Equals(""))
+                return FileOperation.Action.ALLOW;
+
             SeapClient sClient = SeapClient.GetInstance();
             sClient.tryCount = 0;
             try
             {
-                //Logger.GetInstance().Debug("GetReadDecisionByPath path: " + Engine.GetShortPath(filePath));
+                //Logger.GetInstance().Debug("GetReadDecisionByPath path: " + shortFilePath);
                 Logger.GetInstance().Debug("GetReadDecisionByPath path: " + filePath);
 
                 String response;
@@ -228,7 +233,7 @@ namespace MyDLP.EndPoint.Core
                 }
 
                 response = sClient.sendMessage("PUSHFILE " + id + " " +
-                    qpEncode(Engine.GetShortPath(filePath)));
+                    qpEncode(shortFilePath));
                 //qpEncode(filePath));
                 //response = sClient.sendMessage("PUSHFILE " + id + " " + filePath);
                 splitResp = response.Split(' ');
@@ -237,7 +242,7 @@ namespace MyDLP.EndPoint.Core
                     return FileOperation.Action.ALLOW;
                 }
 
-                //response = sClient.sendMessage("SETPROP " + id + " filename=" + Engine.GetShortPath(filePath));
+                //response = sClient.sendMessage("SETPROP " + id + " filename=" + shortFilePath);
                 response = sClient.sendMessage("SETPROP " + id +
                     " filename=" + qpEncode(Path.GetFileName(filePath)));
                 splitResp = response.Split(' ');
