@@ -33,163 +33,180 @@ namespace MyDLP.EndPoint.Core
         String server = Configuration.SeapServer;
         TcpClient client;
         NetworkStream stream;
-        int timeout = 50000;
+        int readTimeout = 50000;
+        int writeTimeout = 5000;
         int responseLength = 512;
-        int tryCount = 0;
-        const int tryLimit = 3;
+
 
         public static FileOperation.Action GetWriteDecisionByPath(String filePath, String tempFilePath)
         {
+
             if (tempFilePath.Equals("") || Engine.GetShortPath(tempFilePath).Equals(""))
                 return FileOperation.Action.ALLOW;
 
-            //Logger.GetInstance().Debug("GetWriteDecisionByPath filePath:" + filePath + " tempFilePath:" + tempFilePath);
-            SeapClient sClient = SeapClient.GetInstance();
-            String response;
-            String[] splitResp;
-            long id;
-
-            response = sClient.sendMessage("BEGIN");
-
-            if (response.Equals("ERR"))
+            try
             {
-                return FileOperation.Action.ALLOW;
-            }
-            else
-            {
-                splitResp = response.Split(' ');
-                if (splitResp[0].Equals("OK"))
+                //Logger.GetInstance().Debug("GetWriteDecisionByPath filePath:" + filePath + " tempFilePath:" + tempFilePath);
+                SeapClient sClient = SeapClient.GetInstance();
+                String response;
+                String[] splitResp;
+                long id;
+
+                response = sClient.sendMessage("BEGIN");
+
+                if (response.Equals("ERR"))
                 {
-                    id = Int64.Parse(splitResp[1]);
+                    return FileOperation.Action.ALLOW;
                 }
                 else
+                {
+                    splitResp = response.Split(' ');
+                    if (splitResp[0].Equals("OK"))
+                    {
+                        id = Int64.Parse(splitResp[1]);
+                    }
+                    else
+                    {
+                        return FileOperation.Action.ALLOW;
+                    }
+                }
+
+                //response = sClient.sendMessage("SETPROP " + id + " filename=" + Engine.GetShortPath(filePath));
+                response = sClient.sendMessage("SETPROP " + id +
+                        " filename=" + qpEncode(Path.GetFileName(filePath)));
+                splitResp = response.Split(' ');
+                if (!splitResp[0].Equals("OK"))
+                {
+                    return FileOperation.Action.ALLOW;
+                }
+
+                response = sClient.sendMessage("SETPROP " + id + " burn_after_reading=true");
+                splitResp = response.Split(' ');
+                if (!splitResp[0].Equals("OK"))
+                {
+                    return FileOperation.Action.ALLOW;
+                }
+
+                response = sClient.sendMessage("PUSHFILE " + id + " " + qpEncode(tempFilePath));
+
+                splitResp = response.Split(' ');
+                if (!splitResp[0].Equals("OK"))
+                {
+                    return FileOperation.Action.ALLOW;
+                }
+
+                response = sClient.sendMessage("END " + id);
+
+                splitResp = response.Split(' ');
+                if (!splitResp[0].Equals("OK"))
+                {
+                    return FileOperation.Action.ALLOW;
+                }
+
+                response = sClient.sendMessage("ACLQ " + id);
+                splitResp = response.Split(' ');
+                if (!splitResp[0].Equals("OK"))
+                {
+                    return FileOperation.Action.ALLOW;
+                }
+
+                sClient.sendMessage("DESTROY " + id);
+
+                if (splitResp[1].Equals("block"))
+                {
+                    return FileOperation.Action.BLOCK;
+                }
+                else if (splitResp[1].Equals("pass"))
                 {
                     return FileOperation.Action.ALLOW;
                 }
             }
-
-
-            //response = sClient.sendMessage("SETPROP " + id + " filename=" + Engine.GetShortPath(filePath));
-            response = sClient.sendMessage("SETPROP " + id +
-                    " filename=" + qpEncode(Path.GetFileName(filePath)));
-            splitResp = response.Split(' ');
-            if (!splitResp[0].Equals("OK"))
+            catch (Exception e)
             {
-                return FileOperation.Action.ALLOW;
-            }
-
-            response = sClient.sendMessage("SETPROP " + id + " burn_after_reading=true");
-            splitResp = response.Split(' ');
-            if (!splitResp[0].Equals("OK"))
-            {
-                return FileOperation.Action.ALLOW;
-            }
-
-            response = sClient.sendMessage("PUSHFILE " + id + " " + qpEncode(tempFilePath));
-
-            splitResp = response.Split(' ');
-            if (!splitResp[0].Equals("OK"))
-            {
-                return FileOperation.Action.ALLOW;
-            }
-
-            response = sClient.sendMessage("END " + id);
-
-            splitResp = response.Split(' ');
-            if (!splitResp[0].Equals("OK"))
-            {
-                return FileOperation.Action.ALLOW;
-            }
-
-            response = sClient.sendMessage("ACLQ " + id);
-            splitResp = response.Split(' ');
-            if (!splitResp[0].Equals("OK"))
-            {
-                return FileOperation.Action.ALLOW;
-            }
-
-            sClient.sendMessage("DESTROY " + id);
-
-            if (splitResp[1].Equals("block"))
-            {
-                return FileOperation.Action.BLOCK;
-            }
-            else if (splitResp[1].Equals("pass"))
-            {
+                Logger.GetInstance().Debug(e.Message);
+                //todo: Default Acion
                 return FileOperation.Action.ALLOW;
             }
             //todo: Default Acion
-
             return FileOperation.Action.ALLOW;
         }
 
         public static FileOperation.Action GetWriteDecisionByCache(String filePath, MemoryStream cache)
         {
             //Logger.GetInstance().Debug("GetWriteDecisionByCache path: " + filePath +" length:" + cache.Length);
-            SeapClient sClient = SeapClient.GetInstance();
-            String response;
-            String[] splitResp;
-            long id;
-
-            response = sClient.sendMessage("BEGIN");
-
-            if (response.Equals("ERR"))
+            try
             {
-                return FileOperation.Action.ALLOW;
-            }
-            else
-            {
-                splitResp = response.Split(' ');
-                if (splitResp[0].Equals("OK"))
+                SeapClient sClient = SeapClient.GetInstance();
+                String response;
+                String[] splitResp;
+                long id;
+
+                response = sClient.sendMessage("BEGIN");
+
+                if (response.Equals("ERR"))
                 {
-                    id = Int64.Parse(splitResp[1]);
+                    return FileOperation.Action.ALLOW;
                 }
                 else
+                {
+                    splitResp = response.Split(' ');
+                    if (splitResp[0].Equals("OK"))
+                    {
+                        id = Int64.Parse(splitResp[1]);
+                    }
+                    else
+                    {
+                        return FileOperation.Action.ALLOW;
+                    }
+                }
+
+                response = sClient.sendMessage("SETPROP " + id +
+                        " filename=" + qpEncode(Path.GetFileName(filePath)));
+                splitResp = response.Split(' ');
+                if (!splitResp[0].Equals("OK"))
+                {
+                    return FileOperation.Action.ALLOW;
+                }
+
+                String cmd = "PUSH " + id + " " + cache.Length;
+
+                response = sClient.sendMessage(cmd, cache);
+                splitResp = response.Split(' ');
+                if (!splitResp[0].Equals("OK"))
+                {
+                    return FileOperation.Action.ALLOW;
+                }
+
+                response = sClient.sendMessage("END " + id);
+
+                splitResp = response.Split(' ');
+                if (!splitResp[0].Equals("OK"))
+                {
+                    return FileOperation.Action.ALLOW;
+                }
+
+                response = sClient.sendMessage("ACLQ " + id);
+                splitResp = response.Split(' ');
+                if (!splitResp[0].Equals("OK"))
+                {
+                    return FileOperation.Action.ALLOW;
+                }
+
+                sClient.sendMessage("DESTROY " + id);
+
+                if (splitResp[1].Equals("block"))
+                {
+                    return FileOperation.Action.BLOCK;
+                }
+                else if (splitResp[1].Equals("pass"))
                 {
                     return FileOperation.Action.ALLOW;
                 }
             }
-
-            response = sClient.sendMessage("SETPROP " + id +
-                    " filename=" + qpEncode(Path.GetFileName(filePath)));
-            splitResp = response.Split(' ');
-            if (!splitResp[0].Equals("OK"))
+            catch (Exception e)
             {
-                return FileOperation.Action.ALLOW;
-            }
-
-            String cmd = "PUSH " + id + " " + cache.Length;
-
-            response = sClient.sendMessage(cmd, cache);
-            splitResp = response.Split(' ');
-            if (!splitResp[0].Equals("OK"))
-            {
-                return FileOperation.Action.ALLOW;
-            }
-
-            response = sClient.sendMessage("END " + id);
-
-            splitResp = response.Split(' ');
-            if (!splitResp[0].Equals("OK"))
-            {
-                return FileOperation.Action.ALLOW;
-            }
-
-            response = sClient.sendMessage("ACLQ " + id);
-            splitResp = response.Split(' ');
-            if (!splitResp[0].Equals("OK"))
-            {
-                return FileOperation.Action.ALLOW;
-            }
-
-            sClient.sendMessage("DESTROY " + id);
-
-            if (splitResp[1].Equals("block"))
-            {
-                return FileOperation.Action.BLOCK;
-            }
-            else if (splitResp[1].Equals("pass"))
-            {
+                Logger.GetInstance().Debug(e.Message);
+                //todo: Default Acion
                 return FileOperation.Action.ALLOW;
             }
             //todo: Default Acion            
@@ -199,14 +216,12 @@ namespace MyDLP.EndPoint.Core
         public static FileOperation.Action GetReadDecisionByPath(String filePath)
         {
             String shortFilePath = Engine.GetShortPath(filePath);
-            if ( filePath.Equals("") || shortFilePath.Equals(""))
+            if (filePath.Equals("") || shortFilePath.Equals(""))
                 return FileOperation.Action.ALLOW;
 
-            SeapClient sClient = SeapClient.GetInstance();
-            sClient.tryCount = 0;
             try
             {
-                //Logger.GetInstance().Debug("GetReadDecisionByPath path: " + shortFilePath);
+                SeapClient sClient = SeapClient.GetInstance();
                 Logger.GetInstance().Debug("GetReadDecisionByPath path: " + filePath);
 
                 String response;
@@ -284,8 +299,9 @@ namespace MyDLP.EndPoint.Core
                     return FileOperation.Action.ALLOW;
                 }
             }
-            catch
+            catch (Exception e)
             {
+                Logger.GetInstance().Debug(e.Message);
                 //todo: Default Acion
                 return FileOperation.Action.ALLOW;
             }
@@ -300,8 +316,8 @@ namespace MyDLP.EndPoint.Core
                 Logger.GetInstance().Info("Initialize seap client server: " + server + " port: " + port);
                 client = new TcpClient(server, port);
                 stream = client.GetStream();
-                stream.ReadTimeout = timeout;
-                stream.WriteTimeout = timeout;
+                stream.ReadTimeout = readTimeout;
+                stream.WriteTimeout = writeTimeout;
             }
             catch (Exception)
             {
@@ -320,13 +336,13 @@ namespace MyDLP.EndPoint.Core
                 }
                 catch (Exception e)
                 {
-                    Logger.GetInstance().Info("Reconnect unable to close client: " + e.Message + " " + e.StackTrace);
+                    Logger.GetInstance().Error("Reconnect unable to close client: " + e.Message + " " + e.StackTrace);
                 }
 
                 client = new TcpClient(server, port);
                 stream = client.GetStream();
-                stream.ReadTimeout = timeout;
-                stream.WriteTimeout = timeout;
+                stream.ReadTimeout = readTimeout;
+                stream.WriteTimeout = writeTimeout;
             }
             catch (Exception)
             {
@@ -352,127 +368,144 @@ namespace MyDLP.EndPoint.Core
 
         public String sendMessage(String cmd, MemoryStream msg)
         {
-            Reconnect();
             Byte[] cmdBin = System.Text.Encoding.ASCII.GetBytes(cmd);
             Byte[] end = System.Text.Encoding.ASCII.GetBytes("\r\n");
             Logger.GetInstance().Debug("SeapClient send message: <" + cmd + ">");
             Byte[] response = new Byte[responseLength];
-            int readCount;
-            try
+            int readCount = 0;
+            int tryCount = 0;
+            int tryLimit = 3;
+
+            lock (seapClient)
             {
-                lock (seapClient)
+                while (tryCount < tryLimit)
                 {
-                    stream.Write(cmdBin, 0, cmdBin.Length);
-                    stream.Write(end, 0, end.Length);
-                    stream.Write(msg.GetBuffer(), 0, (int)msg.Length);
-                    //Logger.GetInstance().Debug("SeapClient send data: <" + System.Text.Encoding.ASCII.GetString(msg.GetBuffer()) + ">");                     
-                    //this not necessary
-                    //stream.Write(end, 0, end.Length);
-                    stream.Flush();
-                    readCount = stream.Read(response, 0, responseLength);
-                    tryCount = 0;
-                }
-                String respMessage = System.Text.Encoding.ASCII.GetString(response, 0, readCount);
-                Logger.GetInstance().Debug("SeapClient read response:  <" + respMessage.Trim() + ">");
-                return respMessage.Trim();
-            }
-            catch (System.IO.IOException e)
-            {
-                /*
-                if (tryCount < tryLimit)
-                {
-                    Logger.GetInstance().Debug("IO Exception try reconnect try count:" + tryCount);
-                    tryCount++;
-                    //consume &discard error message
                     try
                     {
+                        //clean and discard data on sockect if any
+                        if (stream.DataAvailable == true)
+                            stream.Read(response, 0, responseLength);
+
+                        stream.Write(cmdBin, 0, cmdBin.Length);
+                        stream.Write(end, 0, end.Length);
+                        stream.Write(msg.GetBuffer(), 0, (int)msg.Length);
+                        stream.Flush();
                         readCount = stream.Read(response, 0, responseLength);
+                        tryCount = 0;
+                        break;
                     }
-                    catch
+                    catch (System.IO.IOException e)
                     {
-                        Logger.GetInstance().Debug("SeapClient discard not possible");  
+                        Logger.GetInstance().Debug("IO Exception try reconnect try count:" + tryCount);
+                        //consume &discard error message if any
+                        try
+                        {
+                            if (stream.DataAvailable)
+                            {
+                                readCount = stream.Read(response, 0, responseLength);
+                            }
+                        }
+                        catch
+                        {
+                            Logger.GetInstance().Debug("SeapClient discard not possible");
+                        }
+                        try
+                        {
+                            tryCount++;
+                            Reconnect();
+                        }
+                        catch
+                        {
+                            Logger.GetInstance().Debug("Reconnect failed");
+                        }
                     }
-                    try
+                    catch (Exception e)
                     {
+                        Logger.GetInstance().Debug("SendMessage Exception " + e.Message + e.StackTrace);
+                        tryCount++;
                         Reconnect();
                     }
-                    catch
-                    {
-                        Logger.GetInstance().Debug("REconnect failed");
-                    }
-                    return sendMessage(cmd.TrimEnd(), msg);
                 }
-                else 
-                {
-                    Logger.GetInstance().Debug("IO Exception exceded try reconnect try count:" + tryCount);
-                    throw;
-                }*/
-                throw;
-            }
-            catch (Exception)
-            {
-                throw;
             }
 
+            if (tryCount >= tryLimit)
+            {
+                throw new IOException("SeapClient can not connect to SeapServer after " + tryCount + " attempt, giving up");
+            }
+
+            String respMessage = System.Text.Encoding.ASCII.GetString(response, 0, readCount);
+            Logger.GetInstance().Debug("SeapClient read response:  <" + respMessage.Trim() + ">");
+            return respMessage.Trim();
         }
 
         public String sendMessage(String msg)
         {
-            Reconnect();
-            int readCount;
+            int readCount = 0;
+            int tryCount = 0;
+            int tryLimit = 3;
+
             Logger.GetInstance().Debug("SeapClient send message: <" + msg + ">");
             Byte[] response = new Byte[responseLength];
             msg = msg + "\r\n";
-            try
+            Byte[] data = System.Text.Encoding.ASCII.GetBytes(msg);
+
+            lock (seapClient)
             {
-                Byte[] data = System.Text.Encoding.ASCII.GetBytes(msg);
-                lock (seapClient)
+                while (tryCount < tryLimit)
                 {
-                    if (stream.DataAvailable == true)
-                        readCount = stream.Read(response, 0, responseLength);
-                    stream.Write(data, 0, msg.Length);
-                    stream.Flush();
-                    readCount = stream.Read(response, 0, responseLength);
-                    tryCount = 0;
-                }
-                String respMessage = System.Text.Encoding.ASCII.GetString(response, 0, readCount);
-                Logger.GetInstance().Debug("SeapClient read response:  <" + respMessage.Trim() + ">");
-                return respMessage.Trim();
-            }
-            catch (System.IO.IOException)
-            {
-                /*if (tryCount < tryLimit)
-                {
-                    Logger.GetInstance().Debug("IO Exception try reconnect try count:" + tryCount);
-                    tryCount++;
                     try
                     {
+                        //clean and discard data on sockect if any
+                        if (stream.DataAvailable == true)
+                            stream.Read(response, 0, responseLength);
+                        stream.Write(data, 0, msg.Length);
+                        stream.Flush();
                         readCount = stream.Read(response, 0, responseLength);
+                        tryCount = 0;
+                        break;
                     }
-                    catch
+                    catch (System.IO.IOException e)
                     {
-                        Logger.GetInstance().Debug("SeapClient discard not possible");       
+                        Logger.GetInstance().Debug("IO Exception try reconnect try count:" + tryCount);
+                        //consume &discard error message if any
+                        try
+                        {
+                            if (stream.DataAvailable)
+                            {
+                                readCount = stream.Read(response, 0, responseLength);
+                            }
+                        }
+                        catch
+                        {
+                            Logger.GetInstance().Debug("SeapClient discard not possible");
+                        }
+                        try
+                        {
+                            tryCount++;
+                            Reconnect();
+                        }
+                        catch
+                        {
+                            Logger.GetInstance().Debug("Reconnect failed");
+                        }
                     }
-                    try
+                    catch (Exception e)
                     {
+                        Logger.GetInstance().Debug("SendMessage Exception " + e.Message + e.StackTrace);
+                        tryCount++;
                         Reconnect();
                     }
-                    catch
-                    {
-                        Logger.GetInstance().Debug("REconnect failed");
-                    }
-                    return sendMessage(msg.TrimEnd());
                 }
-                else 
-                {
-                    throw;
-                }*/
-                throw;
             }
-            catch (Exception)
+
+            if (tryCount >= tryLimit)
             {
-                throw;
+                throw new IOException("SeapClient can not connect to SeapServer after " + tryCount + " attempt, giving up");
             }
+
+            String respMessage = System.Text.Encoding.ASCII.GetString(response, 0, readCount);
+            Logger.GetInstance().Debug("SeapClient read response:  <" + respMessage.Trim() + ">");
+            return respMessage.Trim();
         }
 
         protected static String qpEncode(String inStr)

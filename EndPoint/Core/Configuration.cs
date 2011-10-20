@@ -99,8 +99,8 @@ namespace MyDLP.EndPoint.Core
                     }
                     catch (Exception e)
                     {
-                        Logger.GetInstance().Error("Unable to get registry value  HKLM/Software/MyDLP:LogLevel "
-                             + e.Message + " " + e.StackTrace);
+                        Logger.GetInstance().Error("Unable to get registry value  HKLM/Software/MyDLP:LogLevel, creating with default value");
+                        mydlpKey.SetValue("LogLevel", 1, RegistryValueKind.DWord);
                         logLevel = Logger.LogLevel.DEBUG;
                     }
                 }
@@ -259,9 +259,9 @@ namespace MyDLP.EndPoint.Core
                     }
                     catch (Exception e)
                     {
-                        Logger.GetInstance().Error("Unable to get registry value  HKLM/Software/MyDLP:ArchiveInbound "
-                             + e.Message + " " + e.StackTrace);
-                        return false;
+                        Logger.GetInstance().Info("Unable to get registry value  HKLM/Software/MyDLP:ArchiveInbound, creating with default value");
+                        mydlpKey.SetValue("ArchiveInbound", 0, RegistryValueKind.DWord);
+                        archiveInbound = false;                       
                     }
                     
                     //Get seapServer
@@ -271,9 +271,9 @@ namespace MyDLP.EndPoint.Core
                     }
                     catch (Exception e)
                     {
-                        Logger.GetInstance().Error("Unable to get registry value  HKLM/Software/MyDLP:SeapServer "
-                             + e.Message + " " + e.StackTrace);
-                        return false;
+                        Logger.GetInstance().Error("Unable to get registry value  HKLM/Software/MyDLP:SeapServer, creating with default value");
+                        mydlpKey.SetValue("SeapServer", 0, RegistryValueKind.String);
+                        seapServer = "127.0.0.1";
                     }
 
                     //Get managementServer
@@ -283,9 +283,9 @@ namespace MyDLP.EndPoint.Core
                     }
                     catch (Exception e)
                     {
-                        Logger.GetInstance().Error("Unable to get registry value  HKLM/Software/MyDLP:ManagementServer "
-                             + e.Message + " " + e.StackTrace);
-                        return false;
+                        Logger.GetInstance().Info("Unable to get registry value  HKLM/Software/MyDLP:ManagementServer, creating with default value");
+                        mydlpKey.SetValue("ManagementServer", 0, RegistryValueKind.String);
+                        archiveInbound = false; 
                     }
 
 
@@ -296,9 +296,9 @@ namespace MyDLP.EndPoint.Core
                     }
                     catch (Exception e)
                     {
-                        Logger.GetInstance().Error("Unable to get registry value  HKLM/Software/MyDLP:SeapPort "
-                             + e.Message + " " + e.StackTrace);
-                        return false;
+                        Logger.GetInstance().Error("Unable to get registry value  HKLM/Software/MyDLP:SeapPort, creating with default value");
+                        mydlpKey.SetValue("SeapPort", 9099, RegistryValueKind.DWord);
+                        seapPort = 9099; 
                     }
 
                     //Todo LogLimit registry conf

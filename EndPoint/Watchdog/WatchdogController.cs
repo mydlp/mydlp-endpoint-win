@@ -72,7 +72,9 @@ namespace MyDLP.EndPoint.Service
         }
 
         private void OnTimedWatchdogEvent(object source, ElapsedEventArgs e)
-        {     
+        {
+            Logger.GetInstance().CheckLogLimit();
+
             bool error = false;
 
             if (Configuration.ErlPid != 0)
