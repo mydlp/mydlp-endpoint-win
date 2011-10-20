@@ -83,7 +83,7 @@ namespace MyDLP.EndPoint.Core
         {
             try
             {
-                RegistryKey mydlpKey = Registry.LocalMachine.OpenSubKey("Software").OpenSubKey("MyDLP");
+                RegistryKey mydlpKey = Registry.LocalMachine.OpenSubKey("Software").OpenSubKey("MyDLP", true);
 
                 if (System.Environment.UserInteractive)
                 {
@@ -94,12 +94,11 @@ namespace MyDLP.EndPoint.Core
                     //Get loglevel
                     try
                     {
-                        logLevel = (Logger.LogLevel)mydlpKey.GetValue("LogLevel");
+                        logLevel = (Logger.LogLevel) mydlpKey.GetValue("LogLevel");
                         if (logLevel > Logger.LogLevel.DEBUG) logLevel = Logger.LogLevel.DEBUG;
                     }
                     catch (Exception e)
-                    {
-                        Logger.GetInstance().Error("Unable to get registry value  HKLM/Software/MyDLP:LogLevel, creating with default value");
+                    {                        
                         mydlpKey.SetValue("LogLevel", 1, RegistryValueKind.DWord);
                         logLevel = Logger.LogLevel.DEBUG;
                     }
@@ -224,7 +223,7 @@ namespace MyDLP.EndPoint.Core
                 //Use normal conf
                 try
                 {
-                    RegistryKey mydlpKey = Registry.LocalMachine.OpenSubKey("Software").OpenSubKey("MyDLP");
+                    RegistryKey mydlpKey = Registry.LocalMachine.OpenSubKey("Software").OpenSubKey("MyDLP",true);
 
                     //Get path
                     try
@@ -272,7 +271,7 @@ namespace MyDLP.EndPoint.Core
                     catch (Exception e)
                     {
                         Logger.GetInstance().Error("Unable to get registry value  HKLM/Software/MyDLP:SeapServer, creating with default value");
-                        mydlpKey.SetValue("SeapServer", 0, RegistryValueKind.String);
+                        mydlpKey.SetValue("SeapServer", "127.0.0.1", RegistryValueKind.String);
                         seapServer = "127.0.0.1";
                     }
 
@@ -284,7 +283,7 @@ namespace MyDLP.EndPoint.Core
                     catch (Exception e)
                     {
                         Logger.GetInstance().Info("Unable to get registry value  HKLM/Software/MyDLP:ManagementServer, creating with default value");
-                        mydlpKey.SetValue("ManagementServer", 0, RegistryValueKind.String);
+                        mydlpKey.SetValue("ManagementServer", "127.0.0.1", RegistryValueKind.String);
                         archiveInbound = false; 
                     }
 
