@@ -137,6 +137,7 @@ namespace MyDLP.EndPoint.Core
                 string content = reader.ReadToEnd();
                 reader.Close();
 
+                //TODO : this should be modified to catch single "^management_server_address$" like lines
                 content = Regex.Replace(content, @"^[#\t\ ]*management_server_address\s+[0-9\.]+(\r)?$", "management_server_address\t" + managementServer + @"$1", RegexOptions.Multiline);
                 content = Regex.Replace(content, @"^[#\t\ ]*archive_inbound\s+(true|false)[\t\ ]*(\r)?$", "archive_inbound\t" + archiveInbound.ToString().ToLower() + @"$2", RegexOptions.Multiline);
 
@@ -284,7 +285,7 @@ namespace MyDLP.EndPoint.Core
                     {
                         Logger.GetInstance().Info("Unable to get registry value  HKLM/Software/MyDLP:ManagementServer, creating with default value");
                         mydlpKey.SetValue("ManagementServer", "127.0.0.1", RegistryValueKind.String);
-                        archiveInbound = false; 
+                        managementServer = "127.0.0.1"; 
                     }
 
 

@@ -45,7 +45,11 @@ namespace MyDLP.EndPoint.Core
         public void Start()
         {
             ExecuteCommandAsync(pythonStartCmd);
+            
+            // TODO: When SetErlConf fails service is consuming system resources, user
+            // can hardly use system. When this command fails service should exit.
             Configuration.SetErlConf();
+
             if (System.Environment.UserInteractive)
             {
                 ExecuteCommandAsync(erlStartInteractiveCmd);
