@@ -54,7 +54,7 @@ namespace MyDLP.EndPoint.Service
             //notify logger that we are in main service
             Logger.GetInstance().InitializeMainLogger(serviceLogger);
 
-            Logger.GetInstance().Debug("Starting mydlpepwin service");
+            Logger.GetInstance().Info("Starting mydlpepwin service");
 
             if (Configuration.GetRegistryConf() == false)
             {
