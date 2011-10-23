@@ -47,7 +47,7 @@ namespace MyDLP.EndPoint.Core
         static long logLimit;
         static bool archiveInbound;
         static DateTime startTime;
-       
+
         //This is a special case logger should be initialized before configuration class             
 
         public static String GetLogPath()
@@ -94,13 +94,13 @@ namespace MyDLP.EndPoint.Core
                     //Get loglevel
                     try
                     {
-                        logLevel = (Logger.LogLevel) mydlpKey.GetValue("LogLevel");
+                        logLevel = (Logger.LogLevel)mydlpKey.GetValue("LogLevel");
                         if (logLevel > Logger.LogLevel.DEBUG) logLevel = Logger.LogLevel.DEBUG;
                     }
                     catch (Exception e)
-                    {                        
+                    {
                         mydlpKey.SetValue("LogLevel", 1, RegistryValueKind.DWord);
-                        logLevel = Logger.LogLevel.DEBUG;
+                        logLevel = Logger.LogLevel.INFO;
                     }
                 }
             }
@@ -138,7 +138,7 @@ namespace MyDLP.EndPoint.Core
                 reader.Close();
 
                 //TODO : this should be modified to catch single "^management_server_address$" like lines
-                content = Regex.Replace(content, @"^[#\t\ ]*management_server_address\s+[0-9\.]+(\r)?$", "management_server_address\t" + managementServer + @"$1", RegexOptions.Multiline);
+                content = Regex.Replace(content, @"^[#\t\ ]*management_server_address\s+[0-9\.]+[\t\ ]*(\r)?$", "management_server_address\t" + managementServer + @"$1", RegexOptions.Multiline);
                 content = Regex.Replace(content, @"^[#\t\ ]*archive_inbound\s+(true|false)[\t\ ]*(\r)?$", "archive_inbound\t" + archiveInbound.ToString().ToLower() + @"$2", RegexOptions.Multiline);
 
                 StreamWriter writer = new StreamWriter(mydlpConfPath);
@@ -168,11 +168,11 @@ namespace MyDLP.EndPoint.Core
                     System.Threading.Thread.Sleep(3000);
                     dt = File.GetLastWriteTime(path);
                     tryCount++;
-                }                
+                }
                 string text = System.IO.File.ReadAllText(path);
                 erlPid = Int32.Parse(text.Trim());
             }
-            catch 
+            catch
             {
                 erlPid = GetErlPid();
             }
@@ -195,8 +195,8 @@ namespace MyDLP.EndPoint.Core
                 pythonPid = 0;
             }
 
-            Logger.GetInstance().Debug("Configuration.PythonPid = " + Configuration.PythonPid);
-            Logger.GetInstance().Debug("Configuration.ErlPid = " + Configuration.ErlPid);
+            Logger.GetInstance().Info("Configuration.PythonPid = " + Configuration.PythonPid);
+            Logger.GetInstance().Info("Configuration.ErlPid = " + Configuration.ErlPid);
         }
 
         public static bool GetRegistryConf()
@@ -217,14 +217,13 @@ namespace MyDLP.EndPoint.Core
                 seapPort = 9099;
                 mydlpConfPath = Configuration.ErlangPath + "mydlp-ep.conf";
                 logLimit = 10485760; // 10MB
-                return true;
             }
             else
             {
                 //Use normal conf
                 try
                 {
-                    RegistryKey mydlpKey = Registry.LocalMachine.OpenSubKey("Software").OpenSubKey("MyDLP",true);
+                    RegistryKey mydlpKey = Registry.LocalMachine.OpenSubKey("Software").OpenSubKey("MyDLP", true);
 
                     //Get path
                     try
@@ -261,9 +260,18 @@ namespace MyDLP.EndPoint.Core
                     {
                         Logger.GetInstance().Info("Unable to get registry value  HKLM/Software/MyDLP:ArchiveInbound, creating with default value");
                         mydlpKey.SetValue("ArchiveInbound", 0, RegistryValueKind.DWord);
-                        archiveInbound = false;                       
+                        archiveInbound = false;
                     }
-                    
+
+                    /*if ((int)(getRegistryConfSafe(mydlpKey, "ArchiveInbound", 0, RegistryValueKind.DWord)) == 0)
+                    {
+                        archiveInbound = false;
+                    }
+                    else
+                    {
+                        archiveInbound = true;
+                    }*/
+
                     //Get seapServer
                     try
                     {
@@ -285,9 +293,8 @@ namespace MyDLP.EndPoint.Core
                     {
                         Logger.GetInstance().Info("Unable to get registry value  HKLM/Software/MyDLP:ManagementServer, creating with default value");
                         mydlpKey.SetValue("ManagementServer", "127.0.0.1", RegistryValueKind.String);
-                        managementServer = "127.0.0.1"; 
+                        managementServer = "127.0.0.1";
                     }
-
 
                     //Get seapPort
                     try
@@ -298,22 +305,23 @@ namespace MyDLP.EndPoint.Core
                     {
                         Logger.GetInstance().Error("Unable to get registry value  HKLM/Software/MyDLP:SeapPort, creating with default value");
                         mydlpKey.SetValue("SeapPort", 9099, RegistryValueKind.DWord);
-                        seapPort = 9099; 
+                        seapPort = 9099;
                     }
 
                     //Todo LogLimit registry conf
                     logLimit = 10485760; // 10MB
 
-                    Logger.GetInstance().Info("MyDLP Path: " + appPath);
-                    Logger.GetInstance().Info("MyDLP LogLevel: " + logLevel.ToString());
-                    Logger.GetInstance().Info("MyDLP SeapServer: " + seapServer + ":" + seapPort);
-                    Logger.GetInstance().Info("MyDLP ManagementServer: " + managementServer);
-                    Logger.GetInstance().Info("MyDLP ArchiveInbound: " + archiveInbound);
-                    Logger.GetInstance().Info("MyDLP AppPath: " + appPath);
-                    Logger.GetInstance().Info("MyDLP ConfPath: " + mydlpConfPath);
-                    Logger.GetInstance().Info("MyDLP LogLimit: " + logLimit);
-
-                    return true;
+                    //Get logLimit
+                    try
+                    {
+                        logLimit = (int)mydlpKey.GetValue("LogLimit");
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.GetInstance().Error("Unable to get registry value  HKLM/Software/MyDLP:LogLimit, creating with default value");
+                        mydlpKey.SetValue("LogLimit", 10485760, RegistryValueKind.DWord);
+                        logLimit = 10485760;
+                    }
                 }
                 catch (Exception e)
                 {
@@ -322,6 +330,33 @@ namespace MyDLP.EndPoint.Core
                     return false;
                 }
             }
+
+            Logger.GetInstance().Info("MyDLP Path: " + appPath);
+            Logger.GetInstance().Info("MyDLP LogLevel: " + logLevel.ToString());
+            Logger.GetInstance().Info("MyDLP SeapServer: " + seapServer + ":" + seapPort);
+            Logger.GetInstance().Info("MyDLP ManagementServer: " + managementServer);
+            Logger.GetInstance().Info("MyDLP ArchiveInbound: " + archiveInbound);
+            Logger.GetInstance().Info("MyDLP AppPath: " + appPath);
+            Logger.GetInstance().Info("MyDLP ConfPath: " + mydlpConfPath);
+            Logger.GetInstance().Info("MyDLP LogLimit: " + logLimit);
+
+            return true;
+        }
+
+        public static object getRegistryConfSafe(RegistryKey key, String valueName, Object defaultValue, RegistryValueKind kind)
+        {
+            object retVal;
+            try
+            {
+                retVal = key.GetValue(valueName);
+            }
+            catch (Exception e)
+            {
+                Logger.GetInstance().Error("Unable to get registry value: " + key.ToString() + " " + valueName + " creating with default value:" + defaultValue);
+                key.SetValue(valueName, defaultValue, kind);
+                retVal = defaultValue;
+            }
+            return defaultValue;
         }
 
         public static DateTime StartTime
@@ -331,7 +366,7 @@ namespace MyDLP.EndPoint.Core
                 return startTime;
             }
 
-            set 
+            set
             {
                 startTime = value;
             }

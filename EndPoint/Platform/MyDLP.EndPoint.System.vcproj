@@ -265,6 +265,10 @@
 			</File>
 		</Filter>
 		<File
+			RelativePath="..\Service\Program.cs"
+			>
+		</File>
+		<File
 			RelativePath=".\ReadMe.txt"
 			>
 		</File>

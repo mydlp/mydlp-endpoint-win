@@ -37,10 +37,10 @@ namespace MyDLP.EndPoint.Service
 
         protected override void OnStart(string[] args)
         {
-            MainController.SetServiceLogger(myDLPEventLog);        
-            MainController controller = 
+            MainController.SetServiceLogger(myDLPEventLog);
+            MainController controller =
                 MainController.GetInstance();
-                    
+
             controller.Start();
 
             myDLPEventLog.WriteEntry("MyDLP-EP-Win service started");
@@ -62,7 +62,7 @@ namespace MyDLP.EndPoint.Service
             {
                 System.Diagnostics.EventLog.CreateEventSource(
                     myDLPEventLog.Source,
-                    myDLPEventLog.Log 
+                    myDLPEventLog.Log
                     );
             }
         }
