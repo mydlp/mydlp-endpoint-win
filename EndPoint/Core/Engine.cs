@@ -198,7 +198,6 @@ namespace MyDLP.EndPoint.Core
                 Logger.GetInstance().Debug("Starting process:" + command);
                 proc.Start();
                 string result = proc.StandardOutput.ReadToEnd();
-                Console.WriteLine(result);
                 Logger.GetInstance().Debug(result);
             }
             catch (Exception e)

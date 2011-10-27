@@ -33,8 +33,8 @@ namespace MyDLP.EndPoint.Core
         String server = Configuration.SeapServer;
         TcpClient client;
         NetworkStream stream;
-        int readTimeout = 50000;
-        int writeTimeout = 5000;
+        int readTimeout = 1800;
+        int writeTimeout = 1800;
         int responseLength = 512;
 
 

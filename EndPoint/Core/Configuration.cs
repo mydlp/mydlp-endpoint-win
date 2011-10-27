@@ -241,6 +241,7 @@ namespace MyDLP.EndPoint.Core
                 seapPort = 9099;
                 mydlpConfPath = Configuration.ErlangPath + "mydlp-ep.conf";
                 logLimit = 10485760; // 10MB
+                maximumObjectSize = 10485760; // 10MB
             }
             else
             {

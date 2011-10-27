@@ -43,7 +43,7 @@ namespace MyDLPEP
 			CreateThread( NULL, 0,(LPTHREAD_START_ROUTINE) InitializeListener, NULL, 0, &threadId );
 		}
 		catch(char * str){
-			printf("%s", str);
+			MyDLP::EndPoint::Core::Logger::GetInstance()->Error(gcnew String(str));
 		}
 	}
 	
@@ -100,7 +100,7 @@ int InitializeListener(void)
 	hr = FilterConnectCommunicationPort(MYDLPMFPortName, 0, NULL, 0, NULL, &port);
 
 	if (IS_ERROR(hr)) {
-		printf( "ERROR: Connecting to filter port: 0x%08x\n", hr );
+		MyDLP::EndPoint::Core::Logger::GetInstance()->Error( "ERROR: Connecting to filter port: " + hr );
 		return 2;
 	}
 
@@ -146,7 +146,7 @@ int InitializeListener(void)
 	WaitForMultipleObjectsEx(i, threads, TRUE, INFINITE, FALSE);
 
 main_cleanup:
-	printf("MyDLPMF:  All done. Result = 0x%08x\n", hr);
+	MyDLP::EndPoint::Core::Logger::GetInstance()->Debug("MyDLPMF:  All done. Result:" + hr);
 	CloseHandle(port);
 	CloseHandle(completion);
 	return hr;
@@ -155,7 +155,7 @@ main_cleanup:
 //Worker thread stops when MYDLPMF service stops
 DWORD ListenerWorker(__in PMYDLPMF_THREAD_CONTEXT Context)
 	{
-		printf("Start Listener\n");
+		MyDLP::EndPoint::Core::Logger::GetInstance()->Info("Start Listener\n");
 		PMYDLPMF_NOTIFICATION notification;
 		MYDLPMF_REPLY_MESSAGE replyMessage;
 		MYDLPMF_CONF_REPLY_MESSAGE confMessage;
@@ -180,7 +180,7 @@ DWORD ListenerWorker(__in PMYDLPMF_THREAD_CONTEXT Context)
 			if (!result) {
 				hr = HRESULT_FROM_WIN32( GetLastError() );
 				if (hr == HRESULT_FROM_WIN32( ERROR_INVALID_HANDLE )) {
-					printf("invalid handle here\n");
+					MyDLP::EndPoint::Core::Logger::GetInstance()->Error("invalid handle here\n");
 				}
 				break;
 			}
@@ -202,9 +202,13 @@ DWORD ListenerWorker(__in PMYDLPMF_THREAD_CONTEXT Context)
 			} else if (notification->Type == PRECLEANUP) {
 				listener = MyDLPEP::FilterListener::getInstance();
 				listener->HandleFileCleanup(notification->FileName);
-			} else if (notification->Type ==INIT){
+			} else if (notification->Type == INIT){
 				init = 1;
-			}
+			} /*else if (notification->Type == INSTANCEINIT)
+			{
+				MyDLP::EndPoint::Core::Logger::GetInstance()->Error("Instance Init!!!!");
+				MyDLP::EndPoint::Core::Logger::GetInstance()->Error("Device Id:" + gcnew String(notification->FileName));
+			}*/
 
 			if (init == 0)
 			{
@@ -224,12 +228,11 @@ DWORD ListenerWorker(__in PMYDLPMF_THREAD_CONTEXT Context)
 			
 				hr = FilterReplyMessage( Context->Port, (PFILTER_REPLY_HEADER) &replyMessage, sizeof( replyMessage ) );
 
-				if (SUCCEEDED(hr)) {
+				if (SUCCEEDED(hr) || hr == ERROR_FLT_NO_WAITER_FOR_REPLY ) {
 					//printf("Replied message\n");
 
 				} else {
-
-					printf("MyDLPMF: Error replying message. Error = 0x%X\n", hr);
+					MyDLP::EndPoint::Core::Logger::GetInstance()->Error("MyDLPMF: Error replying message. Error:" + (gcnew Int64(hr)));
 					break;
 				}
 
@@ -256,7 +259,7 @@ DWORD ListenerWorker(__in PMYDLPMF_THREAD_CONTEXT Context)
 
 				} else {
 
-					printf("MyDLPMF: Error replying message. Error = 0x%X\n", hr);
+					MyDLP::EndPoint::Core::Logger::GetInstance()->Error("MyDLPMF: Error replying message.Error:" + (gcnew Int64(hr)));
 					break;
 				}
 
@@ -274,9 +277,9 @@ DWORD ListenerWorker(__in PMYDLPMF_THREAD_CONTEXT Context)
 		if (!SUCCEEDED(hr))	{
 			if (hr == HRESULT_FROM_WIN32( ERROR_INVALID_HANDLE))
 			{
-				printf("MyDLPMF: Port is disconnected, probably due to scanner filter unloading.\n");
+				MyDLP::EndPoint::Core::Logger::GetInstance()->Error("MyDLPMF: Port is disconnected, probably due to scanner filter unloading.\n");
 			} else {
-				printf("MyDLPMF: Unknown error occured. Error = 0x%X\n", hr);
+				MyDLP::EndPoint::Core::Logger::GetInstance()->Error("MyDLPMF: Unknown error occured. Error:" + gcnew Int64(hr));
 			}
 		}
 

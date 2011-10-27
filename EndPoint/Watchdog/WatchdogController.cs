@@ -69,6 +69,8 @@ namespace MyDLP.EndPoint.Service
             watchdogTimer = new Timer(watchdogTimerPeriod);
             watchdogTimer.Elapsed += new ElapsedEventHandler(OnTimedWatchdogEvent);
             watchdogTimer.Enabled = true;
+
+            Logger.GetInstance().Info("mydlpepwatchdog service started");
         }
 
         private void OnTimedWatchdogEvent(object source, ElapsedEventArgs e)
@@ -120,6 +122,7 @@ namespace MyDLP.EndPoint.Service
 
                 if (error)
                 {
+
                     Logger.GetInstance().Info("Starting service");
                     if(service.Status.Equals(ServiceControllerStatus.Running))
                     {
