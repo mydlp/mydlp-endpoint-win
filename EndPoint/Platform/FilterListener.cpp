@@ -254,7 +254,7 @@ DWORD ListenerWorker(__in PMYDLPMF_THREAD_CONTEXT Context)
 				confMessage.Reply.Pid = MyDLP::EndPoint::Core::Configuration::ErlPid;
 				hr = FilterReplyMessage( Context->Port, (PFILTER_REPLY_HEADER) &confMessage, sizeof( confMessage ) );
 
-				if (SUCCEEDED(hr)) {
+				if (SUCCEEDED(hr) || hr == ERROR_FLT_NO_WAITER_FOR_REPLY ){
 					//printf("Replied message\n");
 
 				} else {
@@ -270,7 +270,6 @@ DWORD ListenerWorker(__in PMYDLPMF_THREAD_CONTEXT Context)
 				{
 					break;
 				}
-				
 			}
 		}
 

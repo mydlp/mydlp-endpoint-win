@@ -95,7 +95,8 @@ namespace MyDLPEP
 			key->Close();
 
 			key = Registry::LocalMachine->CreateSubKey( "System\\CurrentControlSet\\Services\\MyDLPMF\\Instances\\MyDLPMF Instance" );
-			key->SetValue("Altitude", "268100", RegistryValueKind::String);
+			//key->SetValue("Altitude", "268100", RegistryValueKind::String);
+			key->SetValue("Altitude", "87799", RegistryValueKind::String);
 			Int32 flagVal = 0;
 			key->SetValue("Flags", flagVal, RegistryValueKind::DWord);
 			key->Close();
