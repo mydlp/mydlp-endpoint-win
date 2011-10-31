@@ -53,6 +53,7 @@ namespace MyDLP.EndPoint.Core
             catch (Exception e)
             {
                 Logger.GetInstance().Error("Exception" + e.Message + e.StackTrace);
+
                 return Action.ALLOW;
             }
             return action;

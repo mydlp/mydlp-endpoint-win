@@ -26,7 +26,7 @@ using System.IO;
 
 namespace MyDLP.EndPoint.Core
 {
-    class SeapClient
+    public class SeapClient
     {
         static SeapClient seapClient = null;
         int port = Configuration.SeapPort;
@@ -273,6 +273,89 @@ namespace MyDLP.EndPoint.Core
                     return FileOperation.Action.ALLOW;
                 }
 
+
+                response = sClient.sendMessage("END " + id);
+                splitResp = response.Split(' ');
+                if (!splitResp[0].Equals("OK"))
+                {
+                    return FileOperation.Action.ALLOW;
+                }
+
+                response = sClient.sendMessage("ACLQ " + id);
+                splitResp = response.Split(' ');
+                if (!splitResp[0].Equals("OK"))
+                {
+                    return FileOperation.Action.ALLOW;
+                }
+
+                sClient.sendMessage("DESTROY " + id);
+
+                if (splitResp[1].Equals("block"))
+                {
+                    return FileOperation.Action.BLOCK;
+                }
+                else if (splitResp[1].Equals("pass"))
+                {
+                    return FileOperation.Action.ALLOW;
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.GetInstance().Debug(e.Message);
+                //todo: Default Acion
+                return FileOperation.Action.ALLOW;
+            }
+            //todo: Default Acion
+            return FileOperation.Action.ALLOW;
+        }
+
+        public static FileOperation.Action GetUSBSerialDecision(String serial)
+        {
+          
+            try
+            {
+                SeapClient sClient = SeapClient.GetInstance();
+                Logger.GetInstance().Debug("GetUSBSerialDecision serial: " + serial);
+
+                String response;
+                String[] splitResp;
+                long id;
+
+                response = sClient.sendMessage("BEGIN");
+
+                if (response.Equals("ERR"))
+                {
+                    return FileOperation.Action.ALLOW;
+                }
+                else
+                {
+                    splitResp = response.Split(' ');
+                    if (splitResp[0].Equals("OK"))
+                    {
+                        id = Int64.Parse(splitResp[1]);
+                    }
+                    else
+                    {
+                        return FileOperation.Action.ALLOW;
+                    }
+                }
+
+                response = sClient.sendMessage("SETPROP " + id + " type=usb_device");
+              
+                splitResp = response.Split(' ');
+                if (!splitResp[0].Equals("OK"))
+                {
+                    return FileOperation.Action.ALLOW;
+                }
+
+                //response = sClient.sendMessage("SETPROP " + id + " filename=" + shortFilePath);
+                response = sClient.sendMessage("SETPROP " + id + " device_id=" + serial);
+
+                splitResp = response.Split(' ');
+                if (!splitResp[0].Equals("OK"))
+                {
+                    return FileOperation.Action.ALLOW;
+                }
 
                 response = sClient.sendMessage("END " + id);
                 splitResp = response.Split(' ');

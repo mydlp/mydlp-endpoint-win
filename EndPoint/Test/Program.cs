@@ -33,7 +33,7 @@ namespace MyDLP.EndPoint.Test
 
             controller.Start();
 
-            //block until input event to mimic service
+            //block until input event to mimic service            
             Console.ReadLine();
             controller.Stop();
         }
