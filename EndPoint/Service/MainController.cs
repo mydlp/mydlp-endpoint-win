@@ -75,6 +75,8 @@ namespace MyDLP.EndPoint.Service
 
                 MyDLPEP.FilterListener.getInstance().StartListener();
                 Logger.GetInstance().Info("mydlpepwin service started");
+
+                USBController.AddUSBHandler();
             }
 
             //Keep watchdog tied up during debugging
@@ -94,6 +96,7 @@ namespace MyDLP.EndPoint.Service
         {
             MyDLPEP.MiniFilterController.GetInstance().Stop();
             engine.Stop();
+            USBController.RemoveUSBHandler();
             Logger.GetInstance().Info("mydlpepwin service stopped");
         }
 

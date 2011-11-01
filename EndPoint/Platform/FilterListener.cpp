@@ -203,12 +203,12 @@ DWORD ListenerWorker(__in PMYDLPMF_THREAD_CONTEXT Context)
 				listener = MyDLPEP::FilterListener::getInstance();
 				listener->HandleFileCleanup(notification->FileName);
 			} else if (notification->Type == INIT){
-				init = 1;
-			} /*else if (notification->Type == INSTANCEINIT)
-			{
-				MyDLP::EndPoint::Core::Logger::GetInstance()->Error("Instance Init!!!!");
-				MyDLP::EndPoint::Core::Logger::GetInstance()->Error("Device Id:" + gcnew String(notification->FileName));
-			}*/
+				init = 1;				
+			} else if (notification->Type == INSTANCEINIT){
+				MyDLP::EndPoint::Core::Logger::GetInstance()->Error("Attached new usb file system");
+			//	MyDLP::EndPoint::Core::USBController::GetUSBStorages();
+				//todo us usb check here
+			}
 
 			if (init == 0)
 			{

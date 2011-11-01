@@ -323,11 +323,12 @@ MyDLPMFInstanceSetup (
 	IO_STATUS_BLOCK IoStatus;
 	PDEVICE_OBJECT DeviceObject;
 	UNICODE_STRING volumeDosName = {0}; 
+	int replyLength;
 
 	UNREFERENCED_PARAMETER( FltObjects );
     UNREFERENCED_PARAMETER( Flags );
-    UNREFERENCED_PARAMETER( VolumeFilesystemType );
-    
+    UNREFERENCED_PARAMETER( VolumeFilesystemType );    
+
     PAGED_CODE();
 
     ASSERT( FltObjects->Filter == MyDLPMFData.Filter );

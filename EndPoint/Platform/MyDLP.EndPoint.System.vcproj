@@ -223,6 +223,10 @@
 					/>
 				</FileConfiguration>
 			</File>
+			<File
+				RelativePath=".\USBRemover.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -247,6 +251,10 @@
 			</File>
 			<File
 				RelativePath=".\Stdafx.h"
+				>
+			</File>
+			<File
+				RelativePath=".\USBRemover.h"
 				>
 			</File>
 		</Filter>
