@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Management;
 using System.Threading;
+using System.Security.Cryptography;
 
 namespace MyDLP.EndPoint.Core
 {
@@ -54,7 +55,17 @@ namespace MyDLP.EndPoint.Core
                                         // CM_Request_Device_Eject_NoUi((int)USBData.DevInst, IntPtr.Zero, null, 0, 0); 
                                         //Console.WriteLine(volume["DeviceID"].ToString());
 
-                                        if (Core.SeapClient.GetUSBSerialDecision(uniqID) != FileOperation.Action.ALLOW)
+                                        MD5 md5 = MD5.Create();
+                                        byte[] md5buf = md5.ComputeHash(ASCIIEncoding.ASCII.GetBytes(uniqID));
+
+                                        String idHash = "";
+
+                                        foreach (byte b in md5buf)
+                                        {
+                                            idHash += b.ToString("X");
+                                        }
+
+                                        if (Core.SeapClient.GetUSBSerialDecision(idHash) != FileOperation.Action.ALLOW)
                                             MyDLPEP.USBRemover.remove((sbyte) volume["DeviceID"].ToString().ToCharArray()[0]);
                                     }
                                 }

@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Windows.Forms;
 using System.Management;
+using System.Security.Cryptography;
 
 namespace MyDLP.EndPoint.Tools.DeviceConsole
 {
@@ -32,8 +33,18 @@ namespace MyDLP.EndPoint.Tools.DeviceConsole
                     //MessageBox.Show("USB storage uniq id: " + uniqID);
                     try
                     {
+                        MD5 md5 = MD5.Create();
+                        byte [] md5buf = md5.ComputeHash(ASCIIEncoding.ASCII.GetBytes(uniqID));
+
+                        String idHash="";
+
+                        foreach (byte b in md5buf)
+                        {
+                            idHash += b.ToString("X");
+                        }
+
                         DataRow row = USBTable.NewRow();
-                        row.SetField(Id, uniqID);
+                        row.SetField(Id, idHash);
                         row.SetField(Model, currentObject["Model"]);
                         USBTable.Rows.Add(row);
                         row.AcceptChanges();
@@ -44,7 +55,6 @@ namespace MyDLP.EndPoint.Tools.DeviceConsole
                     }
                 }
             }
-
         }
 
         private void dataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)
@@ -72,7 +82,16 @@ namespace MyDLP.EndPoint.Tools.DeviceConsole
                     //MessageBox.Show("USB storage uniq id: " + uniqID);
                     try
                     {
-                        USBTable.Rows.Remove(USBTable.Rows.Find(uniqID));
+                        MD5 md5 = MD5.Create();
+                        byte[] md5buf = md5.ComputeHash(ASCIIEncoding.ASCII.GetBytes(uniqID));
+
+                        String idHash = "";
+
+                        foreach (byte b in md5buf)
+                        {
+                            idHash += b.ToString("X");
+                        }
+                        USBTable.Rows.Remove(USBTable.Rows.Find(idHash));
                         USBTable.AcceptChanges();
                     }
                     catch (Exception ex)

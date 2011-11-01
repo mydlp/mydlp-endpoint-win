@@ -47,6 +47,7 @@ namespace MyDLP.EndPoint.Core
         static long logLimit;
         static long maximumObjectSize;
         static bool archiveInbound;
+        static bool usbSerialAccessControl;
         static DateTime startTime;
 
         //This is a special case logger should be initialized before configuration class             
@@ -238,6 +239,7 @@ namespace MyDLP.EndPoint.Core
                 seapServer = "127.0.0.1";
                 managementServer = "127.0.0.1";
                 archiveInbound = false;
+                usbSerialAccessControl = false;
                 seapPort = 9099;
                 mydlpConfPath = Configuration.ErlangPath + "mydlp-ep.conf";
                 logLimit = 10485760; // 10MB
@@ -279,6 +281,16 @@ namespace MyDLP.EndPoint.Core
                         archiveInbound = true;
                     }
 
+                    //Get archiveInbound
+                    if ((int)(getRegistryConfSafe(mydlpKey, "USBSerialAccessControl", 0, RegistryValueKind.DWord)) == 0)
+                    {
+                        usbSerialAccessControl = false;
+                    }
+                    else
+                    {
+                        usbSerialAccessControl = true;
+                    }
+
                     //Get seapServer
                     seapServer = (String)getRegistryConfSafe(mydlpKey, "SeapServer", "127.0.0.1", RegistryValueKind.String);
 
@@ -307,6 +319,7 @@ namespace MyDLP.EndPoint.Core
             Logger.GetInstance().Info("MyDLP SeapServer: " + seapServer + ":" + seapPort);
             Logger.GetInstance().Info("MyDLP ManagementServer: " + managementServer);
             Logger.GetInstance().Info("MyDLP ArchiveInbound: " + archiveInbound);
+            Logger.GetInstance().Info("MyDLP USBSerialAccessControl: " + usbSerialAccessControl);
             Logger.GetInstance().Info("MyDLP AppPath: " + appPath);
             Logger.GetInstance().Info("MyDLP ConfPath: " + mydlpConfPath);
             Logger.GetInstance().Info("MyDLP LogLimit: " + logLimit);
@@ -395,6 +408,14 @@ namespace MyDLP.EndPoint.Core
             get
             {
                 return archiveInbound;
+            }
+        }
+
+        public static bool UsbSerialAccessControl
+        {
+            get
+            {
+                return usbSerialAccessControl;
             }
         }
 

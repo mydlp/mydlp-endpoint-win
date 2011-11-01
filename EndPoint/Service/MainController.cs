@@ -76,7 +76,11 @@ namespace MyDLP.EndPoint.Service
                 MyDLPEP.FilterListener.getInstance().StartListener();
                 Logger.GetInstance().Info("mydlpepwin service started");
 
-                USBController.AddUSBHandler();
+                if (Configuration.UsbSerialAccessControl)
+                {
+                    USBController.AddUSBHandler();
+                    USBController.GetUSBStorages();
+                }
             }
 
             //Keep watchdog tied up during debugging
@@ -89,14 +93,16 @@ namespace MyDLP.EndPoint.Service
                 watchdogTimer.Elapsed += new ElapsedEventHandler(OnTimedWatchdogEvent);
                 watchdogTimer.Enabled = true;
             }
-
         }
 
         public void Stop()
         {
             MyDLPEP.MiniFilterController.GetInstance().Stop();
             engine.Stop();
-            USBController.RemoveUSBHandler();
+            if (Configuration.UsbSerialAccessControl)
+            {
+                USBController.RemoveUSBHandler(); 
+            }            
             Logger.GetInstance().Info("mydlpepwin service stopped");
         }
 
