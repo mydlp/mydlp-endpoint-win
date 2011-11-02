@@ -9,14 +9,15 @@ namespace MyDLP.EndPoint.Tools.DeviceConsole
 {
     class HTTPUtil
     {
-           public static void notifyServer(String serverAddress, String idHash, String uniqId, String comment) {
+           public static void notifyServer(String serverAddress, String idHash, String uniqId, String comment,String model) {
                // encode form data
                StringBuilder postString = new StringBuilder();
                bool first = true;
                KeyValuePair<String, String>[] formValues = {
                    new KeyValuePair<string,string>("deviceid", idHash),
                    new KeyValuePair<string,string>("uniqid", uniqId),
-                   new KeyValuePair<string,string>("comment", comment)
+                   new KeyValuePair<string,string>("comment", comment),
+                   new KeyValuePair<string,string>("model", model)
                };
                String url = "http://" + serverAddress + "/addtousbwl.php"; 
                foreach (KeyValuePair<String, String> pair in formValues)

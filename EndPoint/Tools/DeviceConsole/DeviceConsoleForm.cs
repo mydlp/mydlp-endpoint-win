@@ -187,8 +187,10 @@ namespace MyDLP.EndPoint.Tools.DeviceConsole
             try
             {
                 foreach (DataRow row in USBTable.Rows)
-                {         
+                {
+                    //MessageBox.Show(managementServer + row[Hash].ToString() + " " +row[Id].ToString() + " " + row[Comment].ToString() + " "+ row[Model].ToString());
                     HTTPUtil.notifyServer(managementServer, row[Hash].ToString(), row[Id].ToString(), row[Comment].ToString(), row[Model].ToString());
+
                 }
             }
             catch (Exception ex)
