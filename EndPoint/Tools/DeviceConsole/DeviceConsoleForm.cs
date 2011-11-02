@@ -8,6 +8,7 @@ using System.Text;
 using System.Windows.Forms;
 using System.Management;
 using System.Security.Cryptography;
+using Microsoft.Win32;
 
 namespace MyDLP.EndPoint.Tools.DeviceConsole
 {
@@ -20,16 +21,17 @@ namespace MyDLP.EndPoint.Tools.DeviceConsole
 
         private void button1_Click(object sender, EventArgs e)
         {
+            
             ManagementObjectSearcher theSearcher = new ManagementObjectSearcher("SELECT * FROM Win32_DiskDrive WHERE InterfaceType='USB'");
             foreach (ManagementObject currentObject in theSearcher.Get())
             {
                 String id = currentObject["PNPDeviceID"].ToString();
-                //MessageBox.Show("USB storage id: " + id + " " + currentObject["Size"] + " " + currentObject["Model"]);
-
 
                 if (id.StartsWith("USBSTOR"))
                 {
-                    String uniqID = id.Substring(id.LastIndexOf("\\") + 1);
+                    int start = id.LastIndexOf("\\") + 1;
+                    int lentgh = id.LastIndexOf("&") - start;
+                    String uniqID = id.Substring(start, lentgh);
                     //MessageBox.Show("USB storage uniq id: " + uniqID);
                     try
                     {
@@ -44,8 +46,10 @@ namespace MyDLP.EndPoint.Tools.DeviceConsole
                         }
 
                         DataRow row = USBTable.NewRow();
-                        row.SetField(Id, idHash);
+                        row.SetField(Hash, idHash);
+                        row.SetField(Id, uniqID);
                         row.SetField(Model, currentObject["Model"]);
+                        row.SetField(Comment, "");
                         USBTable.Rows.Add(row);
                         row.AcceptChanges();
                     }
@@ -56,17 +60,7 @@ namespace MyDLP.EndPoint.Tools.DeviceConsole
                 }
             }
         }
-
-        private void dataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)
-        {
-
-        }
-
-        private void dataGridView1_CellContentClick_1(object sender, DataGridViewCellEventArgs e)
-        {
-
-        }
-
+        
         private void button1_Click_1(object sender, EventArgs e)
         {
             ManagementObjectSearcher theSearcher = new ManagementObjectSearcher("SELECT * FROM Win32_DiskDrive WHERE InterfaceType='USB'");
@@ -78,7 +72,9 @@ namespace MyDLP.EndPoint.Tools.DeviceConsole
 
                 if (id.StartsWith("USBSTOR"))
                 {
-                    String uniqID = id.Substring(id.LastIndexOf("\\") + 1);
+                    int start = id.LastIndexOf("\\") + 1;
+                    int lentgh = id.LastIndexOf("&") - start;
+                    String uniqID = id.Substring(start, lentgh);
                     //MessageBox.Show("USB storage uniq id: " + uniqID);
                     try
                     {
@@ -105,10 +101,12 @@ namespace MyDLP.EndPoint.Tools.DeviceConsole
         private void saveToolStripMenuItem_Click(object sender, EventArgs e)
         {
             SaveFileDialog saveFileDialog = new SaveFileDialog();
+            saveFileDialog.FileName = "devices";
+            saveFileDialog.Filter = "Xml (*.xml)|*.xml";
             saveFileDialog.ShowDialog();
             try
             {
-                if (saveFileDialog.FileName != "")
+                if (saveFileDialog.FileName != "")                    
                     dataSet.WriteXml(saveFileDialog.FileName);
             }
             catch (Exception ex)
@@ -120,6 +118,7 @@ namespace MyDLP.EndPoint.Tools.DeviceConsole
         private void openToolStripMenuItem_Click(object sender, EventArgs e)
         {
             OpenFileDialog openFileDialog = new OpenFileDialog();
+            openFileDialog.Filter = "Xml (*.xml)|*.xml";
             openFileDialog.ShowDialog();
             try
             {
@@ -155,7 +154,78 @@ namespace MyDLP.EndPoint.Tools.DeviceConsole
             {
 
             }
-
         }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            String managementServer = "";
+            RegistryKey mydlpKey;
+            try
+            {
+                mydlpKey = Registry.LocalMachine.OpenSubKey("Software", true).CreateSubKey("MyDLP");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Registry mydlp key error: " + ex.Message);
+                return;
+            }
+
+            try
+            {
+                managementServer = (String)mydlpKey.GetValue("ManagementServer", "");
+                if (managementServer == "" || managementServer!= managementServerTextBox.Text)
+                {
+                    mydlpKey.SetValue("ManagementServer", managementServerTextBox.Text);
+                    managementServer = managementServerTextBox.Text;
+                }
+            }
+            catch
+            {
+                MessageBox.Show("Registry management server error");          
+            }
+           
+            try
+            {
+                foreach (DataRow row in USBTable.Rows)
+                {         
+                    HTTPUtil.notifyServer(managementServer, row[Hash].ToString(), row[Id].ToString(), row[Comment].ToString(), row[Model].ToString());
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }       
+        }
+
+        private void DeviceConsoleForm_Load(object sender, EventArgs e)
+        {
+            String managementServer;
+            RegistryKey mydlpKey;
+            try
+            {
+                mydlpKey = Registry.LocalMachine.OpenSubKey("Software",true).CreateSubKey("MyDLP");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Registry mydlp key error: " + ex.Message);
+                return;
+            }
+
+            try
+            {
+                managementServer = (String) mydlpKey.GetValue("ManagementServer","");
+                if (managementServer == "")
+                {
+                    mydlpKey.SetValue("ManagementServer", "10.0.0.1");
+                    managementServer = "10.0.0.1";
+                }
+            }
+            catch
+            {
+                MessageBox.Show("Registry management server error");
+                return;
+            }
+            managementServerTextBox.Text = managementServer;
+        }        
     }
 }
