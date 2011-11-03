@@ -1,3 +1,10 @@
+#pragma once
+#include <windows.h>
+#include <strsafe.h>
+#include <Setupapi.h>
+#include <stdio.h>
+
+using namespace System;
 
 namespace MyDLPEP
 {
@@ -6,6 +13,7 @@ namespace MyDLPEP
 	{
 	
 	public:
-		static int remove(char);		
+		static int remove(String^);	
+		static wchar_t * ManagedStringToUnicodeString(String ^);
 	};
 }

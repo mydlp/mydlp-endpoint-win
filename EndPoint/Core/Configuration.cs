@@ -239,7 +239,7 @@ namespace MyDLP.EndPoint.Core
                 seapServer = "127.0.0.1";
                 managementServer = "127.0.0.1";
                 archiveInbound = false;
-                usbSerialAccessControl = false;
+                usbSerialAccessControl = true;
                 seapPort = 9099;
                 mydlpConfPath = Configuration.ErlangPath + "mydlp-ep.conf";
                 logLimit = 10485760; // 10MB

@@ -21,11 +21,13 @@ namespace MyDLP.EndPoint.Tools.DeviceConsole
 
         private void button1_Click(object sender, EventArgs e)
         {
-            
+
             ManagementObjectSearcher theSearcher = new ManagementObjectSearcher("SELECT * FROM Win32_DiskDrive WHERE InterfaceType='USB'");
             foreach (ManagementObject currentObject in theSearcher.Get())
             {
                 String id = currentObject["PNPDeviceID"].ToString();
+                String pid = "";
+                String vid= "";
 
                 if (id.StartsWith("USBSTOR"))
                 {
@@ -33,12 +35,30 @@ namespace MyDLP.EndPoint.Tools.DeviceConsole
                     int lentgh = id.LastIndexOf("&") - start;
                     String uniqID = id.Substring(start, lentgh);
                     //MessageBox.Show("USB storage uniq id: " + uniqID);
+
+                    RegistryKey enumUSBKey = Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Services\USBSTOR\Enum");
+                    int count = (int)enumUSBKey.GetValue("Count");
+
+                    for (int i = 0; i < count; i++)
+                    {
+                        String usbDeviceString = (String)enumUSBKey.GetValue(i.ToString());
+                        if (usbDeviceString.Contains(uniqID)) 
+                        {
+                            int startVid = usbDeviceString.IndexOf("Vid_") + 4;
+                            int endVid = usbDeviceString.IndexOf("&",startVid);
+                            vid = usbDeviceString.Substring(startVid, endVid - startVid);
+                            int endPid = usbDeviceString.IndexOf("\\", endVid + 1);
+                            pid = usbDeviceString.Substring(endVid + 5, endPid - endVid - 5);
+
+                        }
+                    }
+
                     try
                     {
                         MD5 md5 = MD5.Create();
-                        byte [] md5buf = md5.ComputeHash(ASCIIEncoding.ASCII.GetBytes(uniqID));
+                        byte[] md5buf = md5.ComputeHash(ASCIIEncoding.ASCII.GetBytes(uniqID));
 
-                        String idHash="";
+                        String idHash = "";
 
                         foreach (byte b in md5buf)
                         {
@@ -48,6 +68,8 @@ namespace MyDLP.EndPoint.Tools.DeviceConsole
                         DataRow row = USBTable.NewRow();
                         row.SetField(Hash, idHash);
                         row.SetField(Id, uniqID);
+                        row.SetField(Pid, pid);
+                        row.SetField(Vid, vid);
                         row.SetField(Model, currentObject["Model"]);
                         row.SetField(Comment, "");
                         USBTable.Rows.Add(row);
@@ -60,7 +82,7 @@ namespace MyDLP.EndPoint.Tools.DeviceConsole
                 }
             }
         }
-        
+
         private void button1_Click_1(object sender, EventArgs e)
         {
             ManagementObjectSearcher theSearcher = new ManagementObjectSearcher("SELECT * FROM Win32_DiskDrive WHERE InterfaceType='USB'");
@@ -106,7 +128,7 @@ namespace MyDLP.EndPoint.Tools.DeviceConsole
             saveFileDialog.ShowDialog();
             try
             {
-                if (saveFileDialog.FileName != "")                    
+                if (saveFileDialog.FileName != "")
                     dataSet.WriteXml(saveFileDialog.FileName);
             }
             catch (Exception ex)
@@ -140,7 +162,7 @@ namespace MyDLP.EndPoint.Tools.DeviceConsole
                 if (saveFileDialog.FileName != "")
                 {
                     System.IO.StreamWriter file = new System.IO.StreamWriter(saveFileDialog.FileName);
-                   
+
                     foreach (DataRow row in USBTable.Rows)
                     {
                         file.WriteLine(row[Id].ToString());
@@ -148,7 +170,7 @@ namespace MyDLP.EndPoint.Tools.DeviceConsole
 
                     file.Close();
                 }
-                
+
             }
             catch (Exception ex)
             {
@@ -173,7 +195,7 @@ namespace MyDLP.EndPoint.Tools.DeviceConsole
             try
             {
                 managementServer = (String)mydlpKey.GetValue("ManagementServer", "");
-                if (managementServer == "" || managementServer!= managementServerTextBox.Text)
+                if (managementServer == "" || managementServer != managementServerTextBox.Text)
                 {
                     mydlpKey.SetValue("ManagementServer", managementServerTextBox.Text);
                     managementServer = managementServerTextBox.Text;
@@ -181,9 +203,9 @@ namespace MyDLP.EndPoint.Tools.DeviceConsole
             }
             catch
             {
-                MessageBox.Show("Registry management server error");          
+                MessageBox.Show("Registry management server error");
             }
-           
+
             try
             {
                 foreach (DataRow row in USBTable.Rows)
@@ -196,7 +218,7 @@ namespace MyDLP.EndPoint.Tools.DeviceConsole
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message);
-            }       
+            }
         }
 
         private void DeviceConsoleForm_Load(object sender, EventArgs e)
@@ -205,7 +227,7 @@ namespace MyDLP.EndPoint.Tools.DeviceConsole
             RegistryKey mydlpKey;
             try
             {
-                mydlpKey = Registry.LocalMachine.OpenSubKey("Software",true).CreateSubKey("MyDLP");
+                mydlpKey = Registry.LocalMachine.OpenSubKey("Software", true).CreateSubKey("MyDLP");
             }
             catch (Exception ex)
             {
@@ -215,7 +237,7 @@ namespace MyDLP.EndPoint.Tools.DeviceConsole
 
             try
             {
-                managementServer = (String) mydlpKey.GetValue("ManagementServer","");
+                managementServer = (String)mydlpKey.GetValue("ManagementServer", "");
                 if (managementServer == "")
                 {
                     mydlpKey.SetValue("ManagementServer", "10.0.0.1");
@@ -228,6 +250,6 @@ namespace MyDLP.EndPoint.Tools.DeviceConsole
                 return;
             }
             managementServerTextBox.Text = managementServer;
-        }        
+        }
     }
 }

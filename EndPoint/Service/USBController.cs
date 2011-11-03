@@ -4,6 +4,7 @@ using System.Text;
 using System.Management;
 using System.Threading;
 using System.Security.Cryptography;
+using Microsoft.Win32;
 
 namespace MyDLP.EndPoint.Core
 {
@@ -70,7 +71,39 @@ namespace MyDLP.EndPoint.Core
                                             }
 
                                             if (Core.SeapClient.GetUSBSerialDecision(idHash) != FileOperation.Action.ALLOW)
-                                                MyDLPEP.USBRemover.remove((sbyte)volume["DeviceID"].ToString().ToCharArray()[0]);
+                                            {
+                                                Logger.GetInstance().Debug("Removing usb device :" + uniqID);
+                                                RegistryKey enumUSBKey = Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Services\USBSTOR\Enum");
+                                                int count = (int)enumUSBKey.GetValue("Count");
+                                                string vid ="";
+                                                string pid ="";
+                                                for (int i = 0; i < count; i++)
+                                                {
+                                                    String usbDeviceString = (String)enumUSBKey.GetValue(i.ToString());
+                                                    if (usbDeviceString.Contains(uniqID))
+                                                    {
+                                                        int startVid = usbDeviceString.IndexOf("Vid_") + 4;
+                                                        int endVid = usbDeviceString.IndexOf("&", startVid);
+                                                        vid = usbDeviceString.Substring(startVid, endVid - startVid);
+                                                        int endPid = usbDeviceString.IndexOf("\\", endVid + 1);
+                                                        pid = usbDeviceString.Substring(endVid + 5, endPid - endVid - 5);                                                        
+                                                    }
+                                                }
+                                                RegistryKey enumUSBDevKey = Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Enum\USB");
+                                                String devNode = "";
+                                                foreach (String devNodeKeyString in enumUSBDevKey.GetSubKeyNames())
+                                                {
+                                                    foreach (String devNodeInstanceString in enumUSBDevKey.OpenSubKey(devNodeKeyString).GetSubKeyNames())
+                                                    {
+                                                        if (devNodeInstanceString == uniqID)
+                                                        {
+                                                            devNode = devNodeKeyString; 
+                                                        }
+                                                    }
+                                                }
+
+                                                MyDLPEP.USBRemover.remove("USB\\" + devNode + "\\" + uniqID);
+                                            }
                                         }
                                     }
                                 }
