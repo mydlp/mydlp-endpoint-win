@@ -59,6 +59,7 @@
             this.dataGridViewTextBoxColumn3 = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.modelDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.hashDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.DevNode = new System.Data.DataColumn();
             ((System.ComponentModel.ISupportInitialize)(this.dataSet)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.USBTable)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.UsBTableBindingSource)).BeginInit();
@@ -91,7 +92,8 @@
             this.Hash,
             this.Comment,
             this.Pid,
-            this.Vid});
+            this.Vid,
+            this.DevNode});
             this.USBTable.Constraints.AddRange(new System.Data.Constraint[] {
             new System.Data.UniqueConstraint("Constraint1", new string[] {
                         "Hash"}, true)});
@@ -322,6 +324,11 @@
             this.hashDataGridViewTextBoxColumn.Visible = false;
             this.hashDataGridViewTextBoxColumn.Width = 200;
             // 
+            // DevNode
+            // 
+            this.DevNode.Caption = "DevNode";
+            this.DevNode.ColumnName = "DevNode";
+            // 
             // DeviceConsoleForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -384,6 +391,7 @@
         private System.Windows.Forms.DataGridViewTextBoxColumn dataGridViewTextBoxColumn3;
         private System.Windows.Forms.DataGridViewTextBoxColumn modelDataGridViewTextBoxColumn;
         private System.Windows.Forms.DataGridViewTextBoxColumn hashDataGridViewTextBoxColumn;
+        private System.Data.DataColumn DevNode;
 
 
     }

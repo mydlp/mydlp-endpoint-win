@@ -53,6 +53,20 @@ namespace MyDLP.EndPoint.Tools.DeviceConsole
                         }
                     }
 
+                    RegistryKey enumUSBDevKey = Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Enum\USB");
+                    String devNode = "";
+                    foreach (String devNodeKeyString in enumUSBDevKey.GetSubKeyNames())
+                    {
+                        foreach (String devNodeInstanceString in enumUSBDevKey.OpenSubKey(devNodeKeyString).GetSubKeyNames())
+                        {
+                            if (devNodeInstanceString == uniqID)
+                            {
+                                devNode = devNodeKeyString;
+                                break;
+                            }
+                        }
+                    }
+
                     try
                     {
                         MD5 md5 = MD5.Create();
@@ -72,6 +86,7 @@ namespace MyDLP.EndPoint.Tools.DeviceConsole
                         row.SetField(Vid, vid);
                         row.SetField(Model, currentObject["Model"]);
                         row.SetField(Comment, "");
+                        row.SetField(DevNode, devNode);
                         USBTable.Rows.Add(row);
                         row.AcceptChanges();
                     }

@@ -68,6 +68,7 @@ namespace MyDLP.EndPoint.Core
                                         if (devNodeInstanceString == uniqID)
                                         {
                                             devNode = devNodeKeyString;
+                                            break;
                                         }
                                     }
                                 }
