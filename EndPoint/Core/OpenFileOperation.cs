@@ -40,7 +40,12 @@ namespace MyDLP.EndPoint.Core
         }
 
         public FileOperation.Action DecideAction()
-        {           
+        {
+            if (USBController.IsUsbBlocked())
+            {
+                //return Action.BLOCK;
+            }
+
             if (action != FileOperation.Action.UNDEFINED)
             {
                 //Logger.GetInstance().Debug(action + " " + path);

@@ -205,7 +205,11 @@ DWORD ListenerWorker(__in PMYDLPMF_THREAD_CONTEXT Context)
 			} else if (notification->Type == INIT){
 				init = 1;				
 			} else if (notification->Type == INSTANCEINIT){
-				MyDLP::EndPoint::Core::Logger::GetInstance()->Error("Attached new usb file system");
+				//MyDLP::EndPoint::Core::Logger::GetInstance()->Debug("Attached new usb file system");
+				if(MyDLP::EndPoint::Core::USBController::IsUsbBlocked())
+				{
+					action = FileOperation::Action::BLOCK;
+				}
 			//	MyDLP::EndPoint::Core::USBController::GetUSBStorages();
 				//todo us usb check here
 			}

@@ -9,7 +9,7 @@ namespace MyDLP.EndPoint.Tools.DeviceConsole
 {
     class HTTPUtil
     {
-           public static void notifyServer(String serverAddress, String idHash, String uniqId, String comment,String model) {
+           public static int notifyServer(String serverAddress, String idHash, String uniqId, String comment,String model) {
                // encode form data
                StringBuilder postString = new StringBuilder();
                bool first = true;
@@ -46,6 +46,7 @@ namespace MyDLP.EndPoint.Tools.DeviceConsole
                request.Method = "POST";
                request.ContentType = "application/x-www-form-urlencoded";
                request.ContentLength = postBytes.Length;
+               request.Timeout = 10000;
 
                // add post data to request
                Stream postStream = request.GetRequestStream();
@@ -54,7 +55,7 @@ namespace MyDLP.EndPoint.Tools.DeviceConsole
 
                try
                {
-                   request.GetResponse();
+                   return (int) ((HttpWebResponse)request.GetResponse()).StatusCode;
                }
                catch
                {

@@ -36,9 +36,18 @@
             this.Id = new System.Data.DataColumn();
             this.Model = new System.Data.DataColumn();
             this.Hash = new System.Data.DataColumn();
-            this.Comment = new System.Data.DataColumn();
+            this.Size = new System.Data.DataColumn();
+            this.Pid = new System.Data.DataColumn();
+            this.Vid = new System.Data.DataColumn();
+            this.DevNode = new System.Data.DataColumn();
             this.UsBTableBindingSource = new System.Windows.Forms.BindingSource(this.components);
             this.dataGridView1 = new System.Windows.Forms.DataGridView();
+            this.idDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.dataGridViewTextBoxColumn1 = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.dataGridViewTextBoxColumn2 = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.dataGridViewTextBoxColumn3 = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.modelDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.hashDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.button1 = new System.Windows.Forms.Button();
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.toolStripStatusLabel1 = new System.Windows.Forms.ToolStripStatusLabel();
@@ -46,20 +55,10 @@
             this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.openToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.saveToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.exportToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.panel1 = new System.Windows.Forms.Panel();
             this.button2 = new System.Windows.Forms.Button();
             this.managementServerTextBox = new System.Windows.Forms.TextBox();
             this.managementServerLabel = new System.Windows.Forms.Label();
-            this.Pid = new System.Data.DataColumn();
-            this.Vid = new System.Data.DataColumn();
-            this.idDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.dataGridViewTextBoxColumn1 = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.dataGridViewTextBoxColumn2 = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.dataGridViewTextBoxColumn3 = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.modelDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.hashDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.DevNode = new System.Data.DataColumn();
             ((System.ComponentModel.ISupportInitialize)(this.dataSet)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.USBTable)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.UsBTableBindingSource)).BeginInit();
@@ -90,7 +89,7 @@
             this.Id,
             this.Model,
             this.Hash,
-            this.Comment,
+            this.Size,
             this.Pid,
             this.Vid,
             this.DevNode});
@@ -117,9 +116,25 @@
             this.Hash.AllowDBNull = false;
             this.Hash.ColumnName = "Hash";
             // 
-            // Comment
+            // Size
             // 
-            this.Comment.ColumnName = "Comment";
+            this.Size.Caption = "Size";
+            this.Size.ColumnName = "Size";
+            // 
+            // Pid
+            // 
+            this.Pid.Caption = "Pid";
+            this.Pid.ColumnName = "Pid";
+            // 
+            // Vid
+            // 
+            this.Vid.Caption = "Vid";
+            this.Vid.ColumnName = "Vid";
+            // 
+            // DevNode
+            // 
+            this.DevNode.Caption = "DevNode";
+            this.DevNode.ColumnName = "DevNode";
             // 
             // UsBTableBindingSource
             // 
@@ -156,6 +171,63 @@
             this.dataGridView1.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
             this.dataGridView1.Size = new System.Drawing.Size(629, 341);
             this.dataGridView1.TabIndex = 1;
+            // 
+            // idDataGridViewTextBoxColumn
+            // 
+            this.idDataGridViewTextBoxColumn.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.AllCells;
+            this.idDataGridViewTextBoxColumn.DataPropertyName = "Id";
+            this.idDataGridViewTextBoxColumn.HeaderText = "Id";
+            this.idDataGridViewTextBoxColumn.MinimumWidth = 100;
+            this.idDataGridViewTextBoxColumn.Name = "idDataGridViewTextBoxColumn";
+            this.idDataGridViewTextBoxColumn.ReadOnly = true;
+            // 
+            // dataGridViewTextBoxColumn1
+            // 
+            this.dataGridViewTextBoxColumn1.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.AllCells;
+            this.dataGridViewTextBoxColumn1.DataPropertyName = "Pid";
+            this.dataGridViewTextBoxColumn1.HeaderText = "Pid";
+            this.dataGridViewTextBoxColumn1.MinimumWidth = 50;
+            this.dataGridViewTextBoxColumn1.Name = "dataGridViewTextBoxColumn1";
+            this.dataGridViewTextBoxColumn1.ReadOnly = true;
+            this.dataGridViewTextBoxColumn1.Width = 50;
+            // 
+            // dataGridViewTextBoxColumn2
+            // 
+            this.dataGridViewTextBoxColumn2.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.AllCells;
+            this.dataGridViewTextBoxColumn2.DataPropertyName = "Vid";
+            this.dataGridViewTextBoxColumn2.HeaderText = "Vid";
+            this.dataGridViewTextBoxColumn2.MinimumWidth = 50;
+            this.dataGridViewTextBoxColumn2.Name = "dataGridViewTextBoxColumn2";
+            this.dataGridViewTextBoxColumn2.ReadOnly = true;
+            this.dataGridViewTextBoxColumn2.Width = 50;
+            // 
+            // dataGridViewTextBoxColumn3
+            // 
+            this.dataGridViewTextBoxColumn3.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.AllCells;
+            this.dataGridViewTextBoxColumn3.DataPropertyName = "Size";
+            this.dataGridViewTextBoxColumn3.HeaderText = "Size";
+            this.dataGridViewTextBoxColumn3.Name = "dataGridViewTextBoxColumn3";
+            this.dataGridViewTextBoxColumn3.ReadOnly = true;
+            this.dataGridViewTextBoxColumn3.Width = 52;
+            // 
+            // modelDataGridViewTextBoxColumn
+            // 
+            this.modelDataGridViewTextBoxColumn.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
+            this.modelDataGridViewTextBoxColumn.DataPropertyName = "Model";
+            this.modelDataGridViewTextBoxColumn.HeaderText = "Model";
+            this.modelDataGridViewTextBoxColumn.MinimumWidth = 150;
+            this.modelDataGridViewTextBoxColumn.Name = "modelDataGridViewTextBoxColumn";
+            this.modelDataGridViewTextBoxColumn.ReadOnly = true;
+            // 
+            // hashDataGridViewTextBoxColumn
+            // 
+            this.hashDataGridViewTextBoxColumn.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.DisplayedCells;
+            this.hashDataGridViewTextBoxColumn.DataPropertyName = "Hash";
+            this.hashDataGridViewTextBoxColumn.HeaderText = "Hash";
+            this.hashDataGridViewTextBoxColumn.MinimumWidth = 200;
+            this.hashDataGridViewTextBoxColumn.Name = "hashDataGridViewTextBoxColumn";
+            this.hashDataGridViewTextBoxColumn.ReadOnly = true;
+            this.hashDataGridViewTextBoxColumn.Visible = false;
             // 
             // button1
             // 
@@ -199,8 +271,7 @@
             // 
             this.fileToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.openToolStripMenuItem,
-            this.saveToolStripMenuItem,
-            this.exportToolStripMenuItem});
+            this.saveToolStripMenuItem});
             this.fileToolStripMenuItem.Name = "fileToolStripMenuItem";
             this.fileToolStripMenuItem.Size = new System.Drawing.Size(35, 20);
             this.fileToolStripMenuItem.Text = "File";
@@ -208,23 +279,16 @@
             // openToolStripMenuItem
             // 
             this.openToolStripMenuItem.Name = "openToolStripMenuItem";
-            this.openToolStripMenuItem.Size = new System.Drawing.Size(117, 22);
+            this.openToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.openToolStripMenuItem.Text = "Open";
             this.openToolStripMenuItem.Click += new System.EventHandler(this.openToolStripMenuItem_Click);
             // 
             // saveToolStripMenuItem
             // 
             this.saveToolStripMenuItem.Name = "saveToolStripMenuItem";
-            this.saveToolStripMenuItem.Size = new System.Drawing.Size(117, 22);
+            this.saveToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.saveToolStripMenuItem.Text = "Save";
             this.saveToolStripMenuItem.Click += new System.EventHandler(this.saveToolStripMenuItem_Click);
-            // 
-            // exportToolStripMenuItem
-            // 
-            this.exportToolStripMenuItem.Name = "exportToolStripMenuItem";
-            this.exportToolStripMenuItem.Size = new System.Drawing.Size(117, 22);
-            this.exportToolStripMenuItem.Text = "Export";
-            this.exportToolStripMenuItem.Click += new System.EventHandler(this.exportToolStripMenuItem_Click);
             // 
             // panel1
             // 
@@ -260,74 +324,6 @@
             this.managementServerLabel.Size = new System.Drawing.Size(103, 13);
             this.managementServerLabel.TabIndex = 8;
             this.managementServerLabel.Text = "Management Server";
-            // 
-            // Pid
-            // 
-            this.Pid.Caption = "Pid";
-            this.Pid.ColumnName = "Pid";
-            // 
-            // Vid
-            // 
-            this.Vid.Caption = "Vid";
-            this.Vid.ColumnName = "Vid";
-            // 
-            // idDataGridViewTextBoxColumn
-            // 
-            this.idDataGridViewTextBoxColumn.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.AllCells;
-            this.idDataGridViewTextBoxColumn.DataPropertyName = "Id";
-            this.idDataGridViewTextBoxColumn.HeaderText = "Id";
-            this.idDataGridViewTextBoxColumn.MinimumWidth = 100;
-            this.idDataGridViewTextBoxColumn.Name = "idDataGridViewTextBoxColumn";
-            this.idDataGridViewTextBoxColumn.ReadOnly = true;
-            // 
-            // dataGridViewTextBoxColumn1
-            // 
-            this.dataGridViewTextBoxColumn1.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.AllCells;
-            this.dataGridViewTextBoxColumn1.DataPropertyName = "Pid";
-            this.dataGridViewTextBoxColumn1.HeaderText = "Pid";
-            this.dataGridViewTextBoxColumn1.MinimumWidth = 50;
-            this.dataGridViewTextBoxColumn1.Name = "dataGridViewTextBoxColumn1";
-            this.dataGridViewTextBoxColumn1.Width = 50;
-            // 
-            // dataGridViewTextBoxColumn2
-            // 
-            this.dataGridViewTextBoxColumn2.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.AllCells;
-            this.dataGridViewTextBoxColumn2.DataPropertyName = "Vid";
-            this.dataGridViewTextBoxColumn2.HeaderText = "Vid";
-            this.dataGridViewTextBoxColumn2.MinimumWidth = 50;
-            this.dataGridViewTextBoxColumn2.Name = "dataGridViewTextBoxColumn2";
-            this.dataGridViewTextBoxColumn2.Width = 50;
-            // 
-            // dataGridViewTextBoxColumn3
-            // 
-            this.dataGridViewTextBoxColumn3.DataPropertyName = "Comment";
-            this.dataGridViewTextBoxColumn3.HeaderText = "Comment";
-            this.dataGridViewTextBoxColumn3.Name = "dataGridViewTextBoxColumn3";
-            // 
-            // modelDataGridViewTextBoxColumn
-            // 
-            this.modelDataGridViewTextBoxColumn.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
-            this.modelDataGridViewTextBoxColumn.DataPropertyName = "Model";
-            this.modelDataGridViewTextBoxColumn.HeaderText = "Model";
-            this.modelDataGridViewTextBoxColumn.MinimumWidth = 150;
-            this.modelDataGridViewTextBoxColumn.Name = "modelDataGridViewTextBoxColumn";
-            this.modelDataGridViewTextBoxColumn.ReadOnly = true;
-            // 
-            // hashDataGridViewTextBoxColumn
-            // 
-            this.hashDataGridViewTextBoxColumn.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.DisplayedCells;
-            this.hashDataGridViewTextBoxColumn.DataPropertyName = "Hash";
-            this.hashDataGridViewTextBoxColumn.HeaderText = "Hash";
-            this.hashDataGridViewTextBoxColumn.MinimumWidth = 200;
-            this.hashDataGridViewTextBoxColumn.Name = "hashDataGridViewTextBoxColumn";
-            this.hashDataGridViewTextBoxColumn.ReadOnly = true;
-            this.hashDataGridViewTextBoxColumn.Visible = false;
-            this.hashDataGridViewTextBoxColumn.Width = 200;
-            // 
-            // DevNode
-            // 
-            this.DevNode.Caption = "DevNode";
-            this.DevNode.ColumnName = "DevNode";
             // 
             // DeviceConsoleForm
             // 
@@ -377,21 +373,20 @@
         private System.Windows.Forms.ToolStripMenuItem openToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem saveToolStripMenuItem;
         private System.Windows.Forms.Panel panel1;
-        private System.Windows.Forms.ToolStripMenuItem exportToolStripMenuItem;
         private System.Data.DataColumn Hash;
         private System.Windows.Forms.Button button2;
-        private System.Data.DataColumn Comment;
+        private System.Data.DataColumn Size;
         private System.Windows.Forms.TextBox managementServerTextBox;
         private System.Windows.Forms.Label managementServerLabel;
         private System.Data.DataColumn Pid;
         private System.Data.DataColumn Vid;
+        private System.Data.DataColumn DevNode;
         private System.Windows.Forms.DataGridViewTextBoxColumn idDataGridViewTextBoxColumn;
         private System.Windows.Forms.DataGridViewTextBoxColumn dataGridViewTextBoxColumn1;
         private System.Windows.Forms.DataGridViewTextBoxColumn dataGridViewTextBoxColumn2;
         private System.Windows.Forms.DataGridViewTextBoxColumn dataGridViewTextBoxColumn3;
         private System.Windows.Forms.DataGridViewTextBoxColumn modelDataGridViewTextBoxColumn;
         private System.Windows.Forms.DataGridViewTextBoxColumn hashDataGridViewTextBoxColumn;
-        private System.Data.DataColumn DevNode;
 
 
     }

@@ -39,6 +39,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="USBController.cs" />
     <Compile Include="WatchdogConfiguration.cs" />
     <Compile Include="Configuration.cs" />
     <Compile Include="Engine.cs" />

@@ -93,8 +93,8 @@ namespace MyDLP.EndPoint.Service
 
                 if (Configuration.UsbSerialAccessControl)
                 {
-                    USBController.AddUSBHandler();
-                    USBController.GetUSBStorages();
+                    Core.USBController.AddUSBHandler();
+                    Core.USBController.GetUSBStorages();
                 }
             }
 
@@ -116,7 +116,7 @@ namespace MyDLP.EndPoint.Service
             engine.Stop();
             if (Configuration.UsbSerialAccessControl)
             {
-                USBController.RemoveUSBHandler();
+                Core.USBController.RemoveUSBHandler();
             }
             Logger.GetInstance().Info("mydlpepwin service stopped");
         }
