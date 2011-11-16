@@ -223,10 +223,6 @@
 					/>
 				</FileConfiguration>
 			</File>
-			<File
-				RelativePath=".\USBRemover.cpp"
-				>
-			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
