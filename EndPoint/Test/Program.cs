@@ -34,7 +34,17 @@ namespace MyDLP.EndPoint.Test
             controller.Start();
 
             //block until input event to mimic service            
-            Console.ReadLine();
+            string c="";
+            while (c != "e")
+            {
+                c = Console.ReadLine();
+                c = c.Trim();
+                if (c == "a")
+                    Core.USBController.globalUsbLockFlag = false;
+                if (c == "b")
+                    Core.USBController.globalUsbLockFlag = true;
+
+            }
             controller.Stop();
         }
     }

@@ -35,10 +35,19 @@
             this.USBTable = new System.Data.DataTable();
             this.Id = new System.Data.DataColumn();
             this.Model = new System.Data.DataColumn();
+            this.Hash = new System.Data.DataColumn();
+            this.Size = new System.Data.DataColumn();
+            this.Pid = new System.Data.DataColumn();
+            this.Vid = new System.Data.DataColumn();
+            this.DevNode = new System.Data.DataColumn();
             this.UsBTableBindingSource = new System.Windows.Forms.BindingSource(this.components);
             this.dataGridView1 = new System.Windows.Forms.DataGridView();
             this.idDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.dataGridViewTextBoxColumn1 = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.dataGridViewTextBoxColumn2 = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.dataGridViewTextBoxColumn3 = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.modelDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.hashDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.button1 = new System.Windows.Forms.Button();
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.toolStripStatusLabel1 = new System.Windows.Forms.ToolStripStatusLabel();
@@ -47,7 +56,9 @@
             this.openToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.saveToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.panel1 = new System.Windows.Forms.Panel();
-            this.exportToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.button2 = new System.Windows.Forms.Button();
+            this.managementServerTextBox = new System.Windows.Forms.TextBox();
+            this.managementServerLabel = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.dataSet)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.USBTable)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.UsBTableBindingSource)).BeginInit();
@@ -58,9 +69,9 @@
             // 
             // attachedDevices
             // 
-            this.attachedDevices.Location = new System.Drawing.Point(12, 127);
+            this.attachedDevices.Location = new System.Drawing.Point(12, 117);
             this.attachedDevices.Name = "attachedDevices";
-            this.attachedDevices.Size = new System.Drawing.Size(159, 97);
+            this.attachedDevices.Size = new System.Drawing.Size(159, 60);
             this.attachedDevices.TabIndex = 0;
             this.attachedDevices.Text = "Get Attached Devices";
             this.attachedDevices.UseVisualStyleBackColor = true;
@@ -76,12 +87,17 @@
             // 
             this.USBTable.Columns.AddRange(new System.Data.DataColumn[] {
             this.Id,
-            this.Model});
+            this.Model,
+            this.Hash,
+            this.Size,
+            this.Pid,
+            this.Vid,
+            this.DevNode});
             this.USBTable.Constraints.AddRange(new System.Data.Constraint[] {
             new System.Data.UniqueConstraint("Constraint1", new string[] {
-                        "Id"}, true)});
+                        "Hash"}, true)});
             this.USBTable.PrimaryKey = new System.Data.DataColumn[] {
-        this.Id};
+        this.Hash};
             this.USBTable.TableName = "USBTable";
             // 
             // Id
@@ -94,6 +110,31 @@
             // 
             this.Model.Caption = "Model";
             this.Model.ColumnName = "Model";
+            // 
+            // Hash
+            // 
+            this.Hash.AllowDBNull = false;
+            this.Hash.ColumnName = "Hash";
+            // 
+            // Size
+            // 
+            this.Size.Caption = "Size";
+            this.Size.ColumnName = "Size";
+            // 
+            // Pid
+            // 
+            this.Pid.Caption = "Pid";
+            this.Pid.ColumnName = "Pid";
+            // 
+            // Vid
+            // 
+            this.Vid.Caption = "Vid";
+            this.Vid.ColumnName = "Vid";
+            // 
+            // DevNode
+            // 
+            this.DevNode.Caption = "DevNode";
+            this.DevNode.ColumnName = "DevNode";
             // 
             // UsBTableBindingSource
             // 
@@ -114,23 +155,60 @@
             this.dataGridView1.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.dataGridView1.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
             this.idDataGridViewTextBoxColumn,
-            this.modelDataGridViewTextBoxColumn});
+            this.dataGridViewTextBoxColumn1,
+            this.dataGridViewTextBoxColumn2,
+            this.dataGridViewTextBoxColumn3,
+            this.modelDataGridViewTextBoxColumn,
+            this.hashDataGridViewTextBoxColumn});
             this.dataGridView1.DataSource = this.UsBTableBindingSource;
             this.dataGridView1.GridColor = System.Drawing.SystemColors.ControlDarkDark;
             this.dataGridView1.Location = new System.Drawing.Point(187, 27);
+            this.dataGridView1.MultiSelect = false;
             this.dataGridView1.Name = "dataGridView1";
-            this.dataGridView1.Size = new System.Drawing.Size(561, 337);
+            this.dataGridView1.RowHeadersVisible = false;
+            this.dataGridView1.RowTemplate.DefaultCellStyle.SelectionBackColor = System.Drawing.Color.White;
+            this.dataGridView1.RowTemplate.DefaultCellStyle.SelectionForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(64)))));
+            this.dataGridView1.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
+            this.dataGridView1.Size = new System.Drawing.Size(629, 341);
             this.dataGridView1.TabIndex = 1;
-            this.dataGridView1.CellContentClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.dataGridView1_CellContentClick_1);
             // 
             // idDataGridViewTextBoxColumn
             // 
             this.idDataGridViewTextBoxColumn.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.AllCells;
             this.idDataGridViewTextBoxColumn.DataPropertyName = "Id";
             this.idDataGridViewTextBoxColumn.HeaderText = "Id";
-            this.idDataGridViewTextBoxColumn.MinimumWidth = 250;
+            this.idDataGridViewTextBoxColumn.MinimumWidth = 100;
             this.idDataGridViewTextBoxColumn.Name = "idDataGridViewTextBoxColumn";
-            this.idDataGridViewTextBoxColumn.Width = 250;
+            this.idDataGridViewTextBoxColumn.ReadOnly = true;
+            // 
+            // dataGridViewTextBoxColumn1
+            // 
+            this.dataGridViewTextBoxColumn1.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.AllCells;
+            this.dataGridViewTextBoxColumn1.DataPropertyName = "Pid";
+            this.dataGridViewTextBoxColumn1.HeaderText = "Pid";
+            this.dataGridViewTextBoxColumn1.MinimumWidth = 50;
+            this.dataGridViewTextBoxColumn1.Name = "dataGridViewTextBoxColumn1";
+            this.dataGridViewTextBoxColumn1.ReadOnly = true;
+            this.dataGridViewTextBoxColumn1.Width = 50;
+            // 
+            // dataGridViewTextBoxColumn2
+            // 
+            this.dataGridViewTextBoxColumn2.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.AllCells;
+            this.dataGridViewTextBoxColumn2.DataPropertyName = "Vid";
+            this.dataGridViewTextBoxColumn2.HeaderText = "Vid";
+            this.dataGridViewTextBoxColumn2.MinimumWidth = 50;
+            this.dataGridViewTextBoxColumn2.Name = "dataGridViewTextBoxColumn2";
+            this.dataGridViewTextBoxColumn2.ReadOnly = true;
+            this.dataGridViewTextBoxColumn2.Width = 50;
+            // 
+            // dataGridViewTextBoxColumn3
+            // 
+            this.dataGridViewTextBoxColumn3.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.AllCells;
+            this.dataGridViewTextBoxColumn3.DataPropertyName = "Size";
+            this.dataGridViewTextBoxColumn3.HeaderText = "Size";
+            this.dataGridViewTextBoxColumn3.Name = "dataGridViewTextBoxColumn3";
+            this.dataGridViewTextBoxColumn3.ReadOnly = true;
+            this.dataGridViewTextBoxColumn3.Width = 52;
             // 
             // modelDataGridViewTextBoxColumn
             // 
@@ -139,12 +217,23 @@
             this.modelDataGridViewTextBoxColumn.HeaderText = "Model";
             this.modelDataGridViewTextBoxColumn.MinimumWidth = 150;
             this.modelDataGridViewTextBoxColumn.Name = "modelDataGridViewTextBoxColumn";
+            this.modelDataGridViewTextBoxColumn.ReadOnly = true;
+            // 
+            // hashDataGridViewTextBoxColumn
+            // 
+            this.hashDataGridViewTextBoxColumn.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.DisplayedCells;
+            this.hashDataGridViewTextBoxColumn.DataPropertyName = "Hash";
+            this.hashDataGridViewTextBoxColumn.HeaderText = "Hash";
+            this.hashDataGridViewTextBoxColumn.MinimumWidth = 200;
+            this.hashDataGridViewTextBoxColumn.Name = "hashDataGridViewTextBoxColumn";
+            this.hashDataGridViewTextBoxColumn.ReadOnly = true;
+            this.hashDataGridViewTextBoxColumn.Visible = false;
             // 
             // button1
             // 
-            this.button1.Location = new System.Drawing.Point(12, 249);
+            this.button1.Location = new System.Drawing.Point(12, 194);
             this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(159, 97);
+            this.button1.Size = new System.Drawing.Size(159, 54);
             this.button1.TabIndex = 2;
             this.button1.Text = "Remove Attached Devices";
             this.button1.UseVisualStyleBackColor = true;
@@ -154,16 +243,16 @@
             // 
             this.statusStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.toolStripStatusLabel1});
-            this.statusStrip1.Location = new System.Drawing.Point(0, 367);
+            this.statusStrip1.Location = new System.Drawing.Point(0, 371);
             this.statusStrip1.Name = "statusStrip1";
-            this.statusStrip1.Size = new System.Drawing.Size(760, 22);
+            this.statusStrip1.Size = new System.Drawing.Size(828, 22);
             this.statusStrip1.TabIndex = 3;
             // 
             // toolStripStatusLabel1
             // 
             this.toolStripStatusLabel1.BorderStyle = System.Windows.Forms.Border3DStyle.Etched;
             this.toolStripStatusLabel1.Name = "toolStripStatusLabel1";
-            this.toolStripStatusLabel1.Size = new System.Drawing.Size(745, 17);
+            this.toolStripStatusLabel1.Size = new System.Drawing.Size(813, 17);
             this.toolStripStatusLabel1.Spring = true;
             // 
             // menuStrip1
@@ -174,7 +263,7 @@
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
             this.menuStrip1.RenderMode = System.Windows.Forms.ToolStripRenderMode.System;
-            this.menuStrip1.Size = new System.Drawing.Size(760, 24);
+            this.menuStrip1.Size = new System.Drawing.Size(828, 24);
             this.menuStrip1.TabIndex = 4;
             this.menuStrip1.Text = "menuStrip1";
             // 
@@ -182,8 +271,7 @@
             // 
             this.fileToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.openToolStripMenuItem,
-            this.saveToolStripMenuItem,
-            this.exportToolStripMenuItem});
+            this.saveToolStripMenuItem});
             this.fileToolStripMenuItem.Name = "fileToolStripMenuItem";
             this.fileToolStripMenuItem.Size = new System.Drawing.Size(35, 20);
             this.fileToolStripMenuItem.Text = "File";
@@ -211,18 +299,40 @@
             this.panel1.Size = new System.Drawing.Size(159, 75);
             this.panel1.TabIndex = 5;
             // 
-            // exportToolStripMenuItem
+            // button2
             // 
-            this.exportToolStripMenuItem.Name = "exportToolStripMenuItem";
-            this.exportToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
-            this.exportToolStripMenuItem.Text = "Export";
-            this.exportToolStripMenuItem.Click += new System.EventHandler(this.exportToolStripMenuItem_Click);
+            this.button2.Location = new System.Drawing.Point(12, 309);
+            this.button2.Name = "button2";
+            this.button2.Size = new System.Drawing.Size(159, 46);
+            this.button2.TabIndex = 6;
+            this.button2.Text = "Send To Server";
+            this.button2.UseVisualStyleBackColor = true;
+            this.button2.Click += new System.EventHandler(this.button2_Click);
+            // 
+            // managementServerTextBox
+            // 
+            this.managementServerTextBox.Location = new System.Drawing.Point(12, 276);
+            this.managementServerTextBox.Name = "managementServerTextBox";
+            this.managementServerTextBox.Size = new System.Drawing.Size(159, 20);
+            this.managementServerTextBox.TabIndex = 7;
+            // 
+            // managementServerLabel
+            // 
+            this.managementServerLabel.AutoSize = true;
+            this.managementServerLabel.Location = new System.Drawing.Point(35, 260);
+            this.managementServerLabel.Name = "managementServerLabel";
+            this.managementServerLabel.Size = new System.Drawing.Size(103, 13);
+            this.managementServerLabel.TabIndex = 8;
+            this.managementServerLabel.Text = "Management Server";
             // 
             // DeviceConsoleForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(760, 389);
+            this.ClientSize = new System.Drawing.Size(828, 393);
+            this.Controls.Add(this.managementServerLabel);
+            this.Controls.Add(this.managementServerTextBox);
+            this.Controls.Add(this.button2);
             this.Controls.Add(this.panel1);
             this.Controls.Add(this.statusStrip1);
             this.Controls.Add(this.menuStrip1);
@@ -232,6 +342,7 @@
             this.MainMenuStrip = this.menuStrip1;
             this.Name = "DeviceConsoleForm";
             this.Text = "MyDLP Endpoint Device Console";
+            this.Load += new System.EventHandler(this.DeviceConsoleForm_Load);
             ((System.ComponentModel.ISupportInitialize)(this.dataSet)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.USBTable)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.UsBTableBindingSource)).EndInit();
@@ -261,10 +372,21 @@
         private System.Windows.Forms.ToolStripMenuItem fileToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem openToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem saveToolStripMenuItem;
-        private System.Windows.Forms.DataGridViewTextBoxColumn idDataGridViewTextBoxColumn;
-        private System.Windows.Forms.DataGridViewTextBoxColumn modelDataGridViewTextBoxColumn;
         private System.Windows.Forms.Panel panel1;
-        private System.Windows.Forms.ToolStripMenuItem exportToolStripMenuItem;
+        private System.Data.DataColumn Hash;
+        private System.Windows.Forms.Button button2;
+        private System.Data.DataColumn Size;
+        private System.Windows.Forms.TextBox managementServerTextBox;
+        private System.Windows.Forms.Label managementServerLabel;
+        private System.Data.DataColumn Pid;
+        private System.Data.DataColumn Vid;
+        private System.Data.DataColumn DevNode;
+        private System.Windows.Forms.DataGridViewTextBoxColumn idDataGridViewTextBoxColumn;
+        private System.Windows.Forms.DataGridViewTextBoxColumn dataGridViewTextBoxColumn1;
+        private System.Windows.Forms.DataGridViewTextBoxColumn dataGridViewTextBoxColumn2;
+        private System.Windows.Forms.DataGridViewTextBoxColumn dataGridViewTextBoxColumn3;
+        private System.Windows.Forms.DataGridViewTextBoxColumn modelDataGridViewTextBoxColumn;
+        private System.Windows.Forms.DataGridViewTextBoxColumn hashDataGridViewTextBoxColumn;
 
 
     }

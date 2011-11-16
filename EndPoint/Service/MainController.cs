@@ -76,7 +76,26 @@ namespace MyDLP.EndPoint.Service
                 MyDLPEP.FilterListener.getInstance().StartListener();
                 Logger.GetInstance().Info("mydlpepwin service started");
 
-                USBController.AddUSBHandler();
+                bool testSuccess = false;
+                for (int i = 0; i < 10; i++)
+                {
+                    testSuccess = SeapClient.SeapConnectionTest();
+                    if (testSuccess)
+                        break;
+                    Logger.GetInstance().Debug("Seap connection test attempt:" + i);
+                    System.Threading.Thread.Sleep(1000);
+                }
+
+                if (!testSuccess)
+                {
+                    Logger.GetInstance().Error("Seap connection test failed");
+                }
+
+                if (Configuration.UsbSerialAccessControl)
+                {
+                    Core.USBController.AddUSBHandler();
+                    Core.USBController.GetUSBStorages();
+                }
             }
 
             //Keep watchdog tied up during debugging
@@ -89,14 +108,16 @@ namespace MyDLP.EndPoint.Service
                 watchdogTimer.Elapsed += new ElapsedEventHandler(OnTimedWatchdogEvent);
                 watchdogTimer.Enabled = true;
             }
-
         }
 
         public void Stop()
         {
             MyDLPEP.MiniFilterController.GetInstance().Stop();
             engine.Stop();
-            USBController.RemoveUSBHandler();
+            if (Configuration.UsbSerialAccessControl)
+            {
+                Core.USBController.RemoveUSBHandler();
+            }
             Logger.GetInstance().Info("mydlpepwin service stopped");
         }
 

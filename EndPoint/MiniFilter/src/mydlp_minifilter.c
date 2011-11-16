@@ -424,12 +424,17 @@ MyDLPMFPreCreate (
 	POBJECT_NAME_INFORMATION dosNameInfo = NULL;
 	NTSTATUS status = STATUS_SUCCESS;
 	ULONG replyLength;
+	enum ActionType action;
 
 	UNREFERENCED_PARAMETER( FltObjects );
     UNREFERENCED_PARAMETER( CompletionContext );
 
     PAGED_CODE();
 
+
+#ifdef DBG_PRINT
+			//DbgPrint("In precreate");
+#endif
 	if (!initialized){
 
 		// miniNotification Buffer critical section start 
@@ -479,6 +484,37 @@ MyDLPMFPreCreate (
 
         return FLT_PREOP_SUCCESS_NO_CALLBACK;
     }
+
+
+	miniNotification->Type = INSTANCEINIT;
+	replyLength = sizeof( MYDLPMF_REPLY );
+
+	status = FltSendMessage( MyDLPMFData.Filter,
+			&MyDLPMFData.ClientPort,
+			miniNotification,
+			sizeof( MYDLPMF_MINI_NOTIFICATION ),
+			miniNotification,
+			&replyLength,
+			&timeout);
+
+	if (STATUS_TIMEOUT == status) {
+#ifdef DBG_PRINT
+		DbgPrint("Usb block failed");
+#endif
+	}
+
+	action = ((PMYDLPMF_REPLY) miniNotification)->Action;
+
+	if (action == BLOCK)
+	{
+#ifdef DBG_PRINT
+		//	DbgPrint("Precreate block");
+#endif
+		//disables any read write
+		Data->IoStatus.Status = STATUS_ACCESS_DENIED;
+		Data->IoStatus.Information = 0;
+		return FLT_PREOP_COMPLETE;
+	}
 
     return FLT_PREOP_SUCCESS_WITH_CALLBACK;
 }
@@ -606,7 +642,6 @@ MyDLPMFPostCreate (
 
         Data->IoStatus.Status = STATUS_ACCESS_DENIED;
         Data->IoStatus.Information = 0;
-
         returnStatus = FLT_POSTOP_FINISHED_PROCESSING;
 
     } else if (FltObjects->FileObject->WriteAccess) {

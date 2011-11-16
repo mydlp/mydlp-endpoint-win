@@ -116,6 +116,10 @@ namespace MyDLP.EndPoint.Core
 
         public FileOperation.Action DecideAction()
         {
+            if (USBController.IsUsbBlocked())
+            {
+                return Action.BLOCK;
+            }
             if (cached)
             {
                 try

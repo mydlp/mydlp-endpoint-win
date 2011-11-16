@@ -308,7 +308,7 @@ namespace MyDLP.EndPoint.Core
             //todo: Default Acion
             return FileOperation.Action.ALLOW;
         }
-
+        
         public static FileOperation.Action GetUSBSerialDecision(String serial)
         {
           
@@ -391,6 +391,29 @@ namespace MyDLP.EndPoint.Core
             //todo: Default Acion
             return FileOperation.Action.ALLOW;
         }
+
+        public static bool SeapConnectionTest()
+        {
+
+            try
+            {
+                SeapClient sClient = SeapClient.GetInstance();
+                Logger.GetInstance().Debug("Connection test");
+
+                String response;
+                String[] splitResp;
+           
+                response = sClient.sendMessage("BEGIN");
+                                
+            }
+            catch (Exception e)
+            {
+                Logger.GetInstance().Debug(e.Message);
+                return false;
+            }
+            return true;
+        }
+
 
         private SeapClient()
         {
