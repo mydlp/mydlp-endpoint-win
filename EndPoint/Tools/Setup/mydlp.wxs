@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"> 
+  <Product Id="*" Name="MyDLP" Language="1033" Version="0.9.34" Manufacturer="Medra Tech."
+           UpgradeCode="9BA3E701-8F64-46B1-9D2A-8A29B22C0F65">
+    
+    <Package Id='*' Keywords='Installer' Description="MyDLP EndpointInstaller"
+    Comments='comment' Manufacturer='Medra Tech.'
+    InstallerVersion='100' Languages='1033' Compressed='yes' SummaryCodepage='1252' />
+
+    <Media Id='1' Cabinet='media1.cab' EmbedCab='yes' />
+
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramFilesFolder">
+        <Directory Id="INSTALLLOCATION" Name="MyDLP">
+          <Directory Id="LOGSDIR" Name="logs" />
+          <Directory Id="RUNDIR" Name="run" />
+          <Directory Id="SPOOLDIR" Name="spool" />
+          <Directory Id="MNESIADIR" Name="mnesia" />
+          <Directory Id="ENGINEDIR" Name="engine">
+            <Directory Id="PYDIR" Name="py">
+              <Directory Id="MYDLP_PYDIR" Name="mydlp" />
+            </Directory>
+            <Directory Id="ENGINEERLDIR" Name="erl" />
+          </Directory>                    
+        </Directory>        
+      </Directory>
+    </Directory>
+
+    <Feature Id="Complete" Level="1">
+      <!-- TODO: Remove the comments around this ComponentRef element and the Component above in order to add resources to this installer. -->
+      <ComponentGroupRef Id="MainComponent" />
+      <!-- Note: The following ComponentGroupRef is required to pull in generated authoring from project references. -->
+      <ComponentGroupRef Id="cygwin" />
+      <ComponentGroupRef Id="erl5.8.5" />
+      <ComponentGroupRef Id="engine_erl" />
+      <ComponentGroupRef Id="engine_py" />
+      <ComponentGroupRef Id="magic" />
+      <ComponentGroupRef Id="Python26" />
+      <ComponentGroupRef Id="mydlp_py" />
+    </Feature>
+
+    <Upgrade Id="9BA3E701-8F64-46B1-9D2A-8A29B22C0F65">
+      <UpgradeVersion OnlyDetect="no" Property="PREVIOUSFOUND"
+        Maximum="0.9.34" IncludeMaximum="no"/>
+      <UpgradeVersion OnlyDetect="yes" Property="SELFFOUND"
+        Minimum="0.9.34" IncludeMinimum="yes"
+        Maximum="0.9.34" IncludeMaximum="yes" />
+      <UpgradeVersion OnlyDetect="yes" Property="NEWERFOUND"
+        Minimum="0.9.34" IncludeMinimum="no" />
+    </Upgrade>
+
+    <InstallExecuteSequence>
+      <Custom Action='NoDowngrade' After='FindRelatedProducts'>NEWERFOUND</Custom>
+      <Custom Action='AlreadyUpdated' After='FindRelatedProducts'>SELFFOUND</Custom>
+      <RemoveExistingProducts After="InstallInitialize" />
+      
+    </InstallExecuteSequence>
+    <CustomAction Id='NoDowngrade' Error='A later version of [ProductName] is already installed.' />
+    <CustomAction Id='AlreadyUpdated' Error='Foobar 1.0 has already been updated to 1.0.1 or newer.' />
+    <Property Id="ALLUSERS" Value="1" />
+    <Property Id="REBOOT" Value="ReallySuppress" />
+
+    <ComponentGroup Id ="MainComponent">
+      <Component Id="MyDLP.EndPoint.Platform.dll" Directory="INSTALLLOCATION" Guid="*">
+        <File Id="MyDLP.EndPoint.Platform.dll" Name="MyDLP.EndPoint.Platform.dll" KeyPath="yes" Vital="yes" DiskId="1" Source="..\..\Service\bin\Release\MyDLP.EndPoint.Platform.dll" />
+      </Component>
+
+      <Component Id="MyDLP.EndPoint.Service.exe" Directory="INSTALLLOCATION" Guid="*">
+        <File Id="MyDLP.EndPoint.Service.exe" Name="MyDLP.EndPoint.Service.exe" KeyPath="yes" Vital="yes" DiskId="1" Source="..\..\Service\bin\Release\MyDLP.EndPoint.Service.exe" />
+        <ServiceControl Id="MyDLP.EndPoint.Service.exe" Name="mydlpepwin" Start="install" Stop="uninstall" Remove="uninstall" Wait="no" />
+        <ServiceInstall Id="MyDLP.EndPoint.Service.exe" Name="mydlpepwin" DisplayName="MyDLP EP Win" Type="ownProcess" Start="auto" ErrorControl="normal" Description="MyDLP Windows Endpoint" />
+        <CreateFolder Directory="LOGSDIR" />
+        <CreateFolder Directory="RUNDIR" />
+        <CreateFolder Directory="SPOOLDIR" />
+        <CreateFolder Directory="MNESIADIR" />
+      </Component>
+
+      <Component Id="MyDLP.EndPoint.Watchdog.exe" Directory="INSTALLLOCATION" Guid="*">
+        <File Id="MyDLP.EndPoint.Watchdog.exe" Name="MyDLP.EndPoint.Watchdog.exe" KeyPath="yes" Vital="yes" DiskId="1" Source="..\..\Watchdog\bin\Release\MyDLP.EndPoint.Watchdog.exe" />
+        <ServiceControl Id="MyDLP.EndPoint.Watchdog.exe" Name="mydlpepwatchdog" Stop="uninstall" Remove="uninstall" Wait="no" />
+        <ServiceInstall Id="MyDLP.EndPoint.Watchdog.exe" Name="mydlpepwatchdog" DisplayName="MyDLP EP Watchdog" Type="ownProcess" Start="demand" ErrorControl="normal" Description="MyDLP EP Watchdog" />
+        <CreateFolder Directory="LOGSDIR" />
+        <CreateFolder Directory="RUNDIR" />
+        <CreateFolder Directory="SPOOLDIR" />
+        <CreateFolder Directory="MNESIADIR" />
+      </Component>
+      
+      <Component Id="MyDLP.EndPoint.Core.dll" Directory="INSTALLLOCATION" Guid="*">
+        <File Id="MyDLP.EndPoint.Core.dll" Name="MyDLP.EndPoint.Core.dll" KeyPath="yes" Vital="yes" DiskId="1" Source="..\..\Service\bin\Release\MyDLP.EndPoint.Core.dll" />
+      </Component>
+
+      <Component Id="MyDLPMF.pdb" Directory="INSTALLLOCATION" Guid="*">
+        <File Id="MyDLPMF.pdb" Name="MyDLPMF.pdb" Vital="no" DiskId="1" Source="..\..\MiniFilter\src\objchk_wxp_x86\i386\MyDLPMF.pdb" />
+      </Component>
+
+      <Component Id="vc90.pdb" Directory="INSTALLLOCATION" Guid="*">
+        <File Id="vc90.pdb" Name="vc90.pdb" KeyPath="yes" Vital="no" DiskId="1" Source="..\..\MiniFilter\src\objchk_wxp_x86\i386\vc90.pdb" />
+      </Component>
+
+      <Component Id="MyDLPMF.sys" Directory="INSTALLLOCATION" Guid="*">
+        <File Id="MyDLPMF.sys" Name="MyDLPMF.sys" KeyPath="yes" Vital="yes" DiskId="1" Source="..\..\MiniFilter\src\objchk_wxp_x86\i386\MyDLPMF.sys" />
+      </Component>
+
+      <Component Id="MyDLPMiniFilter.inf" Directory="INSTALLLOCATION" Guid="*">
+        <File Id="MyDLPMiniFilter.inf" Name="MyDLPMiniFilter.inf" Vital="no" DiskId="1" Source="..\..\MiniFilter\src\objchk_wxp_x86\i386\MyDLPMiniFilter.inf" />
+      </Component>
+
+      <Component Id="mydlp.conf" Directory="INSTALLLOCATION" Guid="*">
+        <File Id="mydlp.conf" Name="mydlp.conf" Vital="yes" KeyPath="yes" DiskId="1" Source="..\..\Engine\mydlp\src\mydlp\mydlp-ep.conf" />
+      </Component>
+
+      <Component Id="AppPath" Directory="INSTALLLOCATION" Guid="*">
+        <RegistryValue Id="AppPath" Root="HKLM" Key="Software\MyDLP" Name="AppPath" Value="[INSTALLLOCATION]" Type="string" KeyPath="yes" />
+      </Component>
+    </ComponentGroup>        
+  </Product> 
+</Wix>
+

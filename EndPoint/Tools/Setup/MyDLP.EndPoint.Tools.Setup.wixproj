@@ -1,0 +1,61 @@
+﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
+    <ProductVersion>3.5</ProductVersion>
+    <ProjectGuid>{a72a6390-d25f-4a0a-afbb-ba3053bad0ae}</ProjectGuid>
+    <SchemaVersion>2.0</SchemaVersion>
+    <OutputName>mydlp</OutputName>
+    <OutputType>Package</OutputType>
+    <WixTargetsPath Condition=" '$(WixTargetsPath)' == '' AND '$(MSBuildExtensionsPath32)' != '' ">$(MSBuildExtensionsPath32)\Microsoft\WiX\v3.x\Wix.targets</WixTargetsPath>
+    <WixTargetsPath Condition=" '$(WixTargetsPath)' == '' ">$(MSBuildExtensionsPath)\Microsoft\WiX\v3.x\Wix.targets</WixTargetsPath>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
+    <OutputPath>bin\$(Configuration)\</OutputPath>
+    <IntermediateOutputPath>obj\$(Configuration)\</IntermediateOutputPath>
+    <DefineConstants>Debug</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
+    <OutputPath>bin\$(Configuration)\</OutputPath>
+    <IntermediateOutputPath>obj\$(Configuration)\</IntermediateOutputPath>
+    <VerboseOutput>False</VerboseOutput>
+    <DefineConstants>
+    </DefineConstants>
+    <CompilerAdditionalOptions>-derl5_8_5Path=C:\workspace\mydlp-deployment-env\erl5.8.5
+-dengine_erlPath=C:\workspace\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\mydlp
+-dengine_pyPath=C:\workspace\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\backend\py
+-dmagicPath=C:\workspace\mydlp-deployment-env\magic
+-dPython26Path=C:\workspace\mydlp-deployment-env\Python26
+-dcygwinPath=C:\workspace\mydlp-deployment-env\cygwin
+-dmydlp_pyPath=C:\workspace\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\thrift\gen-py\mydlp</CompilerAdditionalOptions>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="harvested\cygwin.wxs" />
+    <Compile Include="harvested\engine_erl.wxs" />
+    <Compile Include="harvested\engine_py.wxs" />
+    <Compile Include="harvested\erl5.8.5.wxs" />
+    <Compile Include="harvested\mydlp_py.wxs" />
+    <Compile Include="harvested\magic.wxs" />
+    <Compile Include="harvested\Python26.wxs" />
+    <Compile Include="mydlp.wxs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="filter.xsl" />
+    <Content Include="harvest.bat" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="harvested" />
+  </ItemGroup>
+  <Import Project="$(WixTargetsPath)" />
+  <!--
+	To modify your build process, add your task inside one of the targets below and uncomment it.
+	Other similar extension points exist, see Wix.targets.
+	<Target Name="BeforeBuild">
+	</Target>
+	<Target Name="AfterBuild">
+	</Target>
+	-->
+  <PropertyGroup>
+    <PreBuildEvent>$(ProjectDir)harvest.bat</PreBuildEvent>
+  </PropertyGroup>
+</Project>
