@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"> 
-  <Product Id="*" Name="MyDLP" Language="1033" Version="0.9.34" Manufacturer="Medra Tech."
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <?include ProductVersion.wxi?>
+  <Product Id="*" Name="MyDLP" Language="1033" Version="$(var.ProductVersion)" Manufacturer="Medra Tech."
            UpgradeCode="9BA3E701-8F64-46B1-9D2A-8A29B22C0F65">
     
-    <Package Id='*' Keywords='Installer' Description="MyDLP EndpointInstaller"
+    <Package Id='*' Keywords='Installer' Description="MyDLP Endpoint Installer"
     Comments='comment' Manufacturer='Medra Tech.'
     InstallerVersion='100' Languages='1033' Compressed='yes' SummaryCodepage='1252' />
 
@@ -41,12 +42,12 @@
 
     <Upgrade Id="9BA3E701-8F64-46B1-9D2A-8A29B22C0F65">
       <UpgradeVersion OnlyDetect="no" Property="PREVIOUSFOUND"
-        Maximum="0.9.34" IncludeMaximum="no"/>
+        Maximum="$(var.ProductVersion)" IncludeMaximum="no"/>
       <UpgradeVersion OnlyDetect="yes" Property="SELFFOUND"
-        Minimum="0.9.34" IncludeMinimum="yes"
-        Maximum="0.9.34" IncludeMaximum="yes" />
+        Minimum="$(var.ProductVersion)" IncludeMinimum="yes"
+        Maximum="$(var.ProductVersion)" IncludeMaximum="yes" />
       <UpgradeVersion OnlyDetect="yes" Property="NEWERFOUND"
-        Minimum="0.9.34" IncludeMinimum="no" />
+        Minimum="$(var.ProductVersion)" IncludeMinimum="no" />
     </Upgrade>
 
     <InstallExecuteSequence>
@@ -56,7 +57,7 @@
       
     </InstallExecuteSequence>
     <CustomAction Id='NoDowngrade' Error='A later version of [ProductName] is already installed.' />
-    <CustomAction Id='AlreadyUpdated' Error='Foobar 1.0 has already been updated to 1.0.1 or newer.' />
+    <CustomAction Id='AlreadyUpdated' Error='This version of [ProductName] is already installed.' />
     <Property Id="ALLUSERS" Value="1" />
     <Property Id="REBOOT" Value="ReallySuppress" />
 

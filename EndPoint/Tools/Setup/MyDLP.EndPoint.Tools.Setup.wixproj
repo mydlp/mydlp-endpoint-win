@@ -14,6 +14,13 @@
     <OutputPath>bin\$(Configuration)\</OutputPath>
     <IntermediateOutputPath>obj\$(Configuration)\</IntermediateOutputPath>
     <DefineConstants>Debug</DefineConstants>
+    <CompilerAdditionalOptions>-derl5_8_5Path=C:\workspace\mydlp-deployment-env\erl5.8.5
+-dengine_erlPath=C:\workspace\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\mydlp
+-dengine_pyPath=C:\workspace\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\backend\py
+-dmagicPath=C:\workspace\mydlp-deployment-env\magic
+-dPython26Path=C:\workspace\mydlp-deployment-env\Python26
+-dcygwinPath=C:\workspace\mydlp-deployment-env\cygwin
+-dmydlp_pyPath=C:\workspace\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\thrift\gen-py\mydlp</CompilerAdditionalOptions>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
     <OutputPath>bin\$(Configuration)\</OutputPath>
@@ -42,6 +49,9 @@
   <ItemGroup>
     <Content Include="filter.xsl" />
     <Content Include="harvest.bat" />
+    <Content Include="increment.js" />
+    <Content Include="moveversion.js" />
+    <Content Include="ProductVersion.wxi" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="harvested" />
@@ -56,6 +66,7 @@
 	</Target>
 	-->
   <PropertyGroup>
-    <PreBuildEvent>$(ProjectDir)harvest.bat</PreBuildEvent>
+    <PreBuildEvent>$(ProjectDir)increment.js  $(ConfigurationName)  $(ProjectDir) &amp; $(ProjectDir)harvest.bat</PreBuildEvent>
+    <PostBuildEvent>$(ProjectDir)moveversion.js  $(ConfigurationName) $(ProjectDir)</PostBuildEvent>
   </PropertyGroup>
 </Project>
