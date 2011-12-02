@@ -14,13 +14,13 @@
     <OutputPath>bin\$(Configuration)\</OutputPath>
     <IntermediateOutputPath>obj\$(Configuration)\</IntermediateOutputPath>
     <DefineConstants>Debug</DefineConstants>
-    <CompilerAdditionalOptions>-derl5_8_5Path=C:\workspace\mydlp-deployment-env\erl5.8.5
--dengine_erlPath=C:\workspace\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\mydlp
--dengine_pyPath=C:\workspace\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\backend\py
--dmagicPath=C:\workspace\mydlp-deployment-env\magic
--dPython26Path=C:\workspace\mydlp-deployment-env\Python26
--dcygwinPath=C:\workspace\mydlp-deployment-env\cygwin
--dmydlp_pyPath=C:\workspace\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\thrift\gen-py\mydlp</CompilerAdditionalOptions>
+    <CompilerAdditionalOptions>-derl5_8_5Path=$(SolutionDir)..\..\mydlp-deployment-env\erl5.8.5
+-dengine_erlPath=$(SolutionDir)..\..\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\mydlp
+-dengine_pyPath=$(SolutionDir)..\..\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\backend\py
+-dmagicPath=$(SolutionDir)..\..\mydlp-deployment-env\magic
+-dPython26Path=$(SolutionDir)..\..\mydlp-deployment-env\Python26
+-dcygwinPath=$(SolutionDir)..\..\mydlp-deployment-env\cygwin
+-dmydlp_pyPath=$(SolutionDir)..\..\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\thrift\gen-py\mydlp</CompilerAdditionalOptions>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
     <OutputPath>bin\$(Configuration)\</OutputPath>
@@ -28,13 +28,13 @@
     <VerboseOutput>False</VerboseOutput>
     <DefineConstants>
     </DefineConstants>
-    <CompilerAdditionalOptions>-derl5_8_5Path=C:\workspace\mydlp-deployment-env\erl5.8.5
--dengine_erlPath=C:\workspace\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\mydlp
--dengine_pyPath=C:\workspace\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\backend\py
--dmagicPath=C:\workspace\mydlp-deployment-env\magic
--dPython26Path=C:\workspace\mydlp-deployment-env\Python26
--dcygwinPath=C:\workspace\mydlp-deployment-env\cygwin
--dmydlp_pyPath=C:\workspace\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\thrift\gen-py\mydlp</CompilerAdditionalOptions>
+    <CompilerAdditionalOptions>-derl5_8_5Path=$(SolutionDir)..\..\mydlp-deployment-env\erl5.8.5
+-dengine_erlPath=$(SolutionDir)..\..\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\mydlp
+-dengine_pyPath=$(SolutionDir)..\..\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\backend\py
+-dmagicPath=$(SolutionDir)..\..\mydlp-deployment-env\magic
+-dPython26Path=$(SolutionDir)..\..\mydlp-deployment-env\Python26
+-dcygwinPath=$(SolutionDir)..\..\mydlp-deployment-env\cygwin
+-dmydlp_pyPath=$(SolutionDir)..\..\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\thrift\gen-py\mydlp</CompilerAdditionalOptions>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="harvested\cygwin.wxs" />
