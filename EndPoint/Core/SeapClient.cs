@@ -87,6 +87,14 @@ namespace MyDLP.EndPoint.Core
                     return FileOperation.Action.ALLOW;
                 }
 
+                response = sClient.sendMessage("SETPROP " + id +
+                    " user=" + Configuration.GetLoggedOnUser());
+                splitResp = response.Split(' ');
+                if (!splitResp[0].Equals("OK"))
+                {
+                    return FileOperation.Action.ALLOW;
+                }
+
                 response = sClient.sendMessage("PUSHFILE " + id + " " + qpEncode(tempFilePath));
 
                 splitResp = response.Split(' ');
@@ -167,6 +175,15 @@ namespace MyDLP.EndPoint.Core
                 {
                     return FileOperation.Action.ALLOW;
                 }
+
+                response = sClient.sendMessage("SETPROP " + id +
+                    " user=" + Configuration.GetLoggedOnUser());
+                splitResp = response.Split(' ');
+                if (!splitResp[0].Equals("OK"))
+                {
+                    return FileOperation.Action.ALLOW;
+                }
+
 
                 String cmd = "PUSH " + id + " " + cache.Length;
 
@@ -267,6 +284,14 @@ namespace MyDLP.EndPoint.Core
                 }
 
                 response = sClient.sendMessage("SETPROP " + id + " direction=in");
+                splitResp = response.Split(' ');
+                if (!splitResp[0].Equals("OK"))
+                {
+                    return FileOperation.Action.ALLOW;
+                }
+
+                response = sClient.sendMessage("SETPROP " + id +
+                    " user=" + Configuration.GetLoggedOnUser());
                 splitResp = response.Split(' ');
                 if (!splitResp[0].Equals("OK"))
                 {

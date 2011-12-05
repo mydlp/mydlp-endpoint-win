@@ -25,6 +25,8 @@ using System.IO;
 using Microsoft.Win32;
 using System.Diagnostics;
 using System.ComponentModel;
+using System.Management;
+using System.Timers;
 
 namespace MyDLP.EndPoint.Core
 {
@@ -49,6 +51,8 @@ namespace MyDLP.EndPoint.Core
         static bool archiveInbound;
         static bool usbSerialAccessControl;
         static DateTime startTime;
+        static String userName = "";
+        static Timer userNameTimer;
 
         //This is a special case logger should be initialized before configuration class             
 
@@ -112,6 +116,19 @@ namespace MyDLP.EndPoint.Core
                      + e.Message + " " + e.StackTrace);
                 logLevel = Logger.LogLevel.DEBUG;
             }
+        }
+
+        public static void InitUserNameCacheTimer()
+        {
+            userNameTimer = new Timer(20000);
+            userNameTimer.Elapsed += new ElapsedEventHandler(OnTimeUserNameCacheEvent);
+            userNameTimer.Enabled = true;
+        
+        }
+
+        private static void OnTimeUserNameCacheEvent(object source, ElapsedEventArgs e)
+        {
+            userName = "";
         }
 
         public static int GetErlPid()
@@ -327,6 +344,37 @@ namespace MyDLP.EndPoint.Core
 
             return true;
         }
+
+        public static string GetLoggedOnUser()
+        {
+            if (userName != "")
+                return userName;
+            else
+            {
+
+                String processName = "explorer.exe";
+                string query = "Select * from Win32_Process Where Name = \"" + processName + "\"";
+                ManagementObjectSearcher searcher = new ManagementObjectSearcher(query);
+                ManagementObjectCollection processList = searcher.Get();
+
+                foreach (ManagementObject obj in processList)
+                {
+                    string[] argList = new string[] { string.Empty, string.Empty };
+                    int returnVal = Convert.ToInt32(obj.InvokeMethod("GetOwner", argList));
+                    if (returnVal == 0)
+                    {
+                        // return DOMAIN\user
+                        string owner = argList[1] + "\\" + argList[0];
+                        userName = owner;
+                        return userName;
+                    }
+                }
+
+                userName = "NO OWNER";
+            }
+            return userName;
+        }
+
 
         public static object getRegistryConfSafe(RegistryKey key, String valueName, Object defaultValue, RegistryValueKind kind)
         {
