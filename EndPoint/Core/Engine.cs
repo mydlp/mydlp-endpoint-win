@@ -168,7 +168,9 @@ namespace MyDLP.EndPoint.Core
 
                     if (procStartInfo.EnvironmentVariables.ContainsKey("PYTHONPATH"))
                     {
-                        procStartInfo.EnvironmentVariables["PYTHONPATH"] = procStartInfo.EnvironmentVariables["PYTHONPATH"] + ";" + Configuration.PythonPath;
+                        //We want only our python path
+                        //procStartInfo.EnvironmentVariables["PYTHONPATH"] = procStartInfo.EnvironmentVariables["PYTHONPATH"] + ";" + Configuration.PythonPath;
+                        procStartInfo.EnvironmentVariables["PYTHONPATH"] = Configuration.PythonPath;
                     }
                     else
                     {
