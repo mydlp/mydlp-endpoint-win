@@ -3,4 +3,4 @@
 cd C:\hudson\workspace\mydlp-endpoint-win\EndPoint
 
 
-devenv /rebuild "Release|Any CPU" MyDLP.EndPoint.sln
+cmd /c devenv /rebuild "Release|Any CPU" MyDLP.EndPoint.sln
