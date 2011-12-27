@@ -4,7 +4,7 @@ var pdir = WScript.Arguments.Item(1);
 if (config == "Release")
 {   
   var objShell = WScript.CreateObject("WScript.Shell");
-  objShell.run("cmd /C \"git.exe describe --tags > " + pdir + "gitoutput.txt\"", 0, true); 
+  objShell.run("cmd /C \"git.exe describe > " + pdir + "gitoutput.txt\"", 0, true); 
   var fs = new ActiveXObject("Scripting.FileSystemObject");
   var f = fs.GetFile(pdir + "gitoutput.txt");  
   var is = f.OpenAsTextStream(1, 0);    
@@ -36,6 +36,6 @@ if (config == "Release")
   f.WriteLine(productVersion);
   f.Close();
 
-  objShell.run("cmd /C \"git.exe tag " + newVersion + "\"",0 , true);
+  objShell.run("cmd /C \"git.exe tag -a " + newVersion + "\"",0 , true);
   objShell.run("cmd /C \"git.exe push --tags \"", 0, true);
 }
