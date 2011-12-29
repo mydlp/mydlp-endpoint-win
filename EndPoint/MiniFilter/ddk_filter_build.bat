@@ -1,4 +1,4 @@
 set pwd=%CD%
 cmd /K "C:\WinDDK\7600.16385.1\bin\setenv.bat C:\WinDDK\7600.16385.1\ chk x86 WXP no_oacr && cd %pwd% && cd src && build -ceZ && cd .. && copy MyDLPMiniFilter.inf src\objchk_wxp_x86\i386\ && exit" 
 cmd /K "C:\WinDDK\7600.16385.1\bin\setenv.bat C:\WinDDK\7600.16385.1\ chk x64 Win7 no_oacr && cd %pwd% && cd src && build -ceZ && cd .. && copy MyDLPMiniFilter.inf src\objchk_win7_amd64\amd64\ && exit" 
-cmd /K "cd %pwd% &&  C:\WinDDK\7600.16385.1\bin\x86\SignTool.exe sign /v /ac "C:\workspace\mydlp-development-env/GlobalSign Root CA.crt" /n "Medra Teknoloji Egitim Danismanlik Ltd" /t http://timestamp.globalsign.com/scripts/timestamp.dll src\objchk_win7_amd64\amd64\MyDLPMF.sys && exit" 
+cmd /K "cd %pwd% &&  C:\WinDDK\7600.16385.1\bin\x86\SignTool.exe sign /v /ac "..\..\..\mydlp-development-env\GlobalSign Root CA.crt" /n "Medra Teknoloji Egitim Danismanlik Ltd" /t http://timestamp.globalsign.com/scripts/timestamp.dll src\objchk_win7_amd64\amd64\MyDLPMF.sys && exit" 
