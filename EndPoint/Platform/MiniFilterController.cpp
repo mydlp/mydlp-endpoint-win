@@ -48,7 +48,6 @@ namespace MyDLPEP
 	{		
 		Logger::GetInstance()->Debug("Installing mydlpmf service");
 		const LPCTSTR DRV_NAME = _T("MyDLPMF");
-		const LPCTSTR DRV_FILE_NAME = _T("MyDLPMF.sys");
 		RegistryKey ^key = nullptr;
 
 		SC_HANDLE hSCManager = OpenSCManager( NULL, NULL, SC_MANAGER_ALL_ACCESS );

@@ -102,6 +102,10 @@
         <File Id="MyDLPMF.sys" Name="MyDLPMF.sys" KeyPath="yes" Vital="yes" DiskId="1" Source="..\..\MiniFilter\src\objchk_wxp_x86\i386\MyDLPMF.sys" />
       </Component>
 
+      <Component Id="MyDLPMF_64.sys" Directory="INSTALLLOCATION" Guid="*">
+        <File Id="MyDLPMF_64.sys" Name="MyDLPMF_64.sys" KeyPath="yes" Vital="yes" DiskId="1" Source="..\..\MiniFilter\src\objchk_win7_amd64\amd64\MyDLPMF.sys" />
+      </Component>
+
       <Component Id="MyDLPMiniFilter.inf" Directory="INSTALLLOCATION" Guid="*">
         <File Id="MyDLPMiniFilter.inf" Name="MyDLPMiniFilter.inf" Vital="no" DiskId="1" Source="..\..\MiniFilter\src\objchk_wxp_x86\i386\MyDLPMiniFilter.inf" />
       </Component>
