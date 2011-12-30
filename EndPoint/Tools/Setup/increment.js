@@ -35,7 +35,4 @@ if (config == "Release")
   var f = fs.CreateTextFile(pdir + "ProductVersion.wxi");
   f.WriteLine(productVersion);
   f.Close();
-
-  objShell.run("cmd /C \"git.exe tag -a " + newVersion + " -m \"tag for release: " + newVersion + "\"",0 , true);
-  objShell.run("cmd /C \"git.exe push --tags \"", 0, true);
 }
