@@ -18,7 +18,7 @@ if (config == "Release")
     var newVersion = version[1] + "." + version[2] + "." + version[3]; 
     
     var objShell = WScript.CreateObject("WScript.Shell");
-    objShell.run("cmd /C \"C:\\WinDDK\\7600.16385.1\\bin\\x86\\SignTool.exe sign /sha1 cb2645d541b0f15ece224fc26c8d713711069e9e /t http://timestamp.globalsign.com/scripts/timestamp.dll "  + pdir + "bin\\Release\\mydlp.msi\"",1 , true);
+    objShell.run("cmd /C \" cd  " + pdir +  "..\\..\\..\\..\\mydlp-development-env\\pp && processmsi.bat " + pdir + "bin\\Release\\mydlp.msi\"",1 , true);
 
     f = fs.GetFile(pdir + "bin\\Release\\mydlp.msi");    
     f.Move(pdir + "bin\\Release\\mydlp_" + fullversion + ".msi"); 
