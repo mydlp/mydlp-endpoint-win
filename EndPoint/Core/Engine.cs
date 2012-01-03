@@ -39,12 +39,20 @@ namespace MyDLP.EndPoint.Core
             );
 
         String pythonStartCmd = @"cd " + Configuration.PyBackendPath + " && Run.bat";
+        String pythonManualStartCmd = @"cd " + Configuration.PyBackendPath + " && ManualRun.bat";
         String erlStartCmd = @"cd " + Configuration.ErlangPath + " && Run.bat";
         String erlStartInteractiveCmd = @"cd " + Configuration.ErlangPath + " && InteractiveRun.bat";
 
         public void Start()
         {
-            ExecuteCommandAsync(pythonStartCmd);
+            if (System.Environment.UserInteractive)
+            {
+                ExecuteCommandAsync(pythonManualStartCmd);
+            }
+            else
+            {
+                ExecuteCommandAsync(pythonStartCmd);
+            }
             
             // TODO: When SetErlConf fails service is consuming system resources, user
             // can hardly use system. When this command fails service should exit.
@@ -162,7 +170,7 @@ namespace MyDLP.EndPoint.Core
                 procStartInfo.UseShellExecute = false;
                 procStartInfo.CreateNoWindow = true;
 
-                if (command.ToString() == pythonStartCmd)
+                if (command.ToString() == pythonStartCmd || command.ToString() == pythonManualStartCmd)
                 {
                     procStartInfo.EnvironmentVariables["path"] = procStartInfo.EnvironmentVariables["path"] + @";" + Configuration.PythonBinPaths;
 
