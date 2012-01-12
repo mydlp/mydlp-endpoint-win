@@ -11,7 +11,7 @@ Copyright (C) 2011 Huseyin Ozgur Batur <ozgur@medra.com.tr>
 #define __MYDLPMF_H__
 
 
-typedef struct _MYDLPMF_DATA {  
+typedef struct _MYDLPMF_CONF {  
 
     PDRIVER_OBJECT DriverObject;
     PFLT_FILTER Filter;
@@ -19,10 +19,14 @@ typedef struct _MYDLPMF_DATA {
     PEPROCESS UserProcess; 
 	PEPROCESS ErlangProcess;
     PFLT_PORT ClientPort;
+	BOOLEAN ArchiveInbound;
+	BOOLEAN USBSerialAC;
+	LARGE_INTEGER ReadTimeout;
+	LARGE_INTEGER WriteTimeout;
 
-} MYDLPMF_DATA, *PMYDLPMF_DATA;
+} MYDLPMF_CONF, *PMYDLPMF_CONF;
 
-extern MYDLPMF_DATA MyDLPMFData;
+extern MYDLPMF_CONF FilterConf;
 
 typedef struct _MYDLPMF_STREAM_HANDLE_CONTEXT {
 
@@ -96,6 +100,9 @@ MyDLPMFInstanceSetup (
     __in DEVICE_TYPE VolumeDeviceType,
     __in FLT_FILESYSTEM_TYPE VolumeFilesystemType
     );
+
+void
+MyDLPMFConfigurationUpdate ();
 
 int CheckRegularFile(WCHAR *path);
 #endif /* __MYDLPMF_H__ */

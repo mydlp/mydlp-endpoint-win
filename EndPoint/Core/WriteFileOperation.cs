@@ -110,7 +110,7 @@ namespace MyDLP.EndPoint.Core
 
         public FileOperation.Action FinishWrite()
         {
-            FileOperationController.GetInstance().DeleteOperation(this);
+            FileOperationController.GetInstance().DeleteOperation(this);        
             return DecideAction();
         }
 

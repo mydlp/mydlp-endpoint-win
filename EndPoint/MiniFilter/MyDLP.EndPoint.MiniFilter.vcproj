@@ -168,6 +168,10 @@
 			>
 		</File>
 		<File
+			RelativePath=".\inc\mydlp_common.h"
+			>
+		</File>
+		<File
 			RelativePath=".\src\mydlp_minifilter.c"
 			>
 		</File>
@@ -177,10 +181,6 @@
 		</File>
 		<File
 			RelativePath=".\MyDLPMiniFilter.inf"
-			>
-		</File>
-		<File
-			RelativePath=".\inc\scanuk.h"
 			>
 		</File>
 		<File

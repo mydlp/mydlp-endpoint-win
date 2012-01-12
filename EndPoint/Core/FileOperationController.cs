@@ -60,15 +60,16 @@ namespace MyDLP.EndPoint.Core
 
         public void HandleCleanupOperation(string filePath)
         {
+            Logger.GetInstance().Debug("HandleCleanupWriteOperation path:" + filePath);
             if (operationTable.Contains(filePath) && ((FileOperationTableEntry)operationTable[filePath]).write != null)
             {
-               // ((FileOperationTableEntry)operationTable[filePath]).write.FinishWrite();
+               ((FileOperationTableEntry)operationTable[filePath]).write.FinishWrite();
             }
         }
 
         public FileOperation.Action HandleWriteOperation(string filePath, byte[] content, int length)
         {
-            Logger.GetInstance().Debug("HandleWriteOperation path:" + filePath + " length: " + length);
+            Logger.GetInstance().Debug("HandleCleanupWriteOperation path:" + filePath + "length: " + length);
             WriteFileOperation wop;
 
             if (!operationTable.Contains(filePath))
@@ -92,7 +93,8 @@ namespace MyDLP.EndPoint.Core
 
                 ((FileOperationTableEntry)operationTable[filePath]).Update(wop);
             }
-            return wop.appendContent(content);
+            FileOperation.Action action = wop.appendContent(content);
+            return action;
         }
 
         public void DeleteOperation(WriteFileOperation wop)

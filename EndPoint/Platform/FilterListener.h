@@ -28,71 +28,10 @@
 #include <fltuser.h>
 #include <dontuse.h>
 #include "Debug.h"
+#include <mydlp_common.h>
 
 using namespace System;
 using namespace MyDLP::EndPoint::Core;
-
-//
-//  Name of port used to communicate
-//
-const PWSTR MYDLPMFPortName = L"\\MyDLPMFPort";
-
-
-#define MYDLPMF_READ_BUFFER_SIZE   65536
-#define MYDLPMF_FILENAME_BUFFER_SIZE 1024
-
-typedef enum _MSG_TYPE        
-{
-	NONE,
-	PREWRITE,
-	POSTCREATE,
-	PRECLEANUP,
-	INIT,
-	INSTANCEINIT
-} MSG_TYPE;
-
-/*typedef struct _MYDLPMF_NOTIFICATION {
-
-    ULONG BytesToScan;
-    ULONG FileNameLength;
-    UCHAR Contents[MYDLPMF_READ_BUFFER_SIZE];
-	WCHAR FileName[MYDLPMF_FILENAME_BUFFER_SIZE];	
-	MSG_TYPE Type;
-	ULONG Reserved;
-    
-} MYDLPMF_NOTIFICATION, *PMYDLPMF_NOTIFICATION;*/
-
-typedef struct _MYDLPMF_NOTIFICATION {
-
-	MSG_TYPE Type;
-	WCHAR FileName[MYDLPMF_FILENAME_BUFFER_SIZE];	
-	ULONG FileNameLength;
-    ULONG BytesToScan;    
-    UCHAR Contents[MYDLPMF_READ_BUFFER_SIZE];
-    
-} MYDLPMF_NOTIFICATION, *PMYDLPMF_NOTIFICATION;
-
-typedef struct _MYDLPMF_MINI_NOTIFICATION {
-
-	MSG_TYPE Type;
-	WCHAR FileName[MYDLPMF_FILENAME_BUFFER_SIZE];	
-	ULONG FileNameLength;
-    ULONG BytesToScan; //just incase for alignment   
-    UCHAR Contents[1];//just incase for alignment
-    
-} MYDLPMF_MINI_NOTIFICATION, *PMYDLPMF_MINI_NOTIFICATION;
-
-typedef struct _MYDLPMF_REPLY {
-
-	enum ActionType
-	{
-		ALLOW,
-		BLOCK,
-		NOACTION	
-	} Action;
-    
-} MYDLPMF_REPLY, *PMYDLPMF_REPLY;
-
 
 #pragma pack(1)
 typedef struct _MYDLPMF_MESSAGE {
@@ -103,16 +42,15 @@ typedef struct _MYDLPMF_MESSAGE {
 
 	FILTER_MESSAGE_HEADER MessageHeader;
 
+	// Largest notification type is used here
+	// MYDLPMF_MESSAGE will be used to recieve both MYDLPMF_WRITE_NOTIFICATION
+	// MYDLPMF_FILE_NOTIFICATION and MYDLPMF_NOTIFICATION
+
+	_MYDLPMF_WRITE_NOTIFICATION Notification;
 
 	//
-	//  Private scanner-specific fields begin here.
-	//
-
-	MYDLPMF_NOTIFICATION Notification;
-
-	//
-	//  Overlapped structure: this is not really part of the message
-	//  However we embed it instead of using a separately allocated overlap structure
+	//  Overlapped structure, DO NOT change its order in structure 
+	//  since it is used with FIELD_OFFSET
 	//
 
 	OVERLAPPED Ovlp;
@@ -129,13 +67,6 @@ typedef struct _MYDLPMF_REPLY_MESSAGE {
 
 } MYDLPMF_REPLY_MESSAGE, *PMYDLPMF_REPLY_MESSAGE;
 
-
-typedef struct _MYDLPMF_CONF_REPLY {
-
-	int Pid;
-    
-} MYDLPMF_CONF_REPLY, *PMYDLPMF_CONF_REPLY;
-
 typedef struct _MYDLPMF_CONF_REPLY_MESSAGE {
 
 
@@ -151,15 +82,10 @@ typedef struct _MYDLPMF_CONF_REPLY_MESSAGE {
 //  Default and Maximum number of threads.
 //
 
+
 #define MYDLPMF_DEFAULT_REQUEST_COUNT       5
 #define MYDLPMF_DEFAULT_THREAD_COUNT        1
 #define MYDLPMF_MAX_THREAD_COUNT            64
-
-//UCHAR FoulString[] = "foul";
-
-//
-//  Context passed to worker threads
-//
 
 typedef struct _MYDLPMF_THREAD_CONTEXT {
 

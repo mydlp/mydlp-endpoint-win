@@ -19,6 +19,7 @@
 
 #include "Stdafx.h"
 #include "FilterListener.h"
+#include <mydlp_common.h>
 
 using namespace System::Runtime::InteropServices;
 using namespace MyDLP::EndPoint::Core;
@@ -97,7 +98,7 @@ int InitializeListener(void)
 	HRESULT hr;
 	DWORD i, j;
 
-	hr = FilterConnectCommunicationPort(MYDLPMFPortName, 0, NULL, 0, NULL, &port);
+	hr = FilterConnectCommunicationPort(MyDLPMFPortName, 0, NULL, 0, NULL, &port);
 
 	if (IS_ERROR(hr)) {
 		MyDLP::EndPoint::Core::Logger::GetInstance()->Error( "ERROR: Connecting to filter port: " + hr );
@@ -156,9 +157,16 @@ main_cleanup:
 DWORD ListenerWorker(__in PMYDLPMF_THREAD_CONTEXT Context)
 	{
 		MyDLP::EndPoint::Core::Logger::GetInstance()->Info("Start Listener\n");
+
+		PMYDLPMF_WRITE_NOTIFICATION writeNotification;
+		PMYDLPMF_FILE_NOTIFICATION fileNotification;
 		PMYDLPMF_NOTIFICATION notification;
+
 		MYDLPMF_REPLY_MESSAGE replyMessage;
 		MYDLPMF_CONF_REPLY_MESSAGE confMessage;
+
+		FileOperation::Action action = FileOperation::Action::ALLOW;
+	
 		PMYDLPMF_MESSAGE message = NULL;
 		LPOVERLAPPED pOvlp;
 		MyDLPEP::FilterListener ^listener;
@@ -167,58 +175,66 @@ DWORD ListenerWorker(__in PMYDLPMF_THREAD_CONTEXT Context)
 		HRESULT hr;
 		ULONG_PTR key;
 		unsigned int i = 0;
-		BOOL init = 0;
+		BOOL confRequest = FALSE;
 
-	#pragma warning(push)
-	#pragma warning(disable:4127) // conditional expression is constant
+#pragma warning(push)
+#pragma warning(disable:4127) // conditional expression is constant
 
 		while (TRUE) {
-	#pragma warning(pop)
+#pragma warning(pop)
 			result = GetQueuedCompletionStatus( Context->Completion, &outSize, &key, &pOvlp, INFINITE );
 			message = CONTAINING_RECORD( pOvlp, MYDLPMF_MESSAGE, Ovlp );
-
 			if (!result) {
 				hr = HRESULT_FROM_WIN32( GetLastError() );
 				if (hr == HRESULT_FROM_WIN32( ERROR_INVALID_HANDLE )) {
-					MyDLP::EndPoint::Core::Logger::GetInstance()->Error("invalid handle here\n");
+						MyDLP::EndPoint::Core::Logger::GetInstance()->Error("ERROR_INVALID_HANDLE");
 				}
 				break;
 			}
 
-			notification = &message->Notification;
-			FileOperation::Action action = FileOperation::Action::ALLOW;
+			notification = (PMYDLPMF_NOTIFICATION)&message->Notification;
 
+			//Archive inbound files if enabled
 			if(notification->Type == POSTCREATE) {
+				fileNotification = (PMYDLPMF_FILE_NOTIFICATION)notification;			
 				listener = MyDLPEP::FilterListener::getInstance();
-				action = listener->HandleFileOpen(notification->FileName);
+				action = listener->HandleFileOpen(fileNotification ->FileName);
+			
+			//Control write outbound files
 			} else if (notification->Type == PREWRITE) {
+				writeNotification = (PMYDLPMF_WRITE_NOTIFICATION)notification;
 				listener = MyDLPEP::FilterListener::getInstance();
 
-				if (notification->BytesToScan > MYDLPMF_READ_BUFFER_SIZE)
+				if (writeNotification->BytesToScan > MYDLPMF_READ_BUFFER_SIZE)
 				{
-					MyDLP::EndPoint::Core::Logger::GetInstance()->Error("ListenerWorker error notification->BytesToScan > MYDLPMF_READ_BUFFER_SIZE");
+					MyDLP::EndPoint::Core::Logger::GetInstance()->Error("ListenerWorker error writeNotification->BytesToScan > MYDLPMF_READ_BUFFER_SIZE");
 				}
-				action = listener->HandleFileWrite(notification->FileName, notification->Contents, notification->BytesToScan);
+				action = listener->HandleFileWrite(writeNotification->FileName, writeNotification->Contents, writeNotification->BytesToScan);
+
+			//Notify file outbound file operation ending
 			} else if (notification->Type == PRECLEANUP) {
+				fileNotification = (PMYDLPMF_FILE_NOTIFICATION)notification;
 				listener = MyDLPEP::FilterListener::getInstance();
-				listener->HandleFileCleanup(notification->FileName);
-			} else if (notification->Type == INIT){
-				init = 1;				
-			} else if (notification->Type == INSTANCEINIT){
-				//MyDLP::EndPoint::Core::Logger::GetInstance()->Debug("Attached new usb file system");
+				listener->HandleFileCleanup(fileNotification->FileName);
+
+			//Send configuration to minifilter
+			} else if (notification->Type == CONF){
+				confRequest = true;				
+
+			//USBSAC if enabled
+			} else if (notification->Type == USBSAC){
 				if(MyDLP::EndPoint::Core::USBController::IsUsbBlocked())
 				{
 					action = FileOperation::Action::BLOCK;
-				}
-			//	MyDLP::EndPoint::Core::USBController::GetUSBStorages();
-				//todo us usb check here
+				}	
 			}
 
-			if (init == 0)
+			if (confRequest == false)
 			{
 				result = FALSE;
 				replyMessage.ReplyHeader.Status = 0;
 				replyMessage.ReplyHeader.MessageId = message->MessageHeader.MessageId;
+				replyMessage.Reply.ConfUpdate = MyDLP::EndPoint::Core::Configuration::NewFilterConfiguration;
 
 				if (action == FileOperation::Action::ALLOW )
 					replyMessage.Reply.Action = _MYDLPMF_REPLY::ActionType::ALLOW;
@@ -227,22 +243,19 @@ DWORD ListenerWorker(__in PMYDLPMF_THREAD_CONTEXT Context)
 				else if(action == FileOperation::Action::NOACTION)
 					replyMessage.Reply.Action = _MYDLPMF_REPLY::ActionType::NOACTION;
 
-				/*if(!replyMessage.Reply.SafeToOpen)
-					printf("***Replying message, SafeToOpen: %d\n", replyMessage.Reply.SafeToOpen );*/
-			
-				hr = FilterReplyMessage( Context->Port, (PFILTER_REPLY_HEADER) &replyMessage, sizeof( replyMessage ) );
-
+				hr = FilterReplyMessage( Context->Port, (PFILTER_REPLY_HEADER) &replyMessage, sizeof( MYDLPMF_REPLY ) + sizeof ( FILTER_REPLY_HEADER ));
+				
 				if (SUCCEEDED(hr) || hr == ERROR_FLT_NO_WAITER_FOR_REPLY ) {
-					//printf("Replied message\n");
-
+					MyDLP::EndPoint::Core::Configuration::setNewFilterConfiguration(false);
 				} else {
 					MyDLP::EndPoint::Core::Logger::GetInstance()->Error("MyDLPMF: Error replying message. Error:" + (gcnew Int64(hr)));
 					break;
 				}
 
 				memset(&message->Ovlp, 0, sizeof( OVERLAPPED));
-
+				
 				hr = FilterGetMessage(Context->Port, &message->MessageHeader, FIELD_OFFSET( MYDLPMF_MESSAGE, Ovlp), &message->Ovlp);
+				
 				if (hr != HRESULT_FROM_WIN32( ERROR_IO_PENDING ))
 				{
 					break;
@@ -250,13 +263,19 @@ DWORD ListenerWorker(__in PMYDLPMF_THREAD_CONTEXT Context)
 			}
 			else
 			{
-				init = 0;
+				confRequest = 0;
 				result = FALSE;
 				confMessage.ReplyHeader.Status = 0;
 				confMessage.ReplyHeader.MessageId = message->MessageHeader.MessageId;
-
+				
+				//Set Confuration of minifilter
 				confMessage.Reply.Pid = MyDLP::EndPoint::Core::Configuration::ErlPid;
-				hr = FilterReplyMessage( Context->Port, (PFILTER_REPLY_HEADER) &confMessage, sizeof( confMessage ) );
+				MyDLP::EndPoint::Core::Logger::GetInstance()->Error("USBSerialAC:" + MyDLP::EndPoint::Core::Configuration::UsbSerialAccessControl);
+				MyDLP::EndPoint::Core::Logger::GetInstance()->Error("ArchiveInbound:" + MyDLP::EndPoint::Core::Configuration::ArchiveInbound);
+				confMessage.Reply.USBSerialAC = MyDLP::EndPoint::Core::Configuration::UsbSerialAccessControl;
+				confMessage.Reply.ArchiveInbound = MyDLP::EndPoint::Core::Configuration::ArchiveInbound;
+
+				hr = FilterReplyMessage( Context->Port, (PFILTER_REPLY_HEADER) &confMessage, sizeof( MYDLPMF_CONF_REPLY ) + sizeof ( FILTER_REPLY_HEADER ));
 
 				if (SUCCEEDED(hr) || hr == ERROR_FLT_NO_WAITER_FOR_REPLY ){
 					//printf("Replied message\n");

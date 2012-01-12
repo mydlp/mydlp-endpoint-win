@@ -13,33 +13,22 @@ Copyright (C) 2011 Huseyin Ozgur Batur <ozgur@medra.com.tr>
 #include <dontuse.h>
 #include <suppress.h>
 #include <Ntddstor.h>
-#include "scanuk.h"
+#include "mydlp_common.h"
 #include "mydlp_minifilter.h"
 #define DBG_PRINT
 
 #pragma prefast(disable:__WARNING_ENCODE_MEMBER_FUNCTION_POINTER, "Not valid for kernel mode drivers")
 
+//Filter runtime configuration
+MYDLPMF_CONF FilterConf;
 
-
-MYDLPMF_DATA MyDLPMFData;
-int initialized = 0; 
-LARGE_INTEGER timeout;
-LARGE_INTEGER writeTimeout;
-
-PMYDLPMF_NOTIFICATION writeNotification = NULL;
-PMYDLPMF_NOTIFICATION miniNotification = NULL;
-//FAST_MUTEX WriteNotificationMutex;
-//FAST_MUTEX MiniNotificationMutex;
-
-const UNICODE_STRING MyDLPMFExtensionsToScan[] =
-    { RTL_CONSTANT_STRING( L"doc"),
-      RTL_CONSTANT_STRING( L"txt"),
-      RTL_CONSTANT_STRING( L"bat"),
-      RTL_CONSTANT_STRING( L"cmd"),
-      RTL_CONSTANT_STRING( L"inf"),
-      {0, 0, NULL}
-    };
-
+//IO buffers used between filter and userspace
+PMYDLPMF_WRITE_NOTIFICATION writeNotification = NULL;
+PMYDLPMF_FILE_NOTIFICATION fileNotification = NULL;
+PMYDLPMF_NOTIFICATION notification = NULL;
+PMYDLPMF_REPLY reply = NULL;
+PMYDLPMF_CONF_REPLY confReply = NULL;
+BOOLEAN Configured = FALSE;
 
 NTSTATUS
 MyDLPMFPortConnect (
@@ -62,16 +51,14 @@ MyDLPMFpScanFileInUserMode (
     __out PBOOLEAN SafeToOpen
     );
 
-BOOLEAN
-MyDLPMFpCheckExtension (
-    __in PUNICODE_STRING Extension
-    );
-
-
 #ifdef ALLOC_PRAGMA
     #pragma alloc_text(INIT, DriverEntry)
     #pragma alloc_text(PAGE, MyDLPMFInstanceSetup)
+    #pragma alloc_text(PAGE, MyDLPMFConfigurationUpdate)
     #pragma alloc_text(PAGE, MyDLPMFPreCreate)
+    #pragma alloc_text(PAGE, MyDLPMFPreWrite)
+    #pragma alloc_text(PAGE, MyDLPMFPostCreate)
+    #pragma alloc_text(PAGE, MyDLPMFPreCleanup)
     #pragma alloc_text(PAGE, MyDLPMFPortConnect)
     #pragma alloc_text(PAGE, MyDLPMFPortDisconnect)
 #endif
@@ -140,13 +127,19 @@ DriverEntry (
     NTSTATUS status;
 
     UNREFERENCED_PARAMETER( RegistryPath );
+	
+	//Timeouts hardcoded for now
+	FilterConf.ReadTimeout.QuadPart = (LONGLONG) - 10 * 1000 * 1000;  //1 seconds
+	FilterConf.WriteTimeout.QuadPart = (LONGLONG) - 50 * 1000 * 1000;  //5 seconds
 
-	timeout.QuadPart = (LONGLONG) - 10 * 1000 * 1000;  //1 seconds
-	writeTimeout.QuadPart = (LONGLONG) - 50 * 1000 * 1000;  //5 seconds
+
+#ifdef DBG_PRINT
+	DbgPrint("In DriverEntry");
+#endif
 
     status = FltRegisterFilter( DriverObject,
                                 &FilterRegistration,
-                                &MyDLPMFData.Filter );
+                                &FilterConf.Filter );
 
 
     if (!NT_SUCCESS( status )) {
@@ -166,8 +159,8 @@ DriverEntry (
                                     NULL,
                                     sd );
 
-        status = FltCreateCommunicationPort( MyDLPMFData.Filter,
-                                             &MyDLPMFData.ServerPort,
+        status = FltCreateCommunicationPort( FilterConf.Filter,
+                                             &FilterConf.ServerPort,
                                              &oa,
                                              NULL,
                                              MyDLPMFPortConnect,
@@ -179,49 +172,87 @@ DriverEntry (
 
         if (NT_SUCCESS( status )) {
 
-            status = FltStartFiltering( MyDLPMFData.Filter );
+			writeNotification = ExAllocatePoolWithTag( NonPagedPool,
+                                          sizeof( MYDLPMF_WRITE_NOTIFICATION ),
+                                          'mdlp' );
+			if (writeNotification == NULL)
+			{
+#ifdef DBG_PRINT
+				DbgPrint("ExAllocatePoolWithTag failed for writeNotification!!!");
+#endif
+				FltCloseCommunicationPort( FilterConf.ServerPort );
+				FltUnregisterFilter( FilterConf.Filter );
+				return status;
+            }
+			
+			fileNotification = ExAllocatePoolWithTag( NonPagedPool,
+                                          sizeof( MYDLPMF_FILE_NOTIFICATION ),
+                                          'mdlp' );
+			if (fileNotification == NULL)
+			{
+#ifdef DBG_PRINT
+				DbgPrint("ExAllocatePoolWithTag failed for fileNotification!!!");
+#endif
+				FltCloseCommunicationPort( FilterConf.ServerPort );
+				FltUnregisterFilter( FilterConf.Filter );
+				return status;
+            }
+
+			notification = ExAllocatePoolWithTag( NonPagedPool,
+                                          sizeof( MYDLPMF_NOTIFICATION ),
+                                          'mdlp' );
+			if (notification == NULL)
+			{
+#ifdef DBG_PRINT
+				DbgPrint("ExAllocatePoolWithTag failed for notification!!!");
+#endif
+				FltCloseCommunicationPort( FilterConf.ServerPort );
+				FltUnregisterFilter( FilterConf.Filter );
+				return status;
+            }
+
+#ifdef DBG_PRINT
+				DbgPrint("ExAllocatePoolWithTag success for notification!!!");
+#endif
+			reply = ExAllocatePoolWithTag( NonPagedPool,
+                                          sizeof( MYDLPMF_REPLY ) + sizeof (FILTER_REPLY_HEADER),
+                                          'mdlp' );
+			if (reply == NULL)
+			{
+#ifdef DBG_PRINT
+				DbgPrint("ExAllocatePoolWithTag failed for reply!!!");
+#endif
+				FltCloseCommunicationPort( FilterConf.ServerPort );
+				FltUnregisterFilter( FilterConf.Filter );
+				return status;
+            }
+
+
+			confReply = ExAllocatePoolWithTag( NonPagedPool,
+                                          sizeof( MYDLPMF_CONF_REPLY ) + sizeof (FILTER_REPLY_HEADER),
+                                          'mdlp' );
+			if (confReply == NULL)
+			{
+#ifdef DBG_PRINT
+				DbgPrint("ExAllocatePoolWithTag failed for confReply!!!");
+#endif
+				FltCloseCommunicationPort( FilterConf.ServerPort );
+				FltUnregisterFilter( FilterConf.Filter );
+				return status;
+            }        
+        
+            status = FltStartFiltering( FilterConf.Filter );
 
             if (NT_SUCCESS( status )) {
 
-				writeNotification = ExAllocatePoolWithTag( NonPagedPool,
-                                              sizeof( MYDLPMF_NOTIFICATION ),
-                                              'mdlp' );
-
-				if (writeNotification == NULL)
-				{
-#ifdef DBG_PRINT
-					DbgPrint("ExAllocatePoolWithTag failed for writeNotification!!!");
-#endif
-					FltCloseCommunicationPort( MyDLPMFData.ServerPort );
-					FltUnregisterFilter( MyDLPMFData.Filter );
-					return status;
-                }
-				
-				miniNotification = ExAllocatePoolWithTag( NonPagedPool,
-                                              sizeof( MYDLPMF_MINI_NOTIFICATION ),
-                                              'mdlp' );
-
-				if (miniNotification == NULL)
-				{
-#ifdef DBG_PRINT
-					DbgPrint("ExAllocatePoolWithTag failed for miniNotification!!!");
-#endif
-					FltCloseCommunicationPort( MyDLPMFData.ServerPort );
-					FltUnregisterFilter( MyDLPMFData.Filter );
-					return status;
-                }
-
-				//ExInitializeFastMutex(&WriteNotificationMutex);
-				//ExInitializeFastMutex(&MiniNotificationMutex);
-
-                return STATUS_SUCCESS;
-            }
-
-            FltCloseCommunicationPort( MyDLPMFData.ServerPort );
-        }
+				return STATUS_SUCCESS;
+			}	
+			
+			FltCloseCommunicationPort( FilterConf.ServerPort );
+		}			
     }
 
-    FltUnregisterFilter( MyDLPMFData.Filter );
+    FltUnregisterFilter( FilterConf.Filter );
 
     return status;
 }
@@ -244,12 +275,13 @@ MyDLPMFPortConnect (
     UNREFERENCED_PARAMETER( SizeOfContext);
     UNREFERENCED_PARAMETER( ConnectionCookie );
 
-    ASSERT( MyDLPMFData.ClientPort == NULL );
-    ASSERT( MyDLPMFData.UserProcess == NULL );
-	ASSERT( MyDLPMFData.ErlangProcess == NULL );
+    ASSERT( FilterConf.ClientPort == NULL );
+    ASSERT( FilterConf.UserProcess == NULL );
+	ASSERT( FilterConf.ErlangProcess == NULL );
 
-    MyDLPMFData.UserProcess = PsGetCurrentProcess();
-    MyDLPMFData.ClientPort = ClientPort;
+    FilterConf.UserProcess = PsGetCurrentProcess();
+    FilterConf.ClientPort = ClientPort;
+
 #ifdef DBG_PRINT
     DbgPrint( "mydlpmf connected, port=0x%p\n", ClientPort );
 #endif
@@ -267,13 +299,12 @@ MyDLPMFPortDisconnect(
 
     PAGED_CODE();
 #ifdef DBG_PRINT
-    DbgPrint( "mydlpmf disconnected, port=0x%p\n", MyDLPMFData.ClientPort );
+    DbgPrint( "mydlpmf disconnected, port=0x%p\n", FilterConf.ClientPort );
 #endif
-    FltCloseClientPort( MyDLPMFData.Filter, &MyDLPMFData.ClientPort );
+    FltCloseClientPort( FilterConf.Filter, &FilterConf.ClientPort );
 
-    MyDLPMFData.UserProcess = NULL;
-	MyDLPMFData.ErlangProcess = NULL;
-	initialized = 0;
+    FilterConf.UserProcess = NULL;
+	FilterConf.ErlangProcess = NULL;
 }
 #pragma endregion 
 
@@ -287,15 +318,30 @@ MyDLPMFUnload (
 #ifdef DBG_PRINT
 	DbgPrint( "mydlpmf unload" );
 #endif
-    FltCloseCommunicationPort( MyDLPMFData.ServerPort );
-	FltUnregisterFilter( MyDLPMFData.Filter );
+    FltCloseCommunicationPort( FilterConf.ServerPort );
+	FltUnregisterFilter( FilterConf.Filter );
 
 	if (writeNotification != NULL) {
-            ExFreePoolWithTag( writeNotification, 'mdlp' );			
+        ExFreePoolWithTag( writeNotification, 'mdlp' );			
     }
 	
-	if (writeNotification != NULL) {
-		ExFreePoolWithTag( miniNotification, 'mdlp' );
+	if (fileNotification != NULL) {
+		ExFreePoolWithTag( fileNotification, 'mdlp' );
+	}
+
+		
+	if (notification != NULL) {
+		ExFreePoolWithTag( notification, 'mdlp' );
+	}
+
+		
+	if (reply != NULL) {
+		ExFreePoolWithTag( reply, 'mdlp' );
+	}
+
+		
+	if (confReply != NULL) {
+		ExFreePoolWithTag( confReply, 'mdlp' );
 	}
 
     return STATUS_SUCCESS;
@@ -331,7 +377,12 @@ MyDLPMFInstanceSetup (
 
     PAGED_CODE();
 
-    ASSERT( FltObjects->Filter == MyDLPMFData.Filter );
+#ifdef DBG_PRINT
+    DbgPrint( "mydlpmf instance setup" );
+#endif
+
+
+    ASSERT( FltObjects->Filter == FilterConf.Filter );
 
 	Query.PropertyId = StorageDeviceProperty;
 	Query.QueryType = PropertyStandardQuery;
@@ -395,8 +446,63 @@ MyDLPMFInstanceSetup (
 		return STATUS_FLT_DO_NOT_ATTACH;
 	}
 
+#ifdef DBG_PRINT
+    DbgPrint( "mydlpmf end setup" );
+#endif
     return STATUS_SUCCESS;
 }
+#pragma endregion
+
+#pragma region ConfigurationUpdate
+void
+MyDLPMFConfigurationUpdate ()
+{
+	int replyLength;
+	NTSTATUS status;
+	PAGED_CODE();
+
+#ifdef DBG_PRINT
+	DbgPrint("In ConfigurationUpdate");
+#endif
+
+	notification->Type = CONF;
+	replyLength = sizeof( FILTER_REPLY_HEADER ) + sizeof(MYDLPMF_CONF_REPLY);
+	status = FltSendMessage( FilterConf.Filter,
+		&FilterConf.ClientPort,
+		notification,
+		sizeof( MYDLPMF_NOTIFICATION ),
+		confReply,
+		&replyLength,
+		&FilterConf.ReadTimeout );	
+
+	if (STATUS_SUCCESS == status) {
+		HANDLE pid = confReply->Pid;
+		status = PsLookupProcessByProcessId(pid, &FilterConf.ErlangProcess); 
+		FilterConf.ArchiveInbound = confReply->ArchiveInbound;
+		FilterConf.USBSerialAC = confReply->USBSerialAC;
+		if (STATUS_SUCCESS == status) {
+#ifdef DBG_PRINT
+			DbgPrint("Initialized minifilter runtime conf pid: %d", pid);
+			DbgPrint("Initialized minifilter USBSerialAC: %d", FilterConf.USBSerialAC);
+			DbgPrint("Initialized minifilter ArchiveInbound: %d", FilterConf.ArchiveInbound);
+#endif	
+			Configured = TRUE;
+		}
+		else
+		{
+#ifdef DBG_PRINT
+			DbgPrint("Configuration update failed");
+#endif
+		}
+	}
+	else
+	{
+#ifdef DBG_PRINT
+		DbgPrint(" FltSendMessage failed status 0x%X\n", status);
+#endif
+	}
+}
+
 #pragma endregion
 
 #pragma region QueryTeardown 
@@ -431,91 +537,51 @@ MyDLPMFPreCreate (
 
     PAGED_CODE();
 
-
-#ifdef DBG_PRINT
-			//DbgPrint("In precreate");
-#endif
-	if (!initialized){
-
-		// miniNotification Buffer critical section start 
-		//ExAcquireFastMutexUnsafe(&MiniNotificationMutex);
-
-		miniNotification->Type = INIT;
-		replyLength = sizeof( MYDLPMF_REPLY );
-
-
-		status = FltSendMessage( MyDLPMFData.Filter,
-			&MyDLPMFData.ClientPort,
-			miniNotification,
-			sizeof( MYDLPMF_MINI_NOTIFICATION ),
-			miniNotification,
-			&replyLength,
-			&timeout);
-
-		if (STATUS_TIMEOUT == status) {
-#ifdef DBG_PRINT
-			DbgPrint("Configuration initialization failed");
-#endif
-		}
-
-		if (STATUS_SUCCESS == status) {
-			HANDLE pid = ((PMYDLPMF_CONF_REPLY) miniNotification)->pid;
-			status = PsLookupProcessByProcessId(pid, &MyDLPMFData.ErlangProcess); 
-			
-			if (STATUS_SUCCESS == status) {
-				initialized = 1;
-#ifdef DBG_PRINT
-				DbgPrint("Initialized minifilter runtime conf pid: %d", pid);
-#endif
-			}
-			else
-			{
-#ifdef DBG_PRINT
-				DbgPrint("Configuration initialization failed");
-#endif
-			}
-		}
-
-		//ExReleaseFastMutexUnsafe(&MiniNotificationMutex);	
-		// miniNotification buffer critical section ends					      
+	if (!Configured)
+	{
+		MyDLPMFConfigurationUpdate();
 	}
 
-	if (IoThreadToProcess( Data->Thread ) == MyDLPMFData.UserProcess || IoThreadToProcess( Data->Thread ) == MyDLPMFData.ErlangProcess) {
-
+	//check if accesing userspace process is MyDLP EP or MyDLP Engine
+	if (IoThreadToProcess( Data->Thread ) == FilterConf.UserProcess || IoThreadToProcess( Data->Thread ) == FilterConf.ErlangProcess) {
+		
+		//and leave them alone forever
         return FLT_PREOP_SUCCESS_NO_CALLBACK;
     }
 
+	//check if USBSerialAC is enabled
+	//We do not need to analyze a prcreate if USBSerialAC is not enabled
+	if (FilterConf.USBSerialAC){
+		notification->Type = USBSAC;
+		replyLength = sizeof (FILTER_REPLY_HEADER) + sizeof( MYDLPMF_REPLY );
 
-	miniNotification->Type = INSTANCEINIT;
-	replyLength = sizeof( MYDLPMF_REPLY );
+		status = FltSendMessage( FilterConf.Filter,
+				&FilterConf.ClientPort,
+				notification,
+				sizeof( MYDLPMF_NOTIFICATION ),
+				reply,
+				&replyLength,
+				&FilterConf.ReadTimeout);
 
-	status = FltSendMessage( MyDLPMFData.Filter,
-			&MyDLPMFData.ClientPort,
-			miniNotification,
-			sizeof( MYDLPMF_MINI_NOTIFICATION ),
-			miniNotification,
-			&replyLength,
-			&timeout);
-
-	if (STATUS_TIMEOUT == status) {
+		if (STATUS_TIMEOUT == status) {
 #ifdef DBG_PRINT
-		DbgPrint("Usb block failed");
+			DbgPrint("Usb block failed");
 #endif
-	}
+		}
 
-	action = ((PMYDLPMF_REPLY) miniNotification)->Action;
+		action = reply->Action;
 
-	if (action == BLOCK)
-	{
-#ifdef DBG_PRINT
-		//	DbgPrint("Precreate block");
-#endif
-		//disables any read write
-		Data->IoStatus.Status = STATUS_ACCESS_DENIED;
-		Data->IoStatus.Information = 0;
-		return FLT_PREOP_COMPLETE;
-	}
-
+		if (action == BLOCK)
+		{
+	#ifdef DBG_PRINT
+			//	DbgPrint("Precreate block");
+	#endif
+			//disables any read write for un authorized USB device
+			Data->IoStatus.Status = STATUS_ACCESS_DENIED;
+			Data->IoStatus.Information = 0;
+			return FLT_PREOP_COMPLETE;
+		}
+	}   
     return FLT_PREOP_SUCCESS_WITH_CALLBACK;
 }
 #pragma endregion
@@ -529,6 +595,7 @@ MyDLPMFPostCreate (
     __in FLT_POST_OPERATION_FLAGS Flags
     )
 {	
+	
 	POBJECT_NAME_INFORMATION dosNameInfo = NULL;
 	NTSTATUS status = STATUS_SUCCESS;
 	ULONG replyLength;
@@ -539,104 +606,97 @@ MyDLPMFPostCreate (
     BOOLEAN safeToOpen, scanFile;
 
     UNREFERENCED_PARAMETER( CompletionContext );
-    UNREFERENCED_PARAMETER( Flags );
+    UNREFERENCED_PARAMETER( Flags );  
+    
+	PAGED_CODE();
 
+	if (!Configured)
+	{
+		MyDLPMFConfigurationUpdate();
+	}
 
     if (!NT_SUCCESS( Data->IoStatus.Status ) ||
         (STATUS_REPARSE == Data->IoStatus.Status)) {
 
         return FLT_POSTOP_FINISHED_PROCESSING;
-    }
-    
-	status = IoQueryFileDosDeviceName( FltObjects->FileObject, &dosNameInfo );
+    }  
 
-	if ( status == STATUS_SUCCESS )
+	
+	//We do not need to analyze a post create if archive inbound is not enabled
+	if (FilterConf.ArchiveInbound)
 	{
-		/* miniNotification Buffer critical section start */
-		//ExAcquireFastMutexUnsafe(&MiniNotificationMutex);
+		status = IoQueryFileDosDeviceName( FltObjects->FileObject, &dosNameInfo );
 
-		miniNotification->BytesToScan = 0;
-		miniNotification->Type = POSTCREATE;
-
-		RtlCopyMemory( &miniNotification->FileName,
-                        dosNameInfo->Name.Buffer,
-						dosNameInfo->Name.Length + 1*sizeof(WCHAR));
-		miniNotification->FileNameLength = dosNameInfo->Name.Length + 1*sizeof(WCHAR);
-		
-
-
-		//Check if file is not a directory
-		if ((Data->Iopb->Parameters.Create.Options & FILE_NON_DIRECTORY_FILE) && dosNameInfo->Name.Length > 2*sizeof(WCHAR))
+		if ( status == STATUS_SUCCESS )
 		{
-			//DbgPrint("Regular file: %ws\n", miniNotification->FileName);
 
+			fileNotification->Type = POSTCREATE;
+
+			RtlCopyMemory( &fileNotification->FileName,
+							dosNameInfo->Name.Buffer,
+							dosNameInfo->Name.Length + 1*sizeof(WCHAR));
+			fileNotification->FileNameLength = dosNameInfo->Name.Length + 1*sizeof(WCHAR);
+			
+			//Check if file is not a directory
+			if ((Data->Iopb->Parameters.Create.Options & FILE_NON_DIRECTORY_FILE) && dosNameInfo->Name.Length > 2*sizeof(WCHAR))
+			{
+				//DbgPrint("Regular file: %ws\n", fileNotification->FileName);
+
+			}
+			else
+			{
+				//File is not a regular file, no need for further processing
+				//ExReleaseFastMutexUnsafe(&fileNotificationMutex);
+				/* fileNotification buffer critical section ends */
+
+				return FLT_POSTOP_FINISHED_PROCESSING;
+				//DbgPrint("Unknown file: %ws\n", dosNameInfo->Name.Buffer);
+			}
+
+			if(dosNameInfo != NULL)
+				ExFreePool(dosNameInfo);
+
+			replyLength = sizeof( MYDLPMF_REPLY ) + sizeof (FILTER_REPLY_HEADER);
+
+			status = FltSendMessage( FilterConf.Filter,
+									 &FilterConf.ClientPort,
+									 fileNotification,
+									 sizeof( MYDLPMF_FILE_NOTIFICATION ),
+									 reply,
+									 &replyLength,
+									 &FilterConf.ReadTimeout );	
+
+			if (STATUS_TIMEOUT == status)
+			{
+					action = ALLOW;
+#ifdef DBG_PRINT
+					DbgPrint("PostCreate FltSendMessage timeout");
+#endif
+			}
+			else if (STATUS_SUCCESS == status)
+			{
+					action = reply->Action;
+			}
+			else
+			{
+					action = ALLOW;
+#ifdef DBG_PRINT
+					DbgPrint(" FltSendMessage failed status 0x%X\n", status);
+#endif
+			}
 		}
 		else
 		{
-			//File is not a regular file, no need for further processing
-			//ExReleaseFastMutexUnsafe(&MiniNotificationMutex);
-			/* miniNotification buffer critical section ends */
-
-			return FLT_POSTOP_FINISHED_PROCESSING;
-			//DbgPrint("Unknown file: %ws\n", dosNameInfo->Name.Buffer);
+				//Unable to get file path
+				return FLT_POSTOP_FINISHED_PROCESSING;
 		}
-
-		if(dosNameInfo != NULL)
-			ExFreePool(dosNameInfo);
-
-		replyLength = sizeof( MYDLPMF_REPLY );
-
-
-		status = FltSendMessage( MyDLPMFData.Filter,
-								 &MyDLPMFData.ClientPort,
-								 miniNotification,
-								 sizeof( MYDLPMF_MINI_NOTIFICATION ),
-								 miniNotification,
-								 &replyLength,
-								 &timeout );
-		if (STATUS_TIMEOUT == status)
-		{
-				action = ALLOW;
-#ifdef DBG_PRINT
-				DbgPrint("PostCreate FltSendMessage timeout");
-#endif
-		}
-		else if (STATUS_SUCCESS == status)
-		{
-				action = ((PMYDLPMF_REPLY) miniNotification)->Action;
-
-#ifdef DBG_PRINT
-				DbgPrint("GET action status: %d", action);
-#endif
-		}
-		else
-		{
-				action = ALLOW;
-#ifdef DBG_PRINT
-				DbgPrint(" FltSendMessage failed status 0x%X\n", status);
-#endif
-		}
-
-		//ExReleaseFastMutexUnsafe(&MiniNotificationMutex);
-		/* miniNotification buffer critical section ends */
 	}
 	else
 	{
-			//Unable to get file path
-			return FLT_POSTOP_FINISHED_PROCESSING;
+		action = ALLOW;
 	}
 
-	if (!NT_SUCCESS( Data->IoStatus.Status ) ||
-        (STATUS_REPARSE == Data->IoStatus.Status))
-	{
-        return FLT_POSTOP_FINISHED_PROCESSING;
-    }
-
 	if (action == BLOCK){
-
-#ifdef DBG_PRINT
-        DbgPrint( "Block file in postcreate\n" );
-#endif
 		//TODO: Use this to prevent file open
         FltCancelFileOpen( FltObjects->Instance, FltObjects->FileObject );
 
@@ -646,7 +706,7 @@ MyDLPMFPostCreate (
 
     } else if (FltObjects->FileObject->WriteAccess) {
         
-		status = FltAllocateContext( MyDLPMFData.Filter,
+		status = FltAllocateContext( FilterConf.Filter,
                                      FLT_STREAMHANDLE_CONTEXT,
                                      sizeof(MYDLPMF_STREAM_HANDLE_CONTEXT),
                                      PagedPool,
@@ -664,7 +724,6 @@ MyDLPMFPostCreate (
             FltReleaseContext(scannerContext);
         }
     }
-
     return returnStatus;
 }
 #pragma endregion
@@ -686,8 +745,15 @@ MyDLPMFPreCleanup (
     UNREFERENCED_PARAMETER(Data);
     UNREFERENCED_PARAMETER(CompletionContext);
 
-	miniNotification->BytesToScan = 0;
-	miniNotification->Type = NONE;
+	PAGED_CODE();
+
+	
+	if (!Configured)
+	{
+		MyDLPMFConfigurationUpdate();
+	}
+
+	fileNotification->Type = NONE;
     status = FltGetStreamHandleContext(FltObjects->Instance,
                                         FltObjects->FileObject,
                                         &context );
@@ -699,39 +765,23 @@ MyDLPMFPreCleanup (
 			status = IoQueryFileDosDeviceName( FltObjects->FileObject, &dosNameInfo );
 			if (status == STATUS_SUCCESS)
 			{
-#ifdef DBG_PRINT
-				DbgPrint("MyDLPMFPreCleanup path: %ws \n", dosNameInfo->Name.Buffer);
-#endif
-				// miniNotification Buffer critical section start 
-				//ExAcquireFastMutexUnsafe(&MiniNotificationMutex);
+				fileNotification->Type = PRECLEANUP;
 
-				miniNotification->BytesToScan = 0;
-				miniNotification->Type = PRECLEANUP;
-
-#ifdef DBG_PRINT
-				DbgPrint("MyDLPMFPreCleanup Copy memory");
-#endif
-				RtlCopyMemory( &miniNotification->FileName,
+				RtlCopyMemory( &fileNotification->FileName,
 								dosNameInfo->Name.Buffer,
 								dosNameInfo->Name.Length + 1*sizeof(WCHAR));
-				miniNotification->FileNameLength = dosNameInfo->Name.Length + 1*sizeof(WCHAR);		
+				fileNotification->FileNameLength = dosNameInfo->Name.Length + 1*sizeof(WCHAR);		
 
-				replyLength = sizeof( MYDLPMF_REPLY );
+				replyLength = sizeof (FILTER_REPLY_HEADER) + sizeof( MYDLPMF_REPLY );
 			
-				status = FltSendMessage( MyDLPMFData.Filter,
-					&MyDLPMFData.ClientPort,
-					miniNotification,
-					sizeof( MYDLPMF_MINI_NOTIFICATION ),
-					miniNotification,
+				status = FltSendMessage( FilterConf.Filter,
+					&FilterConf.ClientPort,
+					fileNotification,
+					sizeof( MYDLPMF_FILE_NOTIFICATION ),
+					reply,
 					&replyLength,
-					&timeout );
-#ifdef DBG_PRINT
-				DbgPrint("MyDLPMFPreCleanup sending message length: %d replylength: %d\n", sizeof( MYDLPMF_MINI_NOTIFICATION ), replyLength);
-				DbgPrint("MyDLPMFPreCleanup message sent status %x \n", status);
-#endif
-				//ExReleaseFastMutexUnsafe(&MiniNotificationMutex);	
-				// miniNotification buffer critical section ends
-
+					&FilterConf.ReadTimeout );
+					
 				if(dosNameInfo != NULL)
 					ExFreePool(dosNameInfo);
 			}		
@@ -761,32 +811,36 @@ MyDLPMFPreWrite (
 	POBJECT_NAME_INFORMATION dosNameInfo = NULL;
 
     UNREFERENCED_PARAMETER(CompletionContext);
+
+	PAGED_CODE();
 	
+	if (!Configured)
+	{
+		MyDLPMFConfigurationUpdate();
+	}
+
 	if (FLT_IS_FASTIO_OPERATION(Data))
 		return FLT_PREOP_DISALLOW_FASTIO;
 
-    if (MyDLPMFData.ClientPort == NULL)
+    if (FilterConf.ClientPort == NULL)
 	{
         return FLT_PREOP_SUCCESS_NO_CALLBACK;
-    }
+	}
 
     status = FltGetStreamHandleContext( FltObjects->Instance,
 										FltObjects->FileObject,
 										&context );
 
-    if (!NT_SUCCESS( status )) {        
+
+    if (!NT_SUCCESS( status )) 
+	{
         return FLT_PREOP_SUCCESS_NO_CALLBACK;
     }
 	
     try {
-		/* writeNotification Buffer critical section start */
-		//ExAcquireFastMutexUnsafe(&WriteNotificationMutex);
-
         if (Data->Iopb->Parameters.Write.Length != 0) 
 		{
-#ifdef DBG_PRINT
-			DbgPrint("Data->Iopb->Parameters.Write.Length = %d", Data->Iopb->Parameters.Write.Length);
-#endif
+
 			if (Data->Iopb->Parameters.Write.MdlAddress != NULL)
 			{
                 buffer = MmGetSystemAddressForMdlSafe( Data->Iopb->Parameters.Write.MdlAddress,
@@ -815,14 +869,12 @@ MyDLPMFPreWrite (
 		
 		writeNotification->Type = PREWRITE;		
 		writeNotification->BytesToScan = 0;		
-#ifdef DBG_PRINT
-		DbgPrint("PreWrite start loop writeNotification->Type: %d,\n", writeNotification->Type);
-#endif
+
 		for(i = 0, writeLength = 0; writeLength < Data->Iopb->Parameters.Write.Length; 
 			writeLength += MYDLPMF_READ_BUFFER_SIZE, i++)
 		{
 #ifdef DBG_PRINT
-			DbgPrint("PreWrite inside loop start writeNotification->Type: %d,\n", writeNotification->Type);	
+			//DbgPrint("PreWrite inside loop start writeNotification->Type: %d,\n", writeNotification->Type);	
 #endif
 			writeNotification->BytesToScan = min( Data->Iopb->Parameters.Write.Length - writeLength, MYDLPMF_READ_BUFFER_SIZE );
 	
@@ -832,7 +884,7 @@ MyDLPMFPreWrite (
 					buffer + writeLength,
 					writeNotification->BytesToScan );
 #ifdef DBG_PRINT
-				DbgPrint("Bytes to scan %d, offset: %d\n", writeNotification->BytesToScan, Data->Iopb->Parameters.Write.ByteOffset);
+				//DbgPrint("Bytes to scan %d, offset: %d\n", writeNotification->BytesToScan, Data->Iopb->Parameters.Write.ByteOffset);
 #endif
 			}
 			except(EXCEPTION_EXECUTE_HANDLER)
@@ -843,7 +895,7 @@ MyDLPMFPreWrite (
 				leave;
 			}
 
-			replyLength = sizeof(MYDLPMF_REPLY);
+			replyLength = sizeof (FILTER_REPLY_HEADER) + sizeof( MYDLPMF_REPLY );
 
 			status = IoQueryFileDosDeviceName(FltObjects->FileObject, &dosNameInfo);
 
@@ -854,7 +906,7 @@ MyDLPMFPreWrite (
 						   dosNameInfo->Name.Length + 1*sizeof(WCHAR));
 				writeNotification->FileNameLength = dosNameInfo->Name.Length + 1*sizeof(WCHAR);
 #ifdef DBG_PRINT
-				DbgPrint("writeNotification->FileName: %ws\n", writeNotification->FileName);
+				//DbgPrint("writeNotification->FileName: %ws\n", writeNotification->FileName);
 #endif
 			}
 			else
@@ -865,15 +917,15 @@ MyDLPMFPreWrite (
 			if (dosNameInfo != NULL)
 				ExFreePool(dosNameInfo);
 #ifdef DBG_PRINT
-			DbgPrint("writeNotification->Type: %d\n", writeNotification->Type);
+			//DbgPrint("writeNotification->Type: %d\n", writeNotification->Type);
 #endif
-			status = FltSendMessage( MyDLPMFData.Filter,
-									 &MyDLPMFData.ClientPort,
+			status = FltSendMessage( FilterConf.Filter,
+									 &FilterConf.ClientPort,
 									 writeNotification,
-									 sizeof( MYDLPMF_NOTIFICATION ) - (MYDLPMF_READ_BUFFER_SIZE - writeNotification->BytesToScan),
-									 writeNotification,
+									 sizeof( MYDLPMF_WRITE_NOTIFICATION ) - (MYDLPMF_READ_BUFFER_SIZE - writeNotification->BytesToScan),
+									 reply,
 									 &replyLength,
-									 &writeTimeout );
+									 &FilterConf.WriteTimeout );								 
 
 			if (STATUS_TIMEOUT == status)
 			{
@@ -881,7 +933,7 @@ MyDLPMFPreWrite (
 			}
 			else if (STATUS_SUCCESS == status)
 			{
-				action = ((PMYDLPMF_REPLY) writeNotification)->Action;
+				action = reply->Action;
 			}
 			else
 			{
@@ -906,7 +958,7 @@ MyDLPMFPreWrite (
 			//important response corrupts write notfication
 			writeNotification->Type = PREWRITE;
 #ifdef DBG_PRINT
-			DbgPrint("PreWrite inside loop end writeNotification->Type: %d,\n", writeNotification->Type);
+			//DbgPrint("PreWrite inside loop end writeNotification->Type: %d,\n", writeNotification->Type);
 #endif
 		}
     }

@@ -50,12 +50,18 @@ namespace MyDLP.EndPoint.Core
         static long logLimit;
         static long maximumObjectSize;
         static bool archiveInbound;
-        static bool usbSerialAccessControl;
+        static bool usbSerialAccessControl;      
         static DateTime startTime;
         static String userName = "";
         static Timer userNameTimer;
+        static bool newFilterConfiguration;
 
         //This is a special case logger should be initialized before configuration class             
+
+        public static void setNewFilterConfiguration(bool newConf)
+        {
+            newFilterConfiguration = newConf;
+        }
 
         public static String GetLogPath()
         {
@@ -266,8 +272,8 @@ namespace MyDLP.EndPoint.Core
                 appPath = @"C:\workspace\mydlp-development-env";
                 seapServer = "127.0.0.1";
                 managementServer = "127.0.0.1";
-                archiveInbound = false;
-                usbSerialAccessControl = true;
+                archiveInbound = true;
+                usbSerialAccessControl = false;
                 seapPort = 9099;
                 mydlpConfPath = Configuration.ErlangPath + "mydlp-ep.conf";
                 logLimit = 10485760; // 10MB
@@ -395,7 +401,6 @@ namespace MyDLP.EndPoint.Core
             return userName;
         }
 
-
         public static object getRegistryConfSafe(RegistryKey key, String valueName, Object defaultValue, RegistryValueKind kind)
         {
             object retVal;
@@ -432,7 +437,6 @@ namespace MyDLP.EndPoint.Core
             }
             return retVal;
         }
-
        
         [DllImport("kernel32", SetLastError = true, CallingConvention = CallingConvention.Winapi)]
         public extern static IntPtr LoadLibrary(string libraryName);
@@ -647,6 +651,14 @@ namespace MyDLP.EndPoint.Core
             get
             {
                 return maximumObjectSize;
+            }
+        }
+
+        public static bool NewFilterConfiguration
+        {
+            get
+            {
+                return newFilterConfiguration;
             }
         }
     }
