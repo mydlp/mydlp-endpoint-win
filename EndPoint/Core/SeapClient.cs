@@ -373,6 +373,14 @@ namespace MyDLP.EndPoint.Core
                     return FileOperation.Action.ALLOW;
                 }
 
+                response = sClient.sendMessage("SETPROP " + id +
+                " user=" + Configuration.GetLoggedOnUser());
+                splitResp = response.Split(' ');
+                if (!splitResp[0].Equals("OK"))
+                {
+                    return FileOperation.Action.ALLOW;
+                }
+
                 //response = sClient.sendMessage("SETPROP " + id + " filename=" + shortFilePath);
                 response = sClient.sendMessage("SETPROP " + id + " device_id=" + serial);
 
