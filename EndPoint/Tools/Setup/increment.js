@@ -31,8 +31,8 @@ if (config == "Release")
 
   }
 
-  var fs = new ActiveXObject("Scripting.FileSystemObject");
-  var f = fs.CreateTextFile(pdir + "ProductVersion.wxi");
+  fs = new ActiveXObject("Scripting.FileSystemObject");
+  f = fs.CreateTextFile(pdir + "ProductVersion.wxi");
   f.WriteLine(productVersion);
   f.Close();
 }
