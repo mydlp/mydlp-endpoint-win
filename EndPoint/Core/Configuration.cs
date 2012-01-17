@@ -50,7 +50,8 @@ namespace MyDLP.EndPoint.Core
         static long logLimit;
         static long maximumObjectSize;
         static bool archiveInbound;
-        static bool usbSerialAccessControl;      
+        static bool usbSerialAccessControl;
+        static bool printerMonitor;
         static DateTime startTime;
         static String userName = "";
         static Timer userNameTimer;
@@ -273,6 +274,7 @@ namespace MyDLP.EndPoint.Core
                 seapServer = "127.0.0.1";
                 managementServer = "127.0.0.1";
                 archiveInbound = true;
+                printerMonitor = true;
                 usbSerialAccessControl = false;
                 seapPort = 9099;
                 mydlpConfPath = Configuration.ErlangPath + "mydlp-ep.conf";
@@ -334,6 +336,16 @@ namespace MyDLP.EndPoint.Core
                         usbSerialAccessControl = true;
                     }
 
+                    //Get printMonitor
+                    if ((int)(getRegistryConfSafe(mydlpKey, "PrintMonitor", 0, RegistryValueKind.DWord)) == 0)
+                    {
+                        printerMonitor = false;
+                    }
+                    else
+                    {
+                        printerMonitor = true;
+                    }
+                    
                     //Get seapServer
                     seapServer = (String)getRegistryConfSafe(mydlpKey, "SeapServer", "127.0.0.1", RegistryValueKind.String);
 
@@ -363,6 +375,7 @@ namespace MyDLP.EndPoint.Core
             Logger.GetInstance().Info("MyDLP ManagementServer: " + managementServer);
             Logger.GetInstance().Info("MyDLP ArchiveInbound: " + archiveInbound);
             Logger.GetInstance().Info("MyDLP USBSerialAccessControl: " + usbSerialAccessControl);
+            Logger.GetInstance().Info("MyDLP PrinterMonitor: " + printerMonitor);
             Logger.GetInstance().Info("MyDLP AppPath: " + appPath);
             Logger.GetInstance().Info("MyDLP ConfPath: " + mydlpConfPath);
             Logger.GetInstance().Info("MyDLP LogLimit: " + logLimit);
@@ -546,6 +559,14 @@ namespace MyDLP.EndPoint.Core
             get
             {
                 return usbSerialAccessControl;
+            }
+        }
+
+        public static bool PrinterMonitor
+        {
+            get
+            {
+                return printerMonitor;
             }
         }
 

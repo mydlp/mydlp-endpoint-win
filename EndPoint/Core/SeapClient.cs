@@ -425,6 +425,100 @@ namespace MyDLP.EndPoint.Core
             return FileOperation.Action.ALLOW;
         }
 
+        public static void NotitfyPrintOperation(int pageCount, String userName, String documentName, String printerName, String path)
+        {
+            try
+            {
+                SeapClient sClient = SeapClient.GetInstance();
+                Logger.GetInstance().Debug("NotitfyPrintOperation pageCount: " + pageCount + 
+                    " userName: " + userName + " documentName: " + documentName + " printerName : " + printerName + 
+                    " path: " + path);
+
+                String shortFilePath = Engine.GetShortPath(path);
+
+                String response;
+                String[] splitResp;
+                long id;
+
+                response = sClient.sendMessage("BEGIN");
+
+                if (response.Equals("ERR"))
+                {
+                    return;
+                }
+                else
+                {
+                    splitResp = response.Split(' ');
+                    if (splitResp[0].Equals("OK"))
+                    {
+                        id = Int64.Parse(splitResp[1]);
+                    }
+                    else
+                    {
+                        return;
+                    }
+                }
+
+                /*response = sClient.sendMessage("SETPROP " + id + " burn_after_reading=true");
+                splitResp = response.Split(' ');
+                if (!splitResp[0].Equals("OK"))
+                {
+                    return;
+                }*/
+
+                response = sClient.sendMessage("SETPROP " + id + " pageCount=" + pageCount);
+                splitResp = response.Split(' ');
+                if (!splitResp[0].Equals("OK"))
+                {
+                    return;
+                }
+
+                response = sClient.sendMessage("SETPROP " + id + " documentName=" + documentName);
+                splitResp = response.Split(' ');
+                if (!splitResp[0].Equals("OK"))
+                {
+                    return;
+                }
+
+                response = sClient.sendMessage("SETPROP " + id + " printerName=" + printerName);
+                splitResp = response.Split(' ');
+                if (!splitResp[0].Equals("OK"))
+                {
+                    return;
+                }
+                                            
+                response = sClient.sendMessage("SETPROP " + id + " user=" + userName);
+                splitResp = response.Split(' ');
+                if (!splitResp[0].Equals("OK"))
+                {
+                    return;
+                }
+                
+                response = sClient.sendMessage("PUSHFILE " + id + " " +
+                 qpEncode(shortFilePath));             
+                splitResp = response.Split(' ');
+                if (!splitResp[0].Equals("OK"))
+                {
+                    return;
+                }
+                
+                response = sClient.sendMessage("END " + id);
+                splitResp = response.Split(' ');
+                if (!splitResp[0].Equals("OK"))
+                {
+                    return;
+                }
+
+                sClient.sendMessage("DESTROY " + id);
+            }
+            catch (Exception e)
+            {
+                Logger.GetInstance().Debug(e.Message);
+                return;
+            }
+            return;
+        }
+
         public static bool SeapConnectionTest()
         {
 

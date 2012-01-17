@@ -91,6 +91,12 @@ namespace MyDLP.EndPoint.Service
                     Logger.GetInstance().Error("Seap connection test failed");
                 }
 
+
+                if (Configuration.PrinterMonitor)
+                {
+                    Core.Print.PrintMonitor.InitMonitors();                
+                }
+
                 if (Configuration.UsbSerialAccessControl)
                 {
                     Core.USBController.AddUSBHandler();
@@ -114,10 +120,17 @@ namespace MyDLP.EndPoint.Service
         {
             MyDLPEP.MiniFilterController.GetInstance().Stop();
             engine.Stop();
+
             if (Configuration.UsbSerialAccessControl)
             {
                 Core.USBController.RemoveUSBHandler();
             }
+
+            if (Configuration.PrinterMonitor)
+            {
+                Core.Print.PrintMonitor.StopMonitors();
+            }
+
             Logger.GetInstance().Info("mydlpepwin service stopped");
         }
 

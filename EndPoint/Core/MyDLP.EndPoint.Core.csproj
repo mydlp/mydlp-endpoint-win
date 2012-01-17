@@ -40,6 +40,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Printing.cs" />
+    <Compile Include="PrintMonitor.cs" />
+    <Compile Include="SpoolFile.cs" />
     <Compile Include="USBController.cs" />
     <Compile Include="WatchdogConfiguration.cs" />
     <Compile Include="Configuration.cs" />
