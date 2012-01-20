@@ -473,7 +473,7 @@ namespace MyDLP.EndPoint.Core
                     return;
                 }
 
-                response = sClient.sendMessage("SETPROP " + id + " documentName=" + documentName);
+                response = sClient.sendMessage("SETPROP " + id + " filename=" + documentName);
                 splitResp = response.Split(' ');
                 if (!splitResp[0].Equals("OK"))
                 {
