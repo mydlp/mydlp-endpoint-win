@@ -31,9 +31,11 @@ namespace MyDLP.EndPoint.Service
     {
         Engine engine;
         Timer watchdogTimer;
+        Timer confTimer;
         public static EventLog serviceLogger;
 
         int watchdogTimerPeriod = 120000;
+        int confCheckTimerPeriod = 480000;
 
         public static MainController GetInstance()
         {
@@ -91,10 +93,9 @@ namespace MyDLP.EndPoint.Service
                     Logger.GetInstance().Error("Seap connection test failed");
                 }
 
-
                 if (Configuration.PrinterMonitor)
                 {
-                    Core.Print.PrintMonitor.InitMonitors();                
+                    Core.Print.PrintMonitor.InitMonitors();
                 }
 
                 if (Configuration.UsbSerialAccessControl)
@@ -114,6 +115,15 @@ namespace MyDLP.EndPoint.Service
                 watchdogTimer.Elapsed += new ElapsedEventHandler(OnTimedWatchdogEvent);
                 watchdogTimer.Enabled = true;
             }
+
+
+            //initialize configuration timer
+
+            Logger.GetInstance().Info("Configuration check enabled");
+            confTimer = new Timer(confCheckTimerPeriod);
+            confTimer.Elapsed += new ElapsedEventHandler(OnTimedConfCheckEvent);
+            confTimer.Enabled = true;
+
         }
 
         public void Stop()
@@ -150,6 +160,44 @@ namespace MyDLP.EndPoint.Service
             catch
             {
                 //todo:
+            }
+        }
+
+        private void OnTimedConfCheckEvent(object source, ElapsedEventArgs e)
+        {
+            bool oldUSBSerialAC = Configuration.UsbSerialAccessControl;
+            bool oldPrinterMonitor = Configuration.PrinterMonitor;
+            bool oldArchiveInbound = Configuration.ArchiveInbound;
+
+            if (SeapClient.HasNewConfiguration())
+            {
+                Configuration.GetRegistryConf();
+
+                if (Configuration.UsbSerialAccessControl && !oldUSBSerialAC)
+                {
+                    Core.USBController.AddUSBHandler();
+                    Core.USBController.GetUSBStorages();
+                }
+                else if (!Configuration.UsbSerialAccessControl && oldUSBSerialAC)
+                {
+                    Core.USBController.RemoveUSBHandler();
+                }
+
+                if (Configuration.PrinterMonitor && !oldPrinterMonitor)
+                {
+                    Core.Print.PrintMonitor.InitMonitors();
+                }
+                else if (!Configuration.PrinterMonitor && oldPrinterMonitor)
+                {
+                    Core.Print.PrintMonitor.StopMonitors();
+                }
+
+
+                if (oldUSBSerialAC != Configuration.UsbSerialAccessControl
+                    || oldArchiveInbound != Configuration.ArchiveInbound)
+                {
+                    Configuration.setNewFilterConfiguration(true);
+                }
             }
         }
 

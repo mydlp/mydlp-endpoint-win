@@ -270,8 +270,8 @@ DWORD ListenerWorker(__in PMYDLPMF_THREAD_CONTEXT Context)
 				
 				//Set Confuration of minifilter
 				confMessage.Reply.Pid = MyDLP::EndPoint::Core::Configuration::ErlPid;
-				MyDLP::EndPoint::Core::Logger::GetInstance()->Error("USBSerialAC:" + MyDLP::EndPoint::Core::Configuration::UsbSerialAccessControl);
-				MyDLP::EndPoint::Core::Logger::GetInstance()->Error("ArchiveInbound:" + MyDLP::EndPoint::Core::Configuration::ArchiveInbound);
+				MyDLP::EndPoint::Core::Logger::GetInstance()->Info("USBSerialAC:" + MyDLP::EndPoint::Core::Configuration::UsbSerialAccessControl);
+				MyDLP::EndPoint::Core::Logger::GetInstance()->Info("ArchiveInbound:" + MyDLP::EndPoint::Core::Configuration::ArchiveInbound);
 				confMessage.Reply.USBSerialAC = MyDLP::EndPoint::Core::Configuration::UsbSerialAccessControl;
 				confMessage.Reply.ArchiveInbound = MyDLP::EndPoint::Core::Configuration::ArchiveInbound;
 

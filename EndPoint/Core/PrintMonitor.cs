@@ -106,7 +106,9 @@ namespace MyDLP.EndPoint.Core.Print
         RegisteredWaitHandle printerChangeNotificationHandle;
         ManualResetEvent printerWaitHandle;
 
-        private static ArrayList printerList; 
+        private static ArrayList printerList;
+
+        private static System.Timers.Timer cleanupTimer;
 
 
         public static bool InitMonitors()
@@ -150,11 +152,11 @@ namespace MyDLP.EndPoint.Core.Print
                     }
                 }
                 //initialize cleanup timer
-                System.Timers.Timer t = new System.Timers.Timer();
+                cleanupTimer = new System.Timers.Timer();
                 //t.Interval = 15 * 60000; //15 minutes
-                t.Interval = 7 * 60000; //7 minutes
-                t.Enabled = true;
-                t.Elapsed += new System.Timers.ElapsedEventHandler(TimedCleanUp);
+                cleanupTimer.Interval = 7 * 60000; //7 minutes
+                cleanupTimer.Enabled = true;
+                cleanupTimer.Elapsed += new System.Timers.ElapsedEventHandler(TimedCleanUp);
                 Logger.GetInstance().Debug("PrintMonitor.InitMonitors ends");
                 return true;
                 
@@ -179,6 +181,9 @@ namespace MyDLP.EndPoint.Core.Print
                         SetPrinterOptions(printers[i].pPrinterName, false);
                     }                   
                 }
+
+                cleanupTimer.Stop();
+                cleanupTimer.Close();
                 Logger.GetInstance().Debug("PrintMonitor.StopMonitors stopped");
                 return true;
             }
@@ -329,6 +334,7 @@ namespace MyDLP.EndPoint.Core.Print
                     // we don't do this for now
                     // context related to printers wiped out if spooler service restarted
                     /*
+                    PrintMonitor.StopMonitors();
                     try
                     {
                         ServiceController sc = new ServiceController("Spooler");
@@ -338,8 +344,9 @@ namespace MyDLP.EndPoint.Core.Print
                     }
                     catch (Exception ex)
                     {
-                        myDLPLogErrorIfc.LogError("PrintMonitor.Failsafe: " + ex.Message + " " + ex.StackTrace);
-                    } 
+                        Logger.GetInstance().Error("PrintMonitor.Failsafe: " + ex.Message + " " + ex.StackTrace);
+                    }
+                    PrintMonitor.InitMonitors();
                     */
                 }
             }

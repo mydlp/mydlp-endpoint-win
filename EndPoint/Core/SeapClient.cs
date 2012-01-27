@@ -333,10 +333,10 @@ namespace MyDLP.EndPoint.Core
             //todo: Default Acion
             return FileOperation.Action.ALLOW;
         }
-        
+
         public static FileOperation.Action GetUSBSerialDecision(String serial)
         {
-          
+
             try
             {
                 SeapClient sClient = SeapClient.GetInstance();
@@ -366,7 +366,7 @@ namespace MyDLP.EndPoint.Core
                 }
 
                 response = sClient.sendMessage("SETPROP " + id + " type=usb_device");
-              
+
                 splitResp = response.Split(' ');
                 if (!splitResp[0].Equals("OK"))
                 {
@@ -425,13 +425,49 @@ namespace MyDLP.EndPoint.Core
             return FileOperation.Action.ALLOW;
         }
 
+        public static bool HasNewConfiguration()
+        {
+            try
+            {
+                SeapClient sClient = SeapClient.GetInstance();
+                Logger.GetInstance().Debug("GetConfUpdateNotification");
+
+                String response;
+                String[] splitResp;
+
+                response = sClient.sendMessage("CONFUPDATE");
+                splitResp = response.Split(' ');
+                if (!splitResp[0].Equals("OK"))
+                {
+                    return false;
+                }
+
+                if (splitResp[1].Equals("YES"))
+                {
+                    return true;
+                }
+                else if (splitResp[1].Equals("NO"))
+                {
+                    return false;
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.GetInstance().Debug(e.Message);
+                //todo: Default Acion
+                return false;
+            }
+            //todo: Default Acion
+            return false;
+        }
+
         public static void NotitfyPrintOperation(int pageCount, String userName, String documentName, String printerName, String path)
         {
             try
             {
                 SeapClient sClient = SeapClient.GetInstance();
-                Logger.GetInstance().Debug("NotitfyPrintOperation pageCount: " + pageCount + 
-                    " userName: " + userName + " documentName: " + documentName + " printerName : " + printerName + 
+                Logger.GetInstance().Debug("NotitfyPrintOperation pageCount: " + pageCount +
+                    " userName: " + userName + " documentName: " + documentName + " printerName : " + printerName +
                     " path: " + path);
 
                 String shortFilePath = Engine.GetShortPath(path);
@@ -486,22 +522,22 @@ namespace MyDLP.EndPoint.Core
                 {
                     return;
                 }
-                                            
+
                 response = sClient.sendMessage("SETPROP " + id + " user=" + userName);
                 splitResp = response.Split(' ');
                 if (!splitResp[0].Equals("OK"))
                 {
                     return;
                 }
-                
+
                 response = sClient.sendMessage("PUSHFILE " + id + " " +
-                 qpEncode(shortFilePath));             
+                 qpEncode(shortFilePath));
                 splitResp = response.Split(' ');
                 if (!splitResp[0].Equals("OK"))
                 {
                     return;
                 }
-                
+
                 response = sClient.sendMessage("END " + id);
                 splitResp = response.Split(' ');
                 if (!splitResp[0].Equals("OK"))
@@ -529,9 +565,9 @@ namespace MyDLP.EndPoint.Core
 
                 String response;
                 String[] splitResp;
-           
+
                 response = sClient.sendMessage("BEGIN");
-                                
+
             }
             catch (Exception e)
             {
@@ -540,7 +576,6 @@ namespace MyDLP.EndPoint.Core
             }
             return true;
         }
-
 
         private SeapClient()
         {

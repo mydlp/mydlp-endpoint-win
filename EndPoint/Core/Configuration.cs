@@ -27,7 +27,7 @@ using System.Diagnostics;
 using System.ComponentModel;
 using System.Management;
 using System.Timers;
-using System.Runtime.InteropServices; 
+using System.Runtime.InteropServices;
 
 namespace MyDLP.EndPoint.Core
 {
@@ -131,7 +131,7 @@ namespace MyDLP.EndPoint.Core
             userNameTimer = new Timer(20000);
             userNameTimer.Elapsed += new ElapsedEventHandler(OnTimeUserNameCacheEvent);
             userNameTimer.Enabled = true;
-        
+
         }
 
         private static void OnTimeUserNameCacheEvent(object source, ElapsedEventArgs e)
@@ -171,24 +171,6 @@ namespace MyDLP.EndPoint.Core
                 else
                 {
                     content = content + "\nmanagement_server_address\t" + managementServer;
-                }
-
-                if (content.Contains("archive_inbound"))
-                {
-                    content = Regex.Replace(content, "^[#\t\\ ]*archive_inbound\\s+(true|false)?[\t\\ ]*(\r)?$", "archive_inbound\t" + archiveInbound.ToString().ToLower() + @"$2", RegexOptions.Multiline);
-                }
-                else
-                {
-                    content = content + "\narchive_inbound\t" + archiveInbound.ToString().ToLower();
-                }
-
-                if (content.Contains("maximum_object_size"))
-                {
-                    content = Regex.Replace(content, "^[#\t\\ ]*maximum_object_size\\s+([0-9]+)?[\t\\ ]*(\r)?$", "maximum_object_size\t" + maximumObjectSize + @"$2", RegexOptions.Multiline);
-                }
-                else
-                {
-                    content = content + "\nmaximum_object_size\t" + maximumObjectSize;
                 }
 
                 StreamWriter writer = new StreamWriter(mydlpConfPath);
@@ -317,7 +299,7 @@ namespace MyDLP.EndPoint.Core
                     }
 
                     //Get archiveInbound
-                    if ((int)(getRegistryConfSafe(mydlpKey, "ArchiveInbound", 0, RegistryValueKind.DWord)) == 0)
+                    if ((int)(getRegistryConfSafe(mydlpKey, "archive_inbound", 0, RegistryValueKind.DWord)) == 0)
                     {
                         archiveInbound = false;
                     }
@@ -327,7 +309,7 @@ namespace MyDLP.EndPoint.Core
                     }
 
                     //Get archiveInbound
-                    if ((int)(getRegistryConfSafe(mydlpKey, "USBSerialAccessControl", 0, RegistryValueKind.DWord)) == 0)
+                    if ((int)(getRegistryConfSafe(mydlpKey, "usb_serial_access_control", 0, RegistryValueKind.DWord)) == 0)
                     {
                         usbSerialAccessControl = false;
                     }
@@ -337,7 +319,7 @@ namespace MyDLP.EndPoint.Core
                     }
 
                     //Get printMonitor
-                    if ((int)(getRegistryConfSafe(mydlpKey, "PrintMonitor", 0, RegistryValueKind.DWord)) == 0)
+                    if ((int)(getRegistryConfSafe(mydlpKey, "print_monitor", 0, RegistryValueKind.DWord)) == 0)
                     {
                         printerMonitor = false;
                     }
@@ -345,21 +327,25 @@ namespace MyDLP.EndPoint.Core
                     {
                         printerMonitor = true;
                     }
-                    
+
                     //Get seapServer
-                    seapServer = (String)getRegistryConfSafe(mydlpKey, "SeapServer", "127.0.0.1", RegistryValueKind.String);
+                    seapServer = (String)getRegistryConfSafe(mydlpKey, "seap_server", "127.0.0.1", RegistryValueKind.String);
 
                     //Get managementServer
-                    managementServer = (String)getRegistryConfSafe(mydlpKey, "ManagementServer", "127.0.0.1", RegistryValueKind.String);
+                    managementServer = (String)getRegistryConfSafe(mydlpKey, "management_server", "127.0.0.1", RegistryValueKind.String);
+
+                    //Try to use old management server if local host found for management server
+                    if (managementServer == "127.0.0.1")
+                        managementServer = (String)getRegistryConfSafe(mydlpKey, "ManagementServer", "127.0.0.1", RegistryValueKind.String);
 
                     //Get seapPort
-                    seapPort = (int)getRegistryConfSafe(mydlpKey, "SeapPort", 9099, RegistryValueKind.DWord);
+                    seapPort = (int)getRegistryConfSafe(mydlpKey, "seap_port", 9099, RegistryValueKind.DWord);
 
                     //Get logLimit
-                    logLimit = (int)getRegistryConfSafe(mydlpKey, "LogLimit", 10485760, RegistryValueKind.DWord);
+                    logLimit = (int)getRegistryConfSafe(mydlpKey, "log_limit", 10485760, RegistryValueKind.DWord);
 
                     //Get maximumObjectSize
-                    maximumObjectSize = (int)getRegistryConfSafe(mydlpKey, "MaximumObjectSize", 10485760, RegistryValueKind.DWord);
+                    maximumObjectSize = (int)getRegistryConfSafe(mydlpKey, "maximum_object_size", 10485760, RegistryValueKind.DWord);
                 }
                 catch (Exception e)
                 {
@@ -450,7 +436,7 @@ namespace MyDLP.EndPoint.Core
             }
             return retVal;
         }
-       
+
         [DllImport("kernel32", SetLastError = true, CallingConvention = CallingConvention.Winapi)]
         public extern static IntPtr LoadLibrary(string libraryName);
 
