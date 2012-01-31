@@ -587,8 +587,6 @@ namespace MyDLP.EndPoint.Core
             {
                 Logger.GetInstance().Info("Initialize seap client server: " + server + " port: " + port);
                 client = new TcpClient(server, port);
-                client.Client.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.KeepAlive, true);
-
                 stream = client.GetStream();
                 stream.ReadTimeout = readTimeout;
                 stream.WriteTimeout = writeTimeout;

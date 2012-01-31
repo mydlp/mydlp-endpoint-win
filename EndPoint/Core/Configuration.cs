@@ -241,7 +241,7 @@ namespace MyDLP.EndPoint.Core
                 if (IsOS64Bit())
                 {
                     Logger.GetInstance().Info("64 bit platform, using MyDLPMF_64.sys");
-                    minifilterPath = "C:\\workspace\\mydlp-endpoint-win\\EndPoint\\MiniFilter\\src\\objchk_win7_amd64\\amd64\\MyDLPMF_64.sys";
+                    minifilterPath = "C:\\workspace\\mydlp-endpoint-win\\EndPoint\\MiniFilter\\src\\objchk_win7_amd64\\amd64\\MyDLPMF.sys";
                 }
                 else
                 {
