@@ -42,7 +42,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="C:\WinDDK\7600.16385.1\inc\ddk;C:\WinDDK\7600.16385.1\inc\api;C:\WinDDK\7600.16385.1\inc\crt"
+				AdditionalIncludeDirectories="C:\WinDDK\7600.16385.1\inc\ddk;C:\WinDDK\7600.16385.1\inc\api;C:\WinDDK\7600.16385.1\inc\crt;&quot;C:\hudson\workspace\mydlp-endpoint-win\EndPoint\MiniFilter\inc&quot;;&quot;C:\workspace\mydlp-endpoint-win\EndPoint\MiniFilter\inc&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;CODE_ANALYSIS"
 				RuntimeLibrary="3"
 				UsePrecompiledHeader="2"
