@@ -33,6 +33,10 @@ namespace MyDLP.EndPoint.Core
         String server = Configuration.SeapServer;
         TcpClient client;
         NetworkStream stream;
+        StreamReader reader;
+        StreamWriter writer;
+        BinaryWriter binaryWriter;
+
         int readTimeout = 1800;
         int writeTimeout = 1800;
         int responseLength = 512;
@@ -131,7 +135,7 @@ namespace MyDLP.EndPoint.Core
             }
             catch (Exception e)
             {
-                Logger.GetInstance().Debug(e.Message);
+                Logger.GetInstance().Error(e.Message);
                 //todo: Default Acion
                 return FileOperation.Action.ALLOW;
             }
@@ -222,7 +226,7 @@ namespace MyDLP.EndPoint.Core
             }
             catch (Exception e)
             {
-                Logger.GetInstance().Debug(e.Message);
+                Logger.GetInstance().Error(e.Message);
                 //todo: Default Acion
                 return FileOperation.Action.ALLOW;
             }
@@ -326,7 +330,7 @@ namespace MyDLP.EndPoint.Core
             }
             catch (Exception e)
             {
-                Logger.GetInstance().Debug(e.Message);
+                Logger.GetInstance().Error(e.Message);
                 //todo: Default Acion
                 return FileOperation.Action.ALLOW;
             }
@@ -417,7 +421,7 @@ namespace MyDLP.EndPoint.Core
             }
             catch (Exception e)
             {
-                Logger.GetInstance().Debug(e.Message);
+                Logger.GetInstance().Error(e.Message);
                 //todo: Default Acion
                 return FileOperation.Action.ALLOW;
             }
@@ -453,7 +457,7 @@ namespace MyDLP.EndPoint.Core
             }
             catch (Exception e)
             {
-                Logger.GetInstance().Debug(e.Message);
+                Logger.GetInstance().Error(e.Message);
                 //todo: Default Acion
                 return false;
             }
@@ -549,7 +553,7 @@ namespace MyDLP.EndPoint.Core
             }
             catch (Exception e)
             {
-                Logger.GetInstance().Debug(e.Message);
+                Logger.GetInstance().Error(e.Message);
                 return;
             }
             return;
@@ -583,9 +587,16 @@ namespace MyDLP.EndPoint.Core
             {
                 Logger.GetInstance().Info("Initialize seap client server: " + server + " port: " + port);
                 client = new TcpClient(server, port);
+                client.Client.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.KeepAlive, true);
+
                 stream = client.GetStream();
                 stream.ReadTimeout = readTimeout;
                 stream.WriteTimeout = writeTimeout;
+                reader = new StreamReader(stream, System.Text.Encoding.ASCII);
+                writer = new StreamWriter(stream, System.Text.Encoding.ASCII);
+                binaryWriter = new BinaryWriter(stream);
+
+
             }
             catch (Exception)
             {
@@ -611,6 +622,9 @@ namespace MyDLP.EndPoint.Core
                 stream = client.GetStream();
                 stream.ReadTimeout = readTimeout;
                 stream.WriteTimeout = writeTimeout;
+                reader = new StreamReader(stream, System.Text.Encoding.ASCII);
+                writer = new StreamWriter(stream, System.Text.Encoding.ASCII);
+                binaryWriter = new BinaryWriter(stream);
             }
             catch (Exception)
             {
@@ -636,13 +650,12 @@ namespace MyDLP.EndPoint.Core
 
         public String sendMessage(String cmd, MemoryStream msg)
         {
-            Byte[] cmdBin = System.Text.Encoding.ASCII.GetBytes(cmd);
-            Byte[] end = System.Text.Encoding.ASCII.GetBytes("\r\n");
-            Logger.GetInstance().Debug("SeapClient send message: <" + cmd + ">");
-            Byte[] response = new Byte[responseLength];
-            int readCount = 0;
             int tryCount = 0;
             int tryLimit = 3;
+            Exception lastException = new Exception("Unknown exception");
+            String respMessage = "";
+
+            Logger.GetInstance().Debug("SeapClient send message: <" + cmd + ">");
 
             lock (seapClient)
             {
@@ -652,137 +665,64 @@ namespace MyDLP.EndPoint.Core
                     {
                         //clean and discard data on sockect if any
                         if (stream.DataAvailable == true)
-                            stream.Read(response, 0, responseLength);
+                            reader.ReadToEnd();
 
-                        stream.Write(cmdBin, 0, cmdBin.Length);
-                        stream.Write(end, 0, end.Length);
-                        stream.Write(msg.GetBuffer(), 0, (int)msg.Length);
-                        stream.Flush();
-                        readCount = readResponseTillNewLine(response, responseLength);
+                        writer.WriteLine(cmd);
+                        writer.Flush();
+
+                        if (msg != null)
+                        {
+                            binaryWriter.Write(msg.GetBuffer(), 0, (int)msg.Length);
+                            binaryWriter.Flush();
+                        }
+
+                        respMessage = reader.ReadLine().Trim();
+
                         tryCount = 0;
                         break;
                     }
-                    catch (IOException e)
-                    {
-                        Logger.GetInstance().Debug("IO Exception tryCount:" + tryCount);
-                        tryCount = handleStreamError(tryCount, response);
-                    }
                     catch (Exception e)
                     {
-                        Logger.GetInstance().Debug("SendMessage Exception tryCount:" + tryCount
-                           + " exception message:" + e.Message + e.StackTrace);
-                        tryCount = handleStreamError(tryCount, response);
+                        Logger.GetInstance().Debug("IO Exception tryCount:" + tryCount);
+                        lastException = e;
+                        tryCount = handleStreamError(tryCount);
                     }
+                }
+
+                if (tryCount >= tryLimit)
+                {
+                    throw lastException;
                 }
             }
 
-            if (tryCount >= tryLimit)
-            {
-                throw new IOException("SeapClient can not connect to SeapServer after " + tryCount + " attempt, giving up");
-            }
-
-            String respMessage = System.Text.Encoding.ASCII.GetString(response, 0, readCount);
-            Logger.GetInstance().Debug("SeapClient read response:  <" + respMessage.Trim() + ">");
-            return respMessage.Trim();
+            Logger.GetInstance().Debug("SeapClient read response:  <" + respMessage + ">");
+            return respMessage;
         }
 
         public String sendMessage(String msg)
         {
-            int readCount = 0;
-            int tryCount = 0;
-            int tryLimit = 3;
-
-            Logger.GetInstance().Debug("SeapClient send message: <" + msg + ">");
-            Byte[] response = new Byte[responseLength];
-            msg = msg + "\r\n";
-            Byte[] data = System.Text.Encoding.ASCII.GetBytes(msg);
-
-            lock (seapClient)
-            {
-                while (tryCount < tryLimit)
-                {
-                    try
-                    {
-                        //clean and discard data on sockect if any
-                        if (stream.DataAvailable == true)
-                            stream.Read(response, 0, responseLength);
-                        stream.Write(data, 0, msg.Length);
-                        stream.Flush();
-                        readCount = readResponseTillNewLine(response, responseLength);
-                        tryCount = 0;
-                        break;
-                    }
-                    catch (IOException e)
-                    {
-                        Logger.GetInstance().Debug("IO Exception tryCount:" + tryCount);
-                        tryCount = handleStreamError(tryCount, response);
-                    }
-                    catch (Exception e)
-                    {
-                        Logger.GetInstance().Debug("SendMessage Exception tryCount:" + tryCount
-                           + " exception message:" + e.Message + e.StackTrace);
-                        tryCount = handleStreamError(tryCount, response);
-                    }
-                }
-            }
-
-            if (tryCount >= tryLimit)
-            {
-                throw new IOException("SeapClient can not connect to SeapServer after " + tryCount + " attempt, giving up");
-            }
-
-            String respMessage = System.Text.Encoding.ASCII.GetString(response, 0, readCount);
-            Logger.GetInstance().Debug("SeapClient read response:  <" + respMessage.Trim() + ">");
-            return respMessage.Trim();
-        }
-
-        public int readResponseTillNewLine(byte[] response, int responseLength)
-        {
-
-            int i = 0;
-            int readCount = 0;
-            bool foundNewLine = false;
-
+            String respMessage = "";
             try
             {
-                while (foundNewLine == false)
-                {
-                    readCount = stream.Read(response, i, responseLength);
-
-                    int length = i + readCount;
-
-                    if (length > responseLength)
-                    {
-                        throw new Exception("Read buffer overflow");
-                    }
-
-                    for (; i < length; i++)
-                    {
-                        if (response[i] == '\r' && response[i + 1] == '\n')
-                        {
-                            foundNewLine = true;
-                            i += 2;
-                            break;
-                        }
-                    }
-                }
+                respMessage = sendMessage(msg, null);
             }
             catch
             {
                 throw;
             }
 
-            return i;
+            return respMessage;
         }
 
-        public int handleStreamError(int tryCount, byte[] response)
+
+        public int handleStreamError(int tryCount)
         {
             try
             {
                 //consume &discard error message if any
                 if (stream.DataAvailable)
                 {
-                    stream.Read(response, 0, responseLength);
+                    reader.ReadToEnd();
                 }
             }
             catch
