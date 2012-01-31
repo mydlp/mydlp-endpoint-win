@@ -442,11 +442,11 @@ namespace MyDLP.EndPoint.Core
                     return false;
                 }
 
-                if (splitResp[1].Equals("YES"))
+                if (splitResp[1].Equals("yes"))
                 {
                     return true;
                 }
-                else if (splitResp[1].Equals("NO"))
+                else if (splitResp[1].Equals("no"))
                 {
                     return false;
                 }
@@ -658,40 +658,20 @@ namespace MyDLP.EndPoint.Core
                         stream.Write(end, 0, end.Length);
                         stream.Write(msg.GetBuffer(), 0, (int)msg.Length);
                         stream.Flush();
-                        readCount = stream.Read(response, 0, responseLength);
+                        readCount = readResponseTillNewLine(response, responseLength);
                         tryCount = 0;
                         break;
                     }
-                    catch (System.IO.IOException e)
+                    catch (IOException e)
                     {
-                        Logger.GetInstance().Debug("IO Exception try reconnect try count:" + tryCount);
-                        //consume &discard error message if any
-                        try
-                        {
-                            if (stream.DataAvailable)
-                            {
-                                readCount = stream.Read(response, 0, responseLength);
-                            }
-                        }
-                        catch
-                        {
-                            Logger.GetInstance().Debug("SeapClient discard not possible");
-                        }
-                        try
-                        {
-                            tryCount++;
-                            Reconnect();
-                        }
-                        catch
-                        {
-                            Logger.GetInstance().Debug("Reconnect failed");
-                        }
+                        Logger.GetInstance().Debug("IO Exception tryCount:" + tryCount);
+                        tryCount = handleStreamError(tryCount, response);
                     }
                     catch (Exception e)
                     {
-                        Logger.GetInstance().Debug("SendMessage Exception " + e.Message + e.StackTrace);
-                        tryCount++;
-                        Reconnect();
+                        Logger.GetInstance().Debug("SendMessage Exception tryCount:" + tryCount
+                           + " exception message:" + e.Message + e.StackTrace);
+                        tryCount = handleStreamError(tryCount, response);
                     }
                 }
             }
@@ -728,40 +708,20 @@ namespace MyDLP.EndPoint.Core
                             stream.Read(response, 0, responseLength);
                         stream.Write(data, 0, msg.Length);
                         stream.Flush();
-                        readCount = stream.Read(response, 0, responseLength);
+                        readCount = readResponseTillNewLine(response, responseLength);
                         tryCount = 0;
                         break;
                     }
-                    catch (System.IO.IOException e)
+                    catch (IOException e)
                     {
-                        Logger.GetInstance().Debug("IO Exception try reconnect try count:" + tryCount);
-                        //consume &discard error message if any
-                        try
-                        {
-                            if (stream.DataAvailable)
-                            {
-                                readCount = stream.Read(response, 0, responseLength);
-                            }
-                        }
-                        catch
-                        {
-                            Logger.GetInstance().Debug("SeapClient discard not possible");
-                        }
-                        try
-                        {
-                            tryCount++;
-                            Reconnect();
-                        }
-                        catch
-                        {
-                            Logger.GetInstance().Debug("Reconnect failed");
-                        }
+                        Logger.GetInstance().Debug("IO Exception tryCount:" + tryCount);
+                        tryCount = handleStreamError(tryCount, response);
                     }
                     catch (Exception e)
                     {
-                        Logger.GetInstance().Debug("SendMessage Exception " + e.Message + e.StackTrace);
-                        tryCount++;
-                        Reconnect();
+                        Logger.GetInstance().Debug("SendMessage Exception tryCount:" + tryCount
+                           + " exception message:" + e.Message + e.StackTrace);
+                        tryCount = handleStreamError(tryCount, response);
                     }
                 }
             }
@@ -774,6 +734,71 @@ namespace MyDLP.EndPoint.Core
             String respMessage = System.Text.Encoding.ASCII.GetString(response, 0, readCount);
             Logger.GetInstance().Debug("SeapClient read response:  <" + respMessage.Trim() + ">");
             return respMessage.Trim();
+        }
+
+        public int readResponseTillNewLine(byte[] response, int responseLength)
+        {
+
+            int i = 0;
+            int readCount = 0;
+            bool foundNewLine = false;
+
+            try
+            {
+                while (foundNewLine == false)
+                {
+                    readCount = stream.Read(response, i, responseLength);
+
+                    int length = i + readCount;
+
+                    if (length > responseLength)
+                    {
+                        throw new Exception("Read buffer overflow");
+                    }
+
+                    for (; i < length; i++)
+                    {
+                        if (response[i] == '\r' && response[i + 1] == '\n')
+                        {
+                            foundNewLine = true;
+                            i += 2;
+                            break;
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                throw;
+            }
+
+            return i;
+        }
+
+        public int handleStreamError(int tryCount, byte[] response)
+        {
+            try
+            {
+                //consume &discard error message if any
+                if (stream.DataAvailable)
+                {
+                    stream.Read(response, 0, responseLength);
+                }
+            }
+            catch
+            {
+                Logger.GetInstance().Debug("SeapClient discard not possible");
+            }
+            try
+            {
+                tryCount++;
+                Reconnect();
+            }
+            catch
+            {
+                Logger.GetInstance().Debug("Reconnect failed");
+            }
+            return tryCount;
         }
 
         protected static String qpEncode(String inStr)

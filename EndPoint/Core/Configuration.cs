@@ -233,6 +233,7 @@ namespace MyDLP.EndPoint.Core
 
         public static bool GetRegistryConf()
         {
+            Logger.GetInstance().Debug("GetRegistryConf called");
 
             if (System.Environment.UserInteractive)
             {

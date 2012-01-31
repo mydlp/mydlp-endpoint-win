@@ -171,6 +171,7 @@ namespace MyDLP.EndPoint.Service
 
             if (SeapClient.HasNewConfiguration())
             {
+                Logger.GetInstance().Info("New configuration notified.");
                 Configuration.GetRegistryConf();
 
                 if (Configuration.UsbSerialAccessControl && !oldUSBSerialAC)
@@ -196,6 +197,7 @@ namespace MyDLP.EndPoint.Service
                 if (oldUSBSerialAC != Configuration.UsbSerialAccessControl
                     || oldArchiveInbound != Configuration.ArchiveInbound)
                 {
+                    Logger.GetInstance().Debug("NewFilterConfiguration");
                     Configuration.setNewFilterConfiguration(true);
                 }
             }
