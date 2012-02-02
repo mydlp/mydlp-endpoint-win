@@ -173,6 +173,7 @@ namespace MyDLP.EndPoint.Service
             {
                 Logger.GetInstance().Info("New configuration notified.");
                 Configuration.GetRegistryConf();
+                Configuration.InitLogLevel();
 
                 if (Configuration.UsbSerialAccessControl && !oldUSBSerialAC)
                 {
