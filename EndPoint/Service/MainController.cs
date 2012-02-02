@@ -196,7 +196,7 @@ namespace MyDLP.EndPoint.Service
 
 
                 if (oldArchiveInbound != Configuration.ArchiveInbound
-                    || oldUSBSerialAC != Configuration.ArchiveInbound)
+                    || oldUSBSerialAC != Configuration.UsbSerialAccessControl)
                 {
                     Logger.GetInstance().Debug("New mydlpmf configuration");
                     MyDLPEP.MiniFilterController.GetInstance().Stop();
