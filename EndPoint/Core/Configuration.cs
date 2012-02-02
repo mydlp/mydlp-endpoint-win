@@ -108,12 +108,12 @@ namespace MyDLP.EndPoint.Core
                     //Get loglevel
                     try
                     {
-                        logLevel = (Logger.LogLevel)mydlpKey.GetValue("LogLevel");
+                        logLevel = (Logger.LogLevel)mydlpKey.GetValue("log_level");
                         if (logLevel > Logger.LogLevel.DEBUG) logLevel = Logger.LogLevel.DEBUG;
                     }
                     catch (Exception e)
                     {
-                        mydlpKey.SetValue("LogLevel", 1, RegistryValueKind.DWord);
+                        mydlpKey.SetValue("log_level", 1, RegistryValueKind.DWord);
                         logLevel = Logger.LogLevel.INFO;
                     }
                 }
