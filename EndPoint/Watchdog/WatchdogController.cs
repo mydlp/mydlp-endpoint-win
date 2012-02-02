@@ -53,7 +53,7 @@ namespace MyDLP.EndPoint.Service
         {
             //notify logger that we are in watchdog service
             Logger.GetInstance().InitializeWatchdogLogger(serviceLogger);
-            if (Configuration.GetRegistryConf() == false)
+            if (Configuration.GetAppConf() == false)
             {
                 //to defer error message
                 System.Threading.Thread.Sleep(2000);
@@ -65,6 +65,8 @@ namespace MyDLP.EndPoint.Service
             {
                 Configuration.setPids();
             }
+
+            Configuration.GetUserConf();
 
             watchdogTimer = new Timer(watchdogTimerPeriod);
             watchdogTimer.Elapsed += new ElapsedEventHandler(OnTimedWatchdogEvent);

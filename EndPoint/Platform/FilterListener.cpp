@@ -234,7 +234,6 @@ DWORD ListenerWorker(__in PMYDLPMF_THREAD_CONTEXT Context)
 				result = FALSE;
 				replyMessage.ReplyHeader.Status = 0;
 				replyMessage.ReplyHeader.MessageId = message->MessageHeader.MessageId;
-				replyMessage.Reply.ConfUpdate = MyDLP::EndPoint::Core::Configuration::NewFilterConfiguration;
 
 				if (action == FileOperation::Action::ALLOW )
 					replyMessage.Reply.Action = _MYDLPMF_REPLY::ActionType::ALLOW;
@@ -246,7 +245,7 @@ DWORD ListenerWorker(__in PMYDLPMF_THREAD_CONTEXT Context)
 				hr = FilterReplyMessage( Context->Port, (PFILTER_REPLY_HEADER) &replyMessage, sizeof( MYDLPMF_REPLY ) + sizeof ( FILTER_REPLY_HEADER ));
 				
 				if (SUCCEEDED(hr) || hr == ERROR_FLT_NO_WAITER_FOR_REPLY ) {
-					MyDLP::EndPoint::Core::Configuration::setNewFilterConfiguration(false);
+					
 				} else {
 					MyDLP::EndPoint::Core::Logger::GetInstance()->Error("MyDLPMF: Error replying message. Error:" + (gcnew Int64(hr)));
 					break;
@@ -263,7 +262,7 @@ DWORD ListenerWorker(__in PMYDLPMF_THREAD_CONTEXT Context)
 			}
 			else
 			{
-				MyDLP::EndPoint::Core::Logger::GetInstance()->Info("Filter conf update");
+				MyDLP::EndPoint::Core::Logger::GetInstance()->Info("Filter conf init");
 
 				confRequest = 0;
 				result = FALSE;

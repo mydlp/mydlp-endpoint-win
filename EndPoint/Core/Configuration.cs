@@ -33,9 +33,9 @@ namespace MyDLP.EndPoint.Core
 {
     public class Configuration
     {
+        //app conf
         static String appPath;
         static String seapServer;
-        static String managementServer;
         static int seapPort;
         static Logger.LogLevel logLevel = Logger.LogLevel.DEBUG;
         static String minifilterPath;
@@ -47,23 +47,29 @@ namespace MyDLP.EndPoint.Core
         static String mydlpConfPath;
         static int erlPid = 0;
         static int pythonPid = 0;
+        static DateTime startTime;
+        static String userName = "";
+        static Timer userNameTimer;
+
+
+        //user conf
+        static String managementServer;
         static long logLimit;
         static long maximumObjectSize;
         static bool archiveInbound;
         static bool usbSerialAccessControl;
         static bool printerMonitor;
-        static DateTime startTime;
-        static String userName = "";
-        static Timer userNameTimer;
         static bool newFilterConfiguration;
 
-        //This is a special case logger should be initialized before configuration class             
+
+
 
         public static void setNewFilterConfiguration(bool newConf)
         {
             newFilterConfiguration = newConf;
         }
 
+        //This is a special case logger should be initialized before configuration class    
         public static String GetLogPath()
         {
             if (System.Environment.UserInteractive)
@@ -93,30 +99,25 @@ namespace MyDLP.EndPoint.Core
             }
         }
 
+        //This is a special case logger should be initialized before configuration class 
         public static void InitLogLevel()
         {
             try
             {
                 RegistryKey mydlpKey = Registry.LocalMachine.OpenSubKey("Software").OpenSubKey("MyDLP", true);
 
-                if (System.Environment.UserInteractive)
+                //Get loglevel
+                try
                 {
-                    logLevel = Logger.LogLevel.DEBUG;
+                    logLevel = (Logger.LogLevel)mydlpKey.GetValue("log_level");
+                    if (logLevel > Logger.LogLevel.DEBUG) logLevel = Logger.LogLevel.DEBUG;
                 }
-                else
+                catch (Exception e)
                 {
-                    //Get loglevel
-                    try
-                    {
-                        logLevel = (Logger.LogLevel)mydlpKey.GetValue("log_level");
-                        if (logLevel > Logger.LogLevel.DEBUG) logLevel = Logger.LogLevel.DEBUG;
-                    }
-                    catch (Exception e)
-                    {
-                        mydlpKey.SetValue("log_level", 1, RegistryValueKind.DWord);
-                        logLevel = Logger.LogLevel.INFO;
-                    }
+                    mydlpKey.SetValue("log_level", 1, RegistryValueKind.DWord);
+                    logLevel = Logger.LogLevel.INFO;
                 }
+
             }
             catch (Exception e)
             {
@@ -231,9 +232,9 @@ namespace MyDLP.EndPoint.Core
             Logger.GetInstance().Info("Configuration.ErlPid = " + Configuration.ErlPid);
         }
 
-        public static bool GetRegistryConf()
+        public static bool GetAppConf()
         {
-            Logger.GetInstance().Debug("GetRegistryConf called");
+            Logger.GetInstance().Debug("GetAppConf called");
 
             if (System.Environment.UserInteractive)
             {
@@ -255,14 +256,9 @@ namespace MyDLP.EndPoint.Core
                 pythonPath = @"C:\workspace\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\thrift\gen-py";
                 appPath = @"C:\workspace\mydlp-development-env";
                 seapServer = "127.0.0.1";
-                managementServer = "127.0.0.1";
-                archiveInbound = true;
-                printerMonitor = true;
-                usbSerialAccessControl = false;
                 seapPort = 9099;
                 mydlpConfPath = Configuration.ErlangPath + "mydlp-ep.conf";
-                logLimit = 10485760; // 10MB
-                maximumObjectSize = 10485760; // 10MB
+
             }
             else
             {
@@ -299,54 +295,16 @@ namespace MyDLP.EndPoint.Core
                         return false;
                     }
 
-                    //Get archiveInbound
-                    if ((int)(getRegistryConfSafe(mydlpKey, "archive_inbound", 0, RegistryValueKind.DWord)) == 0)
-                    {
-                        archiveInbound = false;
-                    }
-                    else
-                    {
-                        archiveInbound = true;
-                    }
-
-                    //Get archiveInbound
-                    if ((int)(getRegistryConfSafe(mydlpKey, "usb_serial_access_control", 0, RegistryValueKind.DWord)) == 0)
-                    {
-                        usbSerialAccessControl = false;
-                    }
-                    else
-                    {
-                        usbSerialAccessControl = true;
-                    }
-
-                    //Get printMonitor
-                    if ((int)(getRegistryConfSafe(mydlpKey, "print_monitor", 0, RegistryValueKind.DWord)) == 0)
-                    {
-                        printerMonitor = false;
-                    }
-                    else
-                    {
-                        printerMonitor = true;
-                    }
-
                     //Get seapServer
                     seapServer = (String)getRegistryConfSafe(mydlpKey, "seap_server", "127.0.0.1", RegistryValueKind.String);
 
                     //Get managementServer
                     managementServer = (String)getRegistryConfSafe(mydlpKey, "management_server", "127.0.0.1", RegistryValueKind.String);
 
-                    //Try to use old management server if local host found for management server
-                    if (managementServer == "127.0.0.1")
-                        managementServer = (String)getRegistryConfSafe(mydlpKey, "ManagementServer", "127.0.0.1", RegistryValueKind.String);
 
                     //Get seapPort
                     seapPort = (int)getRegistryConfSafe(mydlpKey, "seap_port", 9099, RegistryValueKind.DWord);
 
-                    //Get logLimit
-                    logLimit = (int)getRegistryConfSafe(mydlpKey, "log_limit", 10485760, RegistryValueKind.DWord);
-
-                    //Get maximumObjectSize
-                    maximumObjectSize = (int)getRegistryConfSafe(mydlpKey, "maximum_object_size", 10485760, RegistryValueKind.DWord);
                 }
                 catch (Exception e)
                 {
@@ -357,14 +315,83 @@ namespace MyDLP.EndPoint.Core
             }
 
             Logger.GetInstance().Info("MyDLP Path: " + appPath);
-            Logger.GetInstance().Info("MyDLP LogLevel: " + logLevel.ToString());
             Logger.GetInstance().Info("MyDLP SeapServer: " + seapServer + ":" + seapPort);
+            Logger.GetInstance().Info("MyDLP AppPath: " + appPath);
+            Logger.GetInstance().Info("MyDLP ConfPath: " + mydlpConfPath);
+
+            return true;
+        }
+
+        public static bool GetUserConf()
+        {
+            Logger.GetInstance().Debug("GetUserConf called");
+
+            try
+            {
+                RegistryKey mydlpKey = Registry.LocalMachine.OpenSubKey("Software").OpenSubKey("MyDLP", true);
+
+                //Get archiveInbound
+                if ((int)(getRegistryConfSafe(mydlpKey, "archive_inbound", 0, RegistryValueKind.DWord)) == 0)
+                {
+                    archiveInbound = false;
+                }
+                else
+                {
+                    archiveInbound = true;
+                }
+
+                //Get archiveInbound
+                if ((int)(getRegistryConfSafe(mydlpKey, "usb_serial_access_control", 0, RegistryValueKind.DWord)) == 0)
+                {
+                    usbSerialAccessControl = false;
+                }
+                else
+                {
+                    usbSerialAccessControl = true;
+                }
+
+                //Get printMonitor
+                if ((int)(getRegistryConfSafe(mydlpKey, "print_monitor", 0, RegistryValueKind.DWord)) == 0)
+                {
+                    printerMonitor = false;
+                }
+                else
+                {
+                    printerMonitor = true;
+                }
+
+
+                //Get managementServer
+                managementServer = (String)getRegistryConfSafe(mydlpKey, "management_server", "127.0.0.1", RegistryValueKind.String);
+
+                //Try to use old management server if local host found for management server
+                if (managementServer == "127.0.0.1")
+                    managementServer = (String)getRegistryConfSafe(mydlpKey, "ManagementServer", "127.0.0.1", RegistryValueKind.String);
+
+                //Get logLimit
+                logLimit = (int)getRegistryConfSafe(mydlpKey, "log_limit", 10485760, RegistryValueKind.DWord);
+
+                //Get maximumObjectSize
+                maximumObjectSize = (int)getRegistryConfSafe(mydlpKey, "maximum_object_size", 10485760, RegistryValueKind.DWord);
+
+                //Get loglevel
+                logLevel = (Logger.LogLevel)getRegistryConfSafe(mydlpKey, "log_level", 1, RegistryValueKind.DWord);
+                if (logLevel > Logger.LogLevel.DEBUG) logLevel = Logger.LogLevel.DEBUG;
+
+            }
+            catch (Exception e)
+            {
+                Logger.GetInstance().Error("Unable to open registry key HKLM/Software/MyDLP "
+                    + e.Message + " " + e.StackTrace);
+                return false;
+            }
+
+
+            Logger.GetInstance().Info("MyDLP LogLevel: " + logLevel.ToString());
             Logger.GetInstance().Info("MyDLP ManagementServer: " + managementServer);
             Logger.GetInstance().Info("MyDLP ArchiveInbound: " + archiveInbound);
             Logger.GetInstance().Info("MyDLP USBSerialAccessControl: " + usbSerialAccessControl);
             Logger.GetInstance().Info("MyDLP PrinterMonitor: " + printerMonitor);
-            Logger.GetInstance().Info("MyDLP AppPath: " + appPath);
-            Logger.GetInstance().Info("MyDLP ConfPath: " + mydlpConfPath);
             Logger.GetInstance().Info("MyDLP LogLimit: " + logLimit);
             Logger.GetInstance().Info("MyDLP MaximumObjectSize: " + maximumObjectSize);
 
@@ -620,7 +647,6 @@ namespace MyDLP.EndPoint.Core
                 return pythonPath;
             }
         }
-
 
         public static String MydlpConfPath
         {

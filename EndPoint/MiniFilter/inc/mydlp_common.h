@@ -58,7 +58,6 @@ typedef struct _MYDLPMF_NOTIFICATION {
 
 typedef struct _MYDLPMF_REPLY {
 
-	BOOLEAN ConfUpdate;
 	enum ActionType
 	{
 		ALLOW,

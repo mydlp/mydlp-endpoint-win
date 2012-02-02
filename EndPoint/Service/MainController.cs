@@ -58,7 +58,7 @@ namespace MyDLP.EndPoint.Service
 
             Logger.GetInstance().Info("Starting mydlpepwin service");
 
-            if (Configuration.GetRegistryConf() == false)
+            if (Configuration.GetAppConf() == false)
             {
                 Logger.GetInstance().Error("Unable to get configuration exiting!");
                 //Environment.Exit(1);
@@ -67,6 +67,7 @@ namespace MyDLP.EndPoint.Service
             {
                 //start backend engine
 
+                Configuration.GetUserConf();
                 Configuration.StartTime = DateTime.Now;
                 engine = new Engine();
                 engine.Start();
@@ -172,8 +173,7 @@ namespace MyDLP.EndPoint.Service
             if (SeapClient.HasNewConfiguration())
             {
                 Logger.GetInstance().Info("New configuration notified.");
-                Configuration.GetRegistryConf();
-                Configuration.InitLogLevel();
+                Configuration.GetUserConf();
 
                 if (Configuration.UsbSerialAccessControl && !oldUSBSerialAC)
                 {
@@ -195,11 +195,13 @@ namespace MyDLP.EndPoint.Service
                 }
 
 
-                if (oldUSBSerialAC != Configuration.UsbSerialAccessControl
-                    || oldArchiveInbound != Configuration.ArchiveInbound)
+                if (oldArchiveInbound != Configuration.ArchiveInbound
+                    || oldUSBSerialAC != Configuration.ArchiveInbound)
                 {
-                    Logger.GetInstance().Debug("NewFilterConfiguration");
-                    Configuration.setNewFilterConfiguration(true);
+                    Logger.GetInstance().Debug("New mydlpmf configuration");
+                    MyDLPEP.MiniFilterController.GetInstance().Stop();
+                    MyDLPEP.MiniFilterController.GetInstance().Start();
+                    MyDLPEP.FilterListener.getInstance().StartListener();
                 }
             }
         }
