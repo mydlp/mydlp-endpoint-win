@@ -37,7 +37,6 @@ namespace MyDLP.EndPoint.Core
         static String appPath;
         static String seapServer;
         static int seapPort;
-        static Logger.LogLevel logLevel = Logger.LogLevel.DEBUG;
         static String minifilterPath;
         static String pyBackendPath;
         static String erlangPath;
@@ -51,8 +50,8 @@ namespace MyDLP.EndPoint.Core
         static String userName = "";
         static Timer userNameTimer;
 
-
         //user conf
+        static Logger.LogLevel logLevel = Logger.LogLevel.DEBUG;
         static String managementServer;
         static long logLimit;
         static long maximumObjectSize;
@@ -60,9 +59,6 @@ namespace MyDLP.EndPoint.Core
         static bool usbSerialAccessControl;
         static bool printerMonitor;
         static bool newFilterConfiguration;
-
-
-
 
         public static void setNewFilterConfiguration(bool newConf)
         {
@@ -473,18 +469,6 @@ namespace MyDLP.EndPoint.Core
 
         private delegate bool IsWow64ProcessDelegate([In] IntPtr handle, [Out] out bool isWow64Process);
 
-        public static bool IsOS64Bit()
-        {
-            if (IntPtr.Size == 8 || (IntPtr.Size == 4 && Is32BitProcessOn64BitProcessor()))
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-
         private static IsWow64ProcessDelegate GetIsWow64ProcessDelegate()
         {
             IntPtr handle = LoadLibrary("kernel32");
@@ -500,6 +484,18 @@ namespace MyDLP.EndPoint.Core
             }
 
             return null;
+        }
+
+        public static bool IsOS64Bit()
+        {
+            if (IntPtr.Size == 8 || (IntPtr.Size == 4 && Is32BitProcessOn64BitProcessor()))
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
 
         private static bool Is32BitProcessOn64BitProcessor()

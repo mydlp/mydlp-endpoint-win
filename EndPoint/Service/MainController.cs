@@ -35,7 +35,7 @@ namespace MyDLP.EndPoint.Service
         public static EventLog serviceLogger;
 
         int watchdogTimerPeriod = 120000;
-        int confCheckTimerPeriod = 140000;
+        int confCheckTimerPeriod = 30000;
 
         public static MainController GetInstance()
         {

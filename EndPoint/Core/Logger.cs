@@ -21,17 +21,16 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Text;
-using System.Diagnostics; 
+using System.Diagnostics;
 
 namespace MyDLP.EndPoint.Core
 {
     public class Logger
     {
         private static Logger logger;
-        EventLog eventLogger; 
+        EventLog eventLogger;
         String logPath;
         public enum LogLevel { ERROR = 0, INFO, DEBUG };
-        LogLevel currentLevel;
         bool useWindowsLogger = false;
         bool useFileLogger = true;
         bool consoleLogger = false;
@@ -41,7 +40,7 @@ namespace MyDLP.EndPoint.Core
         {
             logPath = Configuration.GetLogPath();
             Configuration.InitLogLevel();
-            currentLevel = Configuration.LogLevel;
+
             useWindowsLogger = false;
             useFileLogger = true;
             consoleLogger = false;
@@ -55,7 +54,7 @@ namespace MyDLP.EndPoint.Core
 
         public void InitializeMainLogger(System.Diagnostics.EventLog eventLog)
         {
-            logger.eventLogger = eventLog;          
+            logger.eventLogger = eventLog;
         }
 
         public static Logger GetInstance()
@@ -64,7 +63,7 @@ namespace MyDLP.EndPoint.Core
             {
                 logger = new Logger();
 
-                if (logger.currentLevel == LogLevel.DEBUG && Environment.UserInteractive == true)
+                if (Configuration.LogLevel == LogLevel.DEBUG && Environment.UserInteractive == true)
                 {
                     logger.consoleLogger = true;
                 }
@@ -77,29 +76,29 @@ namespace MyDLP.EndPoint.Core
             logger.Debug("CheckLogLimit limit: " + Configuration.LogLimit);
             lock (logPath)
             {
-         
+
                 FileInfo f = new FileInfo(logPath);
                 long s1 = f.Length;
-                if (s1 > Configuration.LogLimit) 
+                if (s1 > Configuration.LogLimit)
                 {
                     f.Delete();
-                    logger.Debug("CheckLogLimit, log limit exceeded deleted log file");                    
+                    logger.Debug("CheckLogLimit, log limit exceeded deleted log file");
                 }
-            }        
+            }
         }
 
         public void Debug(String entry)
         {
-            String logEntry = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + " DEBUG "  + entry;
-            if (currentLevel == LogLevel.DEBUG)
+            String logEntry = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + " DEBUG " + entry;
+            if (Configuration.LogLevel == LogLevel.DEBUG)
             {
                 if (useFileLogger)
                 {
                     lock (logPath)
                     {
                         using (System.IO.StreamWriter file = new System.IO.StreamWriter(logPath, true, System.Text.Encoding.UTF8))
-                        {                            
-                            file.WriteLine(logEntry);                          
+                        {
+                            file.WriteLine(logEntry);
                         }
                     }
                 }
@@ -115,14 +114,14 @@ namespace MyDLP.EndPoint.Core
         public void Info(String entry)
         {
             String logEntry = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + " INFO  " + entry;
-            if (currentLevel == LogLevel.DEBUG || currentLevel == LogLevel.INFO)
+            if (Configuration.LogLevel == LogLevel.DEBUG || Configuration.LogLevel == LogLevel.INFO)
             {
                 lock (logPath)
                 {
                     if (useFileLogger)
                     {
                         using (System.IO.StreamWriter file = new System.IO.StreamWriter(logPath, true, System.Text.Encoding.UTF8))
-                        {                           
+                        {
                             file.WriteLine(logEntry);
                         }
                     }
@@ -148,7 +147,7 @@ namespace MyDLP.EndPoint.Core
                 lock (logPath)
                 {
                     using (System.IO.StreamWriter file = new System.IO.StreamWriter(logPath, true, System.Text.Encoding.UTF8))
-                    {                        
+                    {
                         file.WriteLine(logEntry);
                     }
                 }
