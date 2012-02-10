@@ -30,20 +30,15 @@
     </DefineConstants>
     <CompilerAdditionalOptions>-derl5_8_5Path=$(SolutionDir)..\..\mydlp-deployment-env\erl5.8.5
 -dengine_erlPath=$(SolutionDir)..\..\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\mydlp
--dengine_pyPath=$(SolutionDir)..\..\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\backend\py
--dmagicPath=$(SolutionDir)..\..\mydlp-deployment-env\magic
--dPython26Path=$(SolutionDir)..\..\mydlp-deployment-env\Python26
--dcygwinPath=$(SolutionDir)..\..\mydlp-deployment-env\cygwin
--dmydlp_pyPath=$(SolutionDir)..\..\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\thrift\gen-py\mydlp</CompilerAdditionalOptions>
+-dengine_javaPath=$(SolutionDir)..\..\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\backend
+-djre7Path=$(SolutionDir)..\..\mydlp-deployment-env\jre7
+-dcygwinPath=$(SolutionDir)..\..\mydlp-deployment-env\cygwin</CompilerAdditionalOptions>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="harvested\cygwin.wxs" />
     <Compile Include="harvested\engine_erl.wxs" />
-    <Compile Include="harvested\engine_py.wxs" />
     <Compile Include="harvested\erl5.8.5.wxs" />
-    <Compile Include="harvested\mydlp_py.wxs" />
-    <Compile Include="harvested\magic.wxs" />
-    <Compile Include="harvested\Python26.wxs" />
+    <Compile Include="harvested\jre7.wxs" />
     <Compile Include="mydlp.wxs" />
   </ItemGroup>
   <ItemGroup>

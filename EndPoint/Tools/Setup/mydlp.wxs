@@ -18,9 +18,7 @@
           <Directory Id="SPOOLDIR" Name="spool" />
           <Directory Id="MNESIADIR" Name="mnesia" />
           <Directory Id="ENGINEDIR" Name="engine">
-            <Directory Id="PYDIR" Name="py">
-              <Directory Id="MYDLP_PYDIR" Name="mydlp" />
-            </Directory>
+            <Directory Id="ENGINEJAVADIR" Name="java" />
             <Directory Id="ENGINEERLDIR" Name="erl" />
           </Directory>                    
         </Directory>        
@@ -34,10 +32,7 @@
       <ComponentGroupRef Id="cygwin" />
       <ComponentGroupRef Id="erl5.8.5" />
       <ComponentGroupRef Id="engine_erl" />
-      <ComponentGroupRef Id="engine_py" />
-      <ComponentGroupRef Id="magic" />
-      <ComponentGroupRef Id="Python26" />
-      <ComponentGroupRef Id="mydlp_py" />
+      <ComponentGroupRef Id="jre7" />
     </Feature>
 
     <Upgrade Id="9BA3E701-8F64-46B1-9D2A-8A29B22C0F65">
@@ -114,9 +109,18 @@
         <File Id="mydlp.conf" Name="mydlp.conf" Vital="yes" KeyPath="yes" DiskId="1" Source="..\..\Engine\mydlp\src\mydlp\mydlp-ep.conf" />
       </Component>
 
+      <Component Id="engine_java_run" Directory="ENGINEJAVADIR" Guid="*">
+        <File Id="engine_java_run" Name="Run.bat" Vital="yes" KeyPath="yes" DiskId="1" Source="..\..\Engine\mydlp\src\backend\Run.bat" />
+      </Component>
+
+      <Component Id="engine_java_jar" Directory="ENGINEJAVADIR" Guid="*">
+        <File Id="engine_java_jar" Name="mydlp-backend-1.0-jar-with-dependencies.jar" Vital="yes" KeyPath="yes" DiskId="1" Source="..\..\Engine\mydlp\src\backend\target\mydlp-backend-1.0-jar-with-dependencies.jar" />
+      </Component>
+
       <Component Id="AppPath" Directory="INSTALLLOCATION" Guid="*">
         <RegistryValue Id="AppPath" Root="HKLM" Key="Software\MyDLP" Name="AppPath" Value="[INSTALLLOCATION]" Type="string" KeyPath="yes" />
       </Component>
+      
     </ComponentGroup>        
   </Product> 
 </Wix>
