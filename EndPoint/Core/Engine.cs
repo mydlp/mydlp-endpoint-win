@@ -38,8 +38,9 @@ namespace MyDLP.EndPoint.Core
             int shortPathLength
             );
 
-        String pythonStartCmd = @"cd " + Configuration.PyBackendPath + " && Run.bat";
-        String pythonManualStartCmd = @"cd " + Configuration.PyBackendPath + " && ManualRun.bat";
+        String javaStartCmd = @"cd " + Configuration.JavaBackendPath + " && Run.bat";
+        // String javaManualStartCmd = @"cd " + Configuration.JavaBackendPath + " && ManualRun.bat";
+        String javaManualStartCmd = @"cd " + Configuration.JavaBackendPath + " && Run.bat";
         String erlStartCmd = @"cd " + Configuration.ErlangPath + " && Run.bat";
         String erlStartInteractiveCmd = @"cd " + Configuration.ErlangPath + " && InteractiveRun.bat";
 
@@ -47,11 +48,11 @@ namespace MyDLP.EndPoint.Core
         {
             if (System.Environment.UserInteractive)
             {
-                ExecuteCommandAsync(pythonManualStartCmd);
+                ExecuteCommandAsync(javaStartCmd);
             }
             else
             {
-                ExecuteCommandAsync(pythonStartCmd);
+                ExecuteCommandAsync(javaManualStartCmd);
             }
             
             // TODO: When SetErlConf fails service is consuming system resources, user
@@ -70,28 +71,28 @@ namespace MyDLP.EndPoint.Core
 
         public void Stop()
         {   //TODO:Handle process with pid files
-            Logger.GetInstance().Debug("Kill python by pid:" + Configuration.PythonPid);
-            if (Configuration.PythonPid != 0)
+            Logger.GetInstance().Debug("Kill java by pid:" + Configuration.JavaPid);
+            if (Configuration.JavaPid != 0)
             {
                 try
                 {
-                    Process p = Process.GetProcessById(Configuration.PythonPid);
+                    Process p = Process.GetProcessById(Configuration.JavaPid);
                     p.Kill();
                 }
                 catch
                 {
-                    Logger.GetInstance().Debug("Kill python by pid failed:" + Configuration.PythonPid);
-                    KillProcByName("python");
+                    Logger.GetInstance().Debug("Kill java by pid failed:" + Configuration.JavaPid);
+                    KillProcByName("java");
                 }
             }
             else 
             {
-                KillProcByName("python");
+                KillProcByName("java");
             }
 
             KillProcByName("epmd");
 
-            Logger.GetInstance().Debug("Kill erlang by pid:" + Configuration.PythonPid);
+            Logger.GetInstance().Debug("Kill erlang by pid:" + Configuration.JavaPid);
             if (Configuration.ErlPid != 0)
             {
                 try
@@ -170,24 +171,15 @@ namespace MyDLP.EndPoint.Core
                 procStartInfo.UseShellExecute = false;
                 procStartInfo.CreateNoWindow = true;
 
-                if (command.ToString() == pythonStartCmd || command.ToString() == pythonManualStartCmd)
+                if (command.ToString() == javaStartCmd || command.ToString() == javaManualStartCmd)
                 {
-                    procStartInfo.EnvironmentVariables["path"] = procStartInfo.EnvironmentVariables["path"] + @";" + Configuration.PythonBinPaths;
-
-                    if (procStartInfo.EnvironmentVariables.ContainsKey("PYTHONPATH"))
-                    {
-                        //We want only our python path
-                        //procStartInfo.EnvironmentVariables["PYTHONPATH"] = procStartInfo.EnvironmentVariables["PYTHONPATH"] + ";" + Configuration.PythonPath;
-                        procStartInfo.EnvironmentVariables["PYTHONPATH"] = Configuration.PythonPath;
-                    }
-                    else
-                    {
-                        procStartInfo.EnvironmentVariables.Add("PYTHONPATH", Configuration.PythonPath);
-                    }
+                    procStartInfo.EnvironmentVariables.Add("JRE_BIN_DIR", GetShortPath(Configuration.JavaBinPaths));
+                    procStartInfo.EnvironmentVariables.Add("BACKEND_DIR", GetShortPath(Configuration.JavaPath));
                     procStartInfo.EnvironmentVariables.Add("MYDLP_APPDIR", GetShortPath(Configuration.AppPath));
 
-                    Logger.GetInstance().Debug("Environment path for python:" + procStartInfo.EnvironmentVariables["path"]);
-                    Logger.GetInstance().Debug("Environment PYTHONPATH:" + procStartInfo.EnvironmentVariables["PYTHONPATH"]);
+                    Logger.GetInstance().Debug("Environment JRE_BIN_DIR for backend:" + procStartInfo.EnvironmentVariables["JRE_BIN_DIR"]);
+                    Logger.GetInstance().Debug("Environment BACKEND_DIR for backend:" + procStartInfo.EnvironmentVariables["BACKEND_DIR"]);
+                    Logger.GetInstance().Debug("Environment MYDLP_APPDIR for backend:" + procStartInfo.EnvironmentVariables["MYDLP_APPDIR"]);
 
                 }
 

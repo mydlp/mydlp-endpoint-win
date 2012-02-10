@@ -38,14 +38,14 @@ namespace MyDLP.EndPoint.Core
         static String seapServer;
         static int seapPort;
         static String minifilterPath;
-        static String pyBackendPath;
+        static String javaBackendPath;
         static String erlangPath;
-        static String pythonBinPaths;
+        static String javaBinPaths;
         static String erlangBinPaths;
-        static String pythonPath;
+        static String javaPath;
         static String mydlpConfPath;
         static int erlPid = 0;
-        static int pythonPid = 0;
+        static int javaPid = 0;
         static DateTime startTime;
         static String userName = "";
         static Timer userNameTimer;
@@ -182,7 +182,7 @@ namespace MyDLP.EndPoint.Core
             }
         }
 
-        //this will run after erl and python started
+        //this will run after erl and java started
         public static void setPids()
         {
             int tryLimit = 30;
@@ -207,7 +207,7 @@ namespace MyDLP.EndPoint.Core
             }
 
             tryCount = 0;
-            path = appPath + @"\run\backend-py.pid";
+            path = appPath + @"\run\backend.pid";
             try
             {
                 DateTime dt = File.GetLastWriteTime(path);
@@ -217,14 +217,14 @@ namespace MyDLP.EndPoint.Core
                     dt = File.GetLastWriteTime(path);
                 }
                 string text = System.IO.File.ReadAllText(path);
-                pythonPid = Int32.Parse(text.Trim());
+                javaPid = Int32.Parse(text.Trim());
             }
             catch
             {
-                pythonPid = 0;
+                javaPid = 0;
             }
 
-            Logger.GetInstance().Info("Configuration.PythonPid = " + Configuration.PythonPid);
+            Logger.GetInstance().Info("Configuration.JavaPid = " + Configuration.JavaPid);
             Logger.GetInstance().Info("Configuration.ErlPid = " + Configuration.ErlPid);
         }
 
@@ -245,11 +245,11 @@ namespace MyDLP.EndPoint.Core
                     Logger.GetInstance().Info("32 bit platform, using MyDLPMF.sys");
                     minifilterPath = "C:\\workspace\\mydlp-endpoint-win\\EndPoint\\MiniFilter\\src\\objchk_wxp_x86\\i386\\MyDLPMF.sys";
                 }
-                pyBackendPath = @"C:\workspace\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\backend\py\";
+                javaBackendPath = @"C:\workspace\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\backend\";
+                javaPath = @"C:\workspace\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\backend\target\";
                 erlangPath = @"C:\workspace\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\mydlp\";
                 erlangBinPaths = @"C:\workspace\mydlp-deployment-env\erl5.8.5\bin;C:\workspace\mydlp-deployment-env\erl5.8.5\erts-5.8.5\bin";
-                pythonBinPaths = @"C:\workspace\mydlp-deployment-env\Python26";
-                pythonPath = @"C:\workspace\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\thrift\gen-py";
+                javaBinPaths = @"C:\workspace\mydlp-deployment-env\jre7\bin";
                 appPath = @"C:\workspace\mydlp-development-env";
                 seapServer = "127.0.0.1";
                 seapPort = 9099;
@@ -277,11 +277,11 @@ namespace MyDLP.EndPoint.Core
                             Logger.GetInstance().Info("32 bit platform, using MyDLPMF.sys");
                             minifilterPath = appPath + "MyDLPMF.sys";
                         }
-                        pyBackendPath = appPath + "engine\\py\\";
+                        javaBackendPath = appPath + "engine\\java\\";
                         erlangPath = appPath + "engine\\erl\\";
                         erlangBinPaths = appPath + @"erl5.8.5\bin;" + appPath + @"erl5.8.5\erts-5.8.5\bin";
-                        pythonPath = appPath + "engine\\py\\";
-                        pythonBinPaths = appPath + "Python26";
+                        javaPath = appPath + "engine\\java\\";
+                        javaBinPaths = appPath + "jre7\\bin\\";
                         mydlpConfPath = Configuration.AppPath + @"\mydlp.conf";
                     }
                     catch (Exception e)
@@ -604,11 +604,11 @@ namespace MyDLP.EndPoint.Core
             }
         }
 
-        public static String PyBackendPath
+        public static String JavaBackendPath
         {
             get
             {
-                return pyBackendPath;
+                return javaBackendPath;
             }
         }
 
@@ -628,19 +628,19 @@ namespace MyDLP.EndPoint.Core
             }
         }
 
-        public static String PythonBinPaths
+        public static String JavaBinPaths
         {
             get
             {
-                return pythonBinPaths;
+                return javaBinPaths;
             }
         }
 
-        public static String PythonPath
+        public static String JavaPath
         {
             get
             {
-                return pythonPath;
+                return javaPath;
             }
         }
 
@@ -660,11 +660,11 @@ namespace MyDLP.EndPoint.Core
             }
         }
 
-        public static int PythonPid
+        public static int JavaPid
         {
             get
             {
-                return pythonPid;
+                return javaPid;
             }
         }
 
