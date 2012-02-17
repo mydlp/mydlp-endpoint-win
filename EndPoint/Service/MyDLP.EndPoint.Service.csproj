@@ -55,6 +55,9 @@
     </Reference>
     <Reference Include="System.Management" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Printing">
+      <RequiredTargetFramework>3.0</RequiredTargetFramework>
+    </Reference>
     <Reference Include="System.ServiceProcess" />
     <Reference Include="System.Xml" />
   </ItemGroup>
@@ -66,6 +69,7 @@
     <Compile Include="MyDLPService.Designer.cs">
       <DependentUpon>MyDLPService.cs</DependentUpon>
     </Compile>
+    <Compile Include="PrinterController.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="ProjectInstaller.cs">
       <SubType>Component</SubType>
@@ -114,6 +118,18 @@
   </ItemGroup>
   <ItemGroup>
     <WCFMetadata Include="Service References\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Printing\mydlpportmon_win7_x64.dll" />
+    <Content Include="Printing\mydlpportmon_win7_x86.dll" />
+    <Content Include="Printing\mydlpportmon_xp_x86.dll" />
+    <Content Include="Printing\mydlpportui_win7_x64.dll" />
+    <Content Include="Printing\mydlpportui_win7_x86.dll" />
+    <Content Include="Printing\mydlpportui_xp_x86.dll" />
+    <Content Include="Printing\MyDLPXPSDrv-PipelineConfig.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Printing\MyDLPXPSDrv.gpd" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
