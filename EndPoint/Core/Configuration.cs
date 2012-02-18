@@ -250,7 +250,7 @@ namespace MyDLP.EndPoint.Core
                     minifilterPath = "C:\\workspace\\mydlp-endpoint-win\\EndPoint\\MiniFilter\\src\\objchk_wxp_x86\\i386\\MyDLPMF.sys";
                 }
 
-                printingDirPath = "C:\\workspace\\mydlp-endpoint-win\\EndPoint\\Service\\Printing\\";
+                printingDirPath = "C:\\workspace\\mydlp-endpoint-win\\EndPoint\\Service\\printing\\";
                 javaBackendPath = @"C:\workspace\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\backend\";
                 javaPath = @"C:\workspace\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\backend\target\";
                 erlangPath = @"C:\workspace\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\mydlp\";
@@ -283,7 +283,7 @@ namespace MyDLP.EndPoint.Core
                             Logger.GetInstance().Info("32 bit platform, using MyDLPMF.sys");
                             minifilterPath = appPath + "MyDLPMF.sys";
                         }
-                        printingDirPath = appPath + "Printing\\";
+                        printingDirPath = appPath + "printing\\";
                         javaBackendPath = appPath + "engine\\java\\";
                         erlangPath = appPath + "engine\\erl\\";
                         erlangBinPaths = appPath + @"erl5.8.5\bin;" + appPath + @"erl5.8.5\erts-5.8.5\bin";

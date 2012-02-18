@@ -30,6 +30,7 @@
     </DefineConstants>
     <CompilerAdditionalOptions>-derl5_8_5Path=$(SolutionDir)..\..\mydlp-deployment-env\erl5.8.5
 -dengine_erlPath=$(SolutionDir)..\..\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\mydlp
+-dprintingPath=$(SolutionDir)..\..\mydlp-endpoint-win\EndPoint\Service\printing
 -dengine_javaPath=$(SolutionDir)..\..\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\backend
 -djre7Path=$(SolutionDir)..\..\mydlp-deployment-env\jre7
 -dcygwinPath=$(SolutionDir)..\..\mydlp-deployment-env\cygwin</CompilerAdditionalOptions>
@@ -39,6 +40,7 @@
     <Compile Include="harvested\engine_erl.wxs" />
     <Compile Include="harvested\erl5.8.5.wxs" />
     <Compile Include="harvested\jre7.wxs" />
+    <Compile Include="harvested\printing.wxs" />
     <Compile Include="mydlp.wxs" />
   </ItemGroup>
   <ItemGroup>
