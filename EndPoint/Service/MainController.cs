@@ -96,7 +96,7 @@ namespace MyDLP.EndPoint.Service
 
                 if (Configuration.PrinterMonitor)
                 {
-                    Core.PrinterController.Start();
+                    Service.PrinterController.Start();
                 }
 
                 if (Configuration.UsbSerialAccessControl)
@@ -139,7 +139,7 @@ namespace MyDLP.EndPoint.Service
 
             if (Configuration.PrinterMonitor)
             {
-                Core.PrinterController.Stop();
+                Service.PrinterController.Stop();
             }
 
             Logger.GetInstance().Info("mydlpepwin service stopped");
@@ -187,11 +187,11 @@ namespace MyDLP.EndPoint.Service
 
                 if (Configuration.PrinterMonitor && !oldPrinterMonitor)
                 {
-                    Core.PrinterController.Start();
+                    Service.PrinterController.Start();
                 }
                 else if (!Configuration.PrinterMonitor && oldPrinterMonitor)
                 {
-                    Core.PrinterController.Stop();
+                    Service.PrinterController.Stop();
                 }
 
 

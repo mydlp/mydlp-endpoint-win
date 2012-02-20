@@ -8,8 +8,9 @@ using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.IO;
+using MyDLP.EndPoint.Core;
 
-namespace MyDLP.EndPoint.Core
+namespace MyDLP.EndPoint.Service
 {
     public class PrinterController
     {
@@ -25,6 +26,8 @@ namespace MyDLP.EndPoint.Core
                 //this is ugly but necessary
                 CheckAndInstallXPSDriver();
                 InstallSecurePrinters();
+                TempSpooler.Start();
+                
             }
             else
             {
@@ -57,14 +60,14 @@ namespace MyDLP.EndPoint.Core
                         Logger.GetInstance().Debug("Not a secure printer installing installing secure version:" + queue.Name + "(MyDLP)");
                         try
                         {
-                            pServer.InstallPrintQueue(queue.Name + "(MyDLP)", "MyDLP XPS Printer Driver", new String[] { "MyDLP" }, "winprint", PrintQueueAttributes.Direct);
+                            pServer.InstallPrintQueue("(MyDLP)" + queue.Name, "MyDLP XPS Printer Driver", new String[] { "MyDLP" }, "winprint", PrintQueueAttributes.Direct);
                         }
                         catch (Exception e)
                         {
                             Logger.GetInstance().Debug("Unable to install printer " + queue.Name + " error:" + e.Message);
                         }
 
-                        MyDLPEP.PrinterUtils.HidePrinter(queue.Name);
+                        //MyDLPEP.PrinterUtils.HidePrinter(queue.Name);
                     }
                 }
             }
@@ -101,7 +104,7 @@ namespace MyDLP.EndPoint.Core
                     else
                     {
                         Logger.GetInstance().Debug("A non-secure printer found revealing " + queue.Name);
-                        MyDLPEP.PrinterUtils.RevealPrinter(queue.Name);
+                        //MyDLPEP.PrinterUtils.RevealPrinter(queue.Name);
                     }
                 }
             }

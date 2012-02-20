@@ -104,18 +104,26 @@ namespace MyDLP.EndPoint.Core
         {
             try
             {
-                RegistryKey mydlpKey = Registry.LocalMachine.OpenSubKey("Software").OpenSubKey("MyDLP", true);
-
-                //Get loglevel
-                try
+                if (Environment.UserInteractive)
                 {
-                    logLevel = (Logger.LogLevel)mydlpKey.GetValue("log_level");
-                    if (logLevel > Logger.LogLevel.DEBUG) logLevel = Logger.LogLevel.DEBUG;
+                    logLevel = Logger.LogLevel.DEBUG;
                 }
-                catch (Exception e)
+                else
                 {
-                    mydlpKey.SetValue("log_level", 1, RegistryValueKind.DWord);
-                    logLevel = Logger.LogLevel.INFO;
+
+                    RegistryKey mydlpKey = Registry.LocalMachine.OpenSubKey("Software").OpenSubKey("MyDLP", true);
+
+                    //Get loglevel
+                    try
+                    {
+                        logLevel = (Logger.LogLevel)mydlpKey.GetValue("log_level");
+                        if (logLevel > Logger.LogLevel.DEBUG) logLevel = Logger.LogLevel.DEBUG;
+                    }
+                    catch (Exception e)
+                    {
+                        mydlpKey.SetValue("log_level", 1, RegistryValueKind.DWord);
+                        logLevel = Logger.LogLevel.INFO;
+                    }
                 }
 
             }

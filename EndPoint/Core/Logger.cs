@@ -63,7 +63,7 @@ namespace MyDLP.EndPoint.Core
             {
                 logger = new Logger();
 
-                if (Configuration.LogLevel == LogLevel.DEBUG && Environment.UserInteractive == true)
+                if (Configuration.LogLevel == LogLevel.DEBUG && Environment.UserInteractive)
                 {
                     logger.consoleLogger = true;
                 }
