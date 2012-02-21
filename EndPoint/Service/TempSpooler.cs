@@ -20,22 +20,41 @@ namespace MyDLP.EndPoint.Service
         public static bool Start()
         {
             spoolWatcher = new FileSystemWatcher();
-            if (Environment.UserInteractive)
+
+            //clean spool files create empty directory
+            if (System.IO.Directory.Exists(Configuration.PrintSpoolPath))
             {
-                spoolWatcher.Path = Path.Combine("C:\\windows\\temp", "mydlp");
-            }
-            else
-            {
-                spoolWatcher.Path = Path.Combine(Path.GetTempPath(), "mydlp");
+                try
+                {
+                    System.IO.Directory.Delete(Configuration.PrintSpoolPath, true);
+                }
+
+                catch (System.IO.IOException e)
+                {
+                    Logger.GetInstance().Error(e.Message);
+                }            
             }
 
-            Logger.GetInstance().Debug("TempSpooler watch started on path:" + spoolWatcher.Path);
+            try
+            {
+                System.IO.Directory.CreateDirectory(Configuration.PrintSpoolPath);
+            }
+                
+            catch (System.IO.IOException e)
+            {
+                Logger.GetInstance().Error(e.Message);
+            }
+
+            spoolWatcher.Path = Configuration.PrintSpoolPath;            
             spoolWatcher.IncludeSubdirectories = true;
             spoolWatcher.Filter = "*.meta";
             spoolWatcher.NotifyFilter = NotifyFilters.LastAccess | NotifyFilters.LastWrite
            | NotifyFilters.FileName | NotifyFilters.DirectoryName;
-            spoolWatcher.Created += new FileSystemEventHandler(OnCreate);
+            //spoolWatcher.Created += new FileSystemEventHandler(OnCreate);
+            spoolWatcher.Changed += new FileSystemEventHandler(OnCreate);
             spoolWatcher.EnableRaisingEvents = true;
+
+            Logger.GetInstance().Debug("TempSpooler watch started on path:" + spoolWatcher.Path);
             return true;
         }
 
