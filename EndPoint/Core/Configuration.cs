@@ -300,7 +300,7 @@ namespace MyDLP.EndPoint.Core
                         javaPath = appPath + "engine\\java\\";
                         javaBinPaths = appPath + "jre7\\bin\\";
                         mydlpConfPath = Configuration.AppPath + @"\mydlp.conf";
-                        printSpoolPath = Path.Combine(Path.GetTempPath(), "mydlp");
+                        printSpoolPath = Path.Combine(Path.GetTempPath(), "mydlp\\spool");
                     }
                     catch (Exception e)
                     {

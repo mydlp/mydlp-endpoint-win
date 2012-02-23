@@ -86,7 +86,7 @@ namespace MyDLP.EndPoint.Service
 
             try
             {
-                string[] metaText = System.IO.File.ReadAllLines(metaPath);
+                string[] metaText = System.IO.File.ReadAllLines(metaPath,System.Text.Encoding.Unicode);
 
                 if (metaText.Length > 0)
                 {
@@ -128,13 +128,40 @@ namespace MyDLP.EndPoint.Service
         
         private static void WorkerMethod(object state)
         {
+            PrintQueue pQueue;
             try
-            {
+            {                
                 LocalPrintServer pServer = new LocalPrintServer();
-                PrintQueue pQueue = pServer.GetPrintQueue(printerName.Replace("(MyDLP)", "").Trim());
-                
-                pQueue.AddJob(jobId, xpsPath, false);
-                File.Delete(xpsPath);
+
+                try
+                {
+                    //get print queue by name
+                    pQueue = pServer.GetPrintQueue(printerName.Replace("(MyDLP)", "").Trim());
+                    pQueue.AddJob(jobId, xpsPath, false);
+                    File.Delete(xpsPath);
+                }
+                catch
+                {
+                    //printer does not exist or has "_" for offending chars
+                    foreach (PrintQueue queue in pServer.GetPrintQueues())
+                    {
+                        if (
+                            (queue.Name
+                            .Replace(":", "_")
+                            .Replace("\\", "_")
+                            .Replace("/", "_")
+                            .Replace("|", "_")
+                            .Replace("<", "_")
+                            .Replace(">", "_")
+                            .Replace("*", "_")
+                            ) == printerName.Replace("(MyDLP)","").Trim()) 
+                        {
+                            pQueue = pServer.GetPrintQueue(queue.Name);
+                            pQueue.AddJob(jobId, xpsPath, false);
+                            File.Delete(xpsPath);
+                        }                          
+                    }
+                }               
             }
             catch (Exception e)
             {
