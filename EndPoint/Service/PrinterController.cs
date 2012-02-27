@@ -161,6 +161,11 @@ namespace MyDLP.EndPoint.Service
             {
                 String system32Path = Environment.GetEnvironmentVariable("windir") + @"\\System32";
 
+                if (Configuration.GetOs() == Configuration.OsVersion.Win7_64)
+                {
+                    system32Path = Environment.GetEnvironmentVariable("windir") + @"\\Sysnative";
+                }
+
                 String sourceFile;
                 String sourceUIFile;
                 String destinationFile;

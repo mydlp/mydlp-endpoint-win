@@ -39,7 +39,6 @@ namespace MyDLPEP
 		//static void HidePrinter(String^ printerName);	
 		static void RemovePrinter(String^ printerName);
 		static bool SetPrinterSecurityDescriptor(String ^pName, String ^secDesc);
-		static String^ PrinterUtils::GetPrinterSecurityDescriptor(String ^pName);
-	
+		static String^ PrinterUtils::GetPrinterSecurityDescriptor(String ^pName);	
 	};
 }
