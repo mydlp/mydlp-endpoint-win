@@ -269,7 +269,7 @@ namespace MyDLP.EndPoint.Core
                 seapServer = "127.0.0.1";
                 seapPort = 9099;
                 mydlpConfPath = Configuration.ErlangPath + "mydlp-ep.conf";
-                printSpoolPath = @"C:\windows\temp\mydlp";
+                printSpoolPath = @"C:\windows\temp\mydlp\spool";
 
             }
             else
@@ -300,7 +300,7 @@ namespace MyDLP.EndPoint.Core
                         javaPath = appPath + "engine\\java\\";
                         javaBinPaths = appPath + "jre7\\bin\\";
                         mydlpConfPath = Configuration.AppPath + @"\mydlp.conf";
-                        printSpoolPath = Path.Combine(Path.GetTempPath(), "mydlp\\spool");
+                        printSpoolPath = Path.GetTempPath() + "\\mydlp\\spool";
                     }
                     catch (Exception e)
                     {

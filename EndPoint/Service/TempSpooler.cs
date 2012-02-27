@@ -156,9 +156,20 @@ namespace MyDLP.EndPoint.Service
                             .Replace("*", "_")
                             ) == printerName.Replace("(MyDLP)","").Trim()) 
                         {
-                            pQueue = pServer.GetPrintQueue(queue.Name);
-                            pQueue.AddJob(jobId, xpsPath, false);
-                            File.Delete(xpsPath);
+                            try
+                            {
+                                pQueue = pServer.GetPrintQueue(queue.Name);
+                                pQueue.AddJob(jobId, xpsPath, false);
+                                File.Delete(xpsPath);
+                            }
+                            catch (Exception ex)
+                            {
+                                Logger.GetInstance().Error(ex.Message + ex.StackTrace);
+                                if (ex.InnerException != null)
+                                {
+                                    Logger.GetInstance().Error(ex.InnerException.Message + ex.InnerException.StackTrace);
+                                }
+                            }
                         }                          
                     }
                 }               
@@ -166,6 +177,10 @@ namespace MyDLP.EndPoint.Service
             catch (Exception e)
             {
                 Logger.GetInstance().Error(e.Message + e.StackTrace);
+                if (e.InnerException != null)
+                {
+                    Logger.GetInstance().Error(e.InnerException.Message + e.InnerException.StackTrace);
+                }
             }          
         }        
     }

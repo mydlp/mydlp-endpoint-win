@@ -14,15 +14,21 @@ namespace MyDLP.EndPoint.Service
 {
     public class PrinterController
     {
+        public const String PrinterPrefix = "(MyDLP)";
+        public const String SystemPrinterSecurityDescriptor =
+            "O:SYG:SYD:(A;;LCSWSDRCWDWO;;;SY)(A;OIIO;RPWPSDRCWDWO;;;SY)";
+        public const String BuiltinAdminsPrinterSecurityDescriptor =
+            "O:SYG:SYD:(A;;LCSWSDRCWDWO;;;SY)(A;OIIO;RPWPSDRCWDWO;;;SY)(A;;LCSWSDRCWDWO;;;BA)(A;OIIO;RPWPSDRCWDWO;;;BA)";
+
         public static void Start()
         {
             SvcController.StopService("Spooler", 5000);
             //this is ugly but necessary
-            Thread.Sleep(2000);
+            Thread.Sleep(1000);
             if (CheckAndInstallPortMonitor())
             {
                 SvcController.StartService("Spooler", 5000);
-                Thread.Sleep(2000);
+                Thread.Sleep(1000);
                 //this is ugly but necessary
                 CheckAndInstallXPSDriver();
                 InstallSecurePrinters();
@@ -57,23 +63,42 @@ namespace MyDLP.EndPoint.Service
                     if (queue.QueueDriver.Name != "MyDLP XPS Printer Driver" ||
                         queue.QueuePort.Name != "MyDLP")
                     {
-                        Logger.GetInstance().Debug("Not a secure printer installing installing secure version:" + queue.Name + "(MyDLP)");
+                        Logger.GetInstance().Debug(
+                            "Not a secure printer installing installing secure version:" + queue.Name + "(MyDLP)");
                         try
                         {
-                            pServer.InstallPrintQueue("(MyDLP)" + queue.Name, "MyDLP XPS Printer Driver", new String[] { "MyDLP" }, "winprint", PrintQueueAttributes.Direct);
+                            pServer.InstallPrintQueue(PrinterPrefix + queue.Name,
+                                "MyDLP XPS Printer Driver",
+                                new String[] { "MyDLP" },
+                                "winprint",
+                                PrintQueueAttributes.Direct);
+
+                            String securityDesc = MyDLPEP.PrinterUtils.GetPrinterSecurityDescriptor(queue.Name);
+                            if (securityDesc != "")
+                            {
+                                MyDLPEP.PrinterUtils.SetPrinterSecurityDescriptor(PrinterPrefix + queue.Name, securityDesc);
+                            }
+
+                            if (Environment.UserInteractive)
+                            {
+                                MyDLPEP.PrinterUtils.SetPrinterSecurityDescriptor(queue.Name, BuiltinAdminsPrinterSecurityDescriptor);
+                            }
+                            else
+                            {
+                                MyDLPEP.PrinterUtils.SetPrinterSecurityDescriptor(queue.Name, SystemPrinterSecurityDescriptor);
+                            }
                         }
                         catch (Exception e)
                         {
                             Logger.GetInstance().Debug("Unable to install printer " + queue.Name + " error:" + e.Message);
-                        }
+                        }              
 
-                        //MyDLPEP.PrinterUtils.HidePrinter(queue.Name);
                     }
                 }
             }
             catch (Exception e)
             {
-                Logger.GetInstance().Error("Install secure pritners failed: " + e.Message);
+                Logger.GetInstance().Error("InstallSecurePrinters failed: " + e.Message);
             }
             finally
             {
@@ -99,6 +124,18 @@ namespace MyDLP.EndPoint.Service
                         queue.QueuePort.Name == "MyDLP")
                     {
                         Logger.GetInstance().Debug("A secure printer found removing " + queue.Name);
+
+                        if (queue.Name.StartsWith(PrinterPrefix))
+                        {
+                            String securityDesc = MyDLPEP.PrinterUtils.GetPrinterSecurityDescriptor(queue.Name);
+                            if (securityDesc != "")
+                            {
+                                MyDLPEP.PrinterUtils.SetPrinterSecurityDescriptor(
+                                    queue.Name.Substring(PrinterPrefix.Length),
+                                    securityDesc);
+                            }
+                        }
+
                         MyDLPEP.PrinterUtils.RemovePrinter(queue.Name);
                     }
                     else

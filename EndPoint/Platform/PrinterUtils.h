@@ -17,10 +17,15 @@
 //    along with MyDLP.  If not, see <http://www.gnu.org/licenses/>.
 //--------------------------------------------------------------------------
 
+#pragma once
 #include "Windows.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <vcclr.h>
+#include <sddl.h>
+
+
+BOOL SetPrivilege(HANDLE hToken, LPCTSTR lpszPrivilege, BOOL bEnablePrivilege);
 
 using namespace System;
 using namespace MyDLP::EndPoint::Core;
@@ -29,11 +34,12 @@ namespace MyDLPEP
 {
 	public ref class PrinterUtils{
 
-	private:
-		static HANDLE GetPrinterHandle(String ^printerName);
 	public:
-		static void HidePrinter(String^ printerName);
-		static void RevealPrinter(String^ printerName);
+		static HANDLE GetPrinterHandle(String ^printerName);	
+		//static void HidePrinter(String^ printerName);	
 		static void RemovePrinter(String^ printerName);
+		static bool SetPrinterSecurityDescriptor(String ^pName, String ^secDesc);
+		static String^ PrinterUtils::GetPrinterSecurityDescriptor(String ^pName);
+	
 	};
 }
