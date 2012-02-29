@@ -36,7 +36,7 @@ namespace MyDLPEP
 
 	public:
 		static HANDLE GetPrinterHandle(String ^printerName);	
-		//static void HidePrinter(String^ printerName);	
+		static void SetPrinterSpoolMode(String^ printerName, bool spool);	
 		static void RemovePrinter(String^ printerName);
 		static bool SetPrinterSecurityDescriptor(String ^pName, String ^secDesc);
 		static String^ PrinterUtils::GetPrinterSecurityDescriptor(String ^pName);	

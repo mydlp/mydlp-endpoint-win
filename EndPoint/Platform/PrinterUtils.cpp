@@ -142,7 +142,6 @@ namespace MyDLPEP
 		return securityDescriptor;
 	}
 
-
 	bool PrinterUtils::SetPrinterSecurityDescriptor(String ^pName, String ^secDesc)
 	{
 		HANDLE pHandle = NULL;
@@ -252,7 +251,6 @@ namespace MyDLPEP
 		return errorFlag;
 	}	
 
-	
 	void PrinterUtils::RemovePrinter(String^ pName)
 	{
 		SetLastError(0);
@@ -297,11 +295,11 @@ namespace MyDLPEP
 		return hPrinter;	
 	}
 
-	/*void PrinterUtils::HidePrinter(String^ pName)
+	void PrinterUtils::SetPrinterSpoolMode(String^ pName, bool spool)
 	{	
-		Logger::GetInstance()->Debug("Hide Printer " + pName);	
+		Logger::GetInstance()->Debug("Set pinter spooling mode " + pName + " " + spool);	
 
-		HANDLE pHandle = GetPrinterHandle(pName);
+		HANDLE pHandle = PrinterUtils::GetPrinterHandle(pName);
 		DWORD pcbNeeded = 0;
 		DWORD cBuf = 0;
 		PRINTER_INFO_5* pPrinterInfo = NULL;
@@ -316,7 +314,11 @@ namespace MyDLPEP
 			{
 				Logger::GetInstance()->Debug("GetPrinterInfo success: " + pName);
 
-				pPrinterInfo->Attributes = pPrinterInfo->Attributes | PRINTER_ATTRIBUTE_HIDDEN;
+				if (spool)
+					pPrinterInfo->Attributes = pPrinterInfo->Attributes & ~PRINTER_ATTRIBUTE_DIRECT;
+				else
+					pPrinterInfo->Attributes = pPrinterInfo->Attributes | PRINTER_ATTRIBUTE_DIRECT;
+
 				if(SetPrinter(pHandle, 5, (LPBYTE)pPrinterInfo, 0))
 				{
 					Logger::GetInstance()->Debug("SetPrinterInfo succeded: " + pName);
@@ -336,7 +338,7 @@ namespace MyDLPEP
 			free(pPrinterInfo);
 			ClosePrinter(pHandle);
 		}
-	}*/
+	}
 }
 	
 BOOL SetPrivilege(

@@ -25,7 +25,7 @@ namespace MyDLP.EndPoint.Service
             SvcController.StopService("Spooler", 5000);
             //this is ugly but necessary
             Thread.Sleep(1000);
-            if (CheckAndInstallPortMonitor())
+            if (CheckAndInstallPortMonitor() && SetSystemPrinterRegistry())
             {
                 SvcController.StartService("Spooler", 5000);
                 Thread.Sleep(1000);
@@ -33,7 +33,7 @@ namespace MyDLP.EndPoint.Service
                 CheckAndInstallXPSDriver();
                 InstallSecurePrinters();
                 TempSpooler.Start();
-                
+
             }
             else
             {
@@ -91,7 +91,7 @@ namespace MyDLP.EndPoint.Service
                         catch (Exception e)
                         {
                             Logger.GetInstance().Debug("Unable to install printer " + queue.Name + " error:" + e.Message);
-                        }              
+                        }
 
                     }
                 }
@@ -269,6 +269,67 @@ namespace MyDLP.EndPoint.Service
                 Logger.GetInstance().Error("Error install printer driver:" + e.Message);
                 return false;
             }
+        }
+
+        //this is for printing from local system account
+        public static bool SetSystemPrinterRegistry()
+        {
+            Logger.GetInstance().Debug("SetSystemPrinterRegistry started");
+            try
+            {
+                RegistryKey currentUserKey = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows NT\CurrentVersion", true);
+                RegistryKey currentUserDevicesKey = currentUserKey.OpenSubKey("Devices", true);
+                RegistryKey currentUserPortsKey = currentUserKey.OpenSubKey("PrinterPorts", true);
+
+                RegistryKey defaultUserKey = Registry.Users.OpenSubKey(@".DEFAULT\Software\Microsoft\Windows NT\CurrentVersion", true);
+                RegistryKey defaultUserDevicesKey;
+                RegistryKey defaultUserPortsKey;
+
+                if (HasSubKey(defaultUserKey, "Devices"))
+                {
+                    defaultUserDevicesKey = defaultUserKey.OpenSubKey("Devices", true);
+                }
+                else
+                {
+                    defaultUserDevicesKey = defaultUserKey.CreateSubKey("Devices",
+                        RegistryKeyPermissionCheck.ReadWriteSubTree);
+                }
+
+                if (HasSubKey(defaultUserKey, "PrinterPorts"))
+                {
+                    defaultUserPortsKey = defaultUserKey.OpenSubKey("PrinterPorts", true);
+                }
+                else
+                {
+                    defaultUserPortsKey = defaultUserKey.CreateSubKey("PrinterPorts", 
+                        RegistryKeyPermissionCheck.ReadWriteSubTree);
+                }
+
+                String[] currentUserDeviceValueNames = currentUserDevicesKey.GetValueNames();
+
+                foreach (String currentValueName in currentUserDeviceValueNames)
+                {
+                    String value = (String)currentUserDevicesKey.GetValue(currentValueName, "");
+                    defaultUserDevicesKey.SetValue(currentValueName, value, RegistryValueKind.String);
+                }
+
+                String[] currentUserPortValueNames = currentUserPortsKey.GetValueNames();
+
+                foreach (String currentValueName in currentUserPortValueNames)
+                {
+                    String value = (String)currentUserPortsKey.GetValue(currentValueName, "");
+                    defaultUserPortsKey.SetValue(currentValueName, value, RegistryValueKind.String);
+                }
+
+                return true;
+            }
+            catch (Exception e)
+            {
+                Logger.GetInstance().Error("SetSystemPrinterRegistry error: " + 
+                    e.Message + " " + e.StackTrace);
+                
+                return false;
+            } 
         }
 
         public static bool HasSubKey(RegistryKey key, String subKeyName)
