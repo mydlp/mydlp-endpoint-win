@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Collections;
 using System.Text;
 using System.Printing;
 using Microsoft.Win32;
@@ -14,18 +14,23 @@ namespace MyDLP.EndPoint.Service
 {
     public class PrinterController
     {
+        static PrinterController instance = null;
+
+        ArrayList spooledNativePrinters;
+
         public const String PrinterPrefix = "(MyDLP)";
         public const String SystemPrinterSecurityDescriptor =
             "O:SYG:SYD:(A;;LCSWSDRCWDWO;;;SY)(A;OIIO;RPWPSDRCWDWO;;;SY)";
         public const String BuiltinAdminsPrinterSecurityDescriptor =
             "O:SYG:SYD:(A;;LCSWSDRCWDWO;;;SY)(A;OIIO;RPWPSDRCWDWO;;;SY)(A;;LCSWSDRCWDWO;;;BA)(A;OIIO;RPWPSDRCWDWO;;;BA)";
 
-        public static void Start()
+        public void Start()
         {
             SvcController.StopService("Spooler", 5000);
             //this is ugly but necessary
             Thread.Sleep(1000);
-            if (CheckAndInstallPortMonitor() && SetSystemPrinterRegistry())
+            //if (CheckAndInstallPortMonitor() && SetSystemPrinterRegistry())
+            if (CheckAndInstallPortMonitor())
             {
                 SvcController.StartService("Spooler", 5000);
                 Thread.Sleep(1000);
@@ -41,12 +46,12 @@ namespace MyDLP.EndPoint.Service
             }
         }
 
-        public static void Stop()
+        public void Stop()
         {
             RemoveSecurePrinters();
         }
 
-        public static void InstallSecurePrinters()
+        public void InstallSecurePrinters()
         {
             Configuration.OsVersion version = Configuration.GetOs();
             try
@@ -87,6 +92,13 @@ namespace MyDLP.EndPoint.Service
                             {
                                 MyDLPEP.PrinterUtils.SetPrinterSecurityDescriptor(queue.Name, SystemPrinterSecurityDescriptor);
                             }
+
+                            if (!queue.IsDirect)
+                            {
+                                Logger.GetInstance().Debug("Found spooling native printer " + queue.Name);
+                                MyDLPEP.PrinterUtils.SetPrinterSpoolMode(queue.Name, false);
+                                spooledNativePrinters.Add(queue.Name);
+                            }
                         }
                         catch (Exception e)
                         {
@@ -106,7 +118,7 @@ namespace MyDLP.EndPoint.Service
             }
         }
 
-        public static void RemoveSecurePrinters()
+        public void RemoveSecurePrinters()
         {
             try
             {
@@ -135,13 +147,19 @@ namespace MyDLP.EndPoint.Service
                                     securityDesc);
                             }
                         }
-
                         MyDLPEP.PrinterUtils.RemovePrinter(queue.Name);
+
                     }
                     else
                     {
-                        Logger.GetInstance().Debug("A non-secure printer found revealing " + queue.Name);
-                        //MyDLPEP.PrinterUtils.RevealPrinter(queue.Name);
+                        Logger.GetInstance().Debug("A non-secure printer found " + queue.Name);
+
+                        if (spooledNativePrinters.Contains(queue.Name))
+                        {
+                            Logger.GetInstance().Debug("Reenabling spooling " + queue.Name);
+                            MyDLPEP.PrinterUtils.SetPrinterSpoolMode(queue.Name, true);
+                            spooledNativePrinters.Remove(queue.Name);
+                        }
                     }
                 }
             }
@@ -155,7 +173,7 @@ namespace MyDLP.EndPoint.Service
             }
         }
 
-        public static bool CheckAndInstallPortMonitor()
+        public bool CheckAndInstallPortMonitor()
         {
             try
             {
@@ -239,7 +257,7 @@ namespace MyDLP.EndPoint.Service
             return true;
         }
 
-        public static bool CheckAndInstallXPSDriver()
+        public bool CheckAndInstallXPSDriver()
         {
             try
             {
@@ -272,7 +290,7 @@ namespace MyDLP.EndPoint.Service
         }
 
         //this is for printing from local system account
-        public static bool SetSystemPrinterRegistry()
+        /*public bool SetSystemPrinterRegistry()
         {
             Logger.GetInstance().Debug("SetSystemPrinterRegistry started");
             try
@@ -330,9 +348,9 @@ namespace MyDLP.EndPoint.Service
                 
                 return false;
             } 
-        }
+        }*/
 
-        public static bool HasSubKey(RegistryKey key, String subKeyName)
+        public bool HasSubKey(RegistryKey key, String subKeyName)
         {
             bool hasKey = false;
 
@@ -345,6 +363,18 @@ namespace MyDLP.EndPoint.Service
                 }
             }
             return hasKey;
+        }
+
+        public static PrinterController getInstance()
+        {
+            if (instance == null)
+                instance = new PrinterController(); 
+            return instance;
+        }
+
+        private PrinterController()
+        {
+            spooledNativePrinters = new ArrayList();
         }
     }
 }
