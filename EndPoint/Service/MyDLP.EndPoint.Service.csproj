@@ -128,6 +128,7 @@
     <Content Include="Printing\mydlpportui_win7_x86.dll" />
     <Content Include="Printing\mydlpportui_xp_x86.dll" />
     <Content Include="Printing\MyDLPXPSDrv-PipelineConfig.xml" />
+    <Content Include="Printing\MyDLPXPSDrv.inf" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Printing\MyDLPXPSDrv.gpd" />
