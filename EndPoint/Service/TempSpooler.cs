@@ -138,7 +138,7 @@ namespace MyDLP.EndPoint.Service
                     //get print queue by name
                     pQueue = pServer.GetPrintQueue(printerName.Replace("(MyDLP)", "").Trim());
                     pQueue.AddJob(jobId, xpsPath, false);
-                    Thread.Sleep(5000);
+                    Thread.Sleep(1000);
                     File.Delete(xpsPath);
                 }
                 catch
@@ -161,7 +161,7 @@ namespace MyDLP.EndPoint.Service
                             {
                                 pQueue = pServer.GetPrintQueue(queue.Name);
                                 pQueue.AddJob(jobId, xpsPath, false);
-                                Thread.Sleep(5000);
+                                Thread.Sleep(1000);
                                 File.Delete(xpsPath);
                             }
                             catch (Exception ex)
