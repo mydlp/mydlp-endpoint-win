@@ -16,11 +16,10 @@
     <DefineConstants>Debug</DefineConstants>
     <CompilerAdditionalOptions>-derl5_8_5Path=$(SolutionDir)..\..\mydlp-deployment-env\erl5.8.5
 -dengine_erlPath=$(SolutionDir)..\..\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\mydlp
--dengine_pyPath=$(SolutionDir)..\..\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\backend\py
--dmagicPath=$(SolutionDir)..\..\mydlp-deployment-env\magic
--dPython26Path=$(SolutionDir)..\..\mydlp-deployment-env\Python26
--dcygwinPath=$(SolutionDir)..\..\mydlp-deployment-env\cygwin
--dmydlp_pyPath=$(SolutionDir)..\..\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\thrift\gen-py\mydlp</CompilerAdditionalOptions>
+-dprintingPath=$(SolutionDir)..\..\mydlp-endpoint-win\EndPoint\Service\printing
+-dengine_javaPath=$(SolutionDir)..\..\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\backend
+-djre7Path=$(SolutionDir)..\..\mydlp-deployment-env\jre7
+-dcygwinPath=$(SolutionDir)..\..\mydlp-deployment-env\cygwin</CompilerAdditionalOptions>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
     <OutputPath>bin\$(Configuration)\</OutputPath>

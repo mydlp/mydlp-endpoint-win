@@ -19,8 +19,11 @@ namespace MyDLP.EndPoint.Service
         ArrayList spooledNativePrinters;
 
         public const String PrinterPrefix = "(MyDLP)";
+        public const String MyDLPDriver = "MyDLP XPS Printer Driver";
+
         public const String SystemPrinterSecurityDescriptor =
             "O:SYG:SYD:(A;;LCSWSDRCWDWO;;;SY)(A;OIIO;RPWPSDRCWDWO;;;SY)";
+        
         public const String BuiltinAdminsPrinterSecurityDescriptor =
             "O:SYG:SYD:(A;;LCSWSDRCWDWO;;;SY)(A;OIIO;RPWPSDRCWDWO;;;SY)(A;;LCSWSDRCWDWO;;;BA)(A;OIIO;RPWPSDRCWDWO;;;BA)";
 
@@ -34,10 +37,12 @@ namespace MyDLP.EndPoint.Service
             {
                 SvcController.StartService("Spooler", 5000);
                 Thread.Sleep(1000);
-                //this is ugly but necessary
-                CheckAndInstallXPSDriver();
-                InstallSecurePrinters();
-                TempSpooler.Start();
+                
+                if (CheckAndInstallXPSDriver())
+                {
+                    InstallSecurePrinters();
+                    TempSpooler.Start();
+                }
 
             }
             else
@@ -65,7 +70,7 @@ namespace MyDLP.EndPoint.Service
                     Logger.GetInstance().Debug("Process printer queue: " + queue.Name
                         + " driver: " + queue.QueueDriver.Name + " port: " + queue.QueuePort.Name);
 
-                    if (queue.QueueDriver.Name != "MyDLP XPS Printer Driver" ||
+                    if (queue.QueueDriver.Name != MyDLPDriver ||
                         queue.QueuePort.Name != "MyDLP")
                     {
                         Logger.GetInstance().Debug(
@@ -73,7 +78,7 @@ namespace MyDLP.EndPoint.Service
                         try
                         {
                             pServer.InstallPrintQueue(PrinterPrefix + queue.Name,
-                                "MyDLP XPS Printer Driver",
+                                MyDLPDriver,
                                 new String[] { "MyDLP" },
                                 "winprint",
                                 PrintQueueAttributes.Direct);
@@ -132,7 +137,7 @@ namespace MyDLP.EndPoint.Service
                     Logger.GetInstance().Debug("Process printer queue: " + queue.Name
                        + " driver: " + queue.QueueDriver.Name + " port: " + queue.QueuePort.Name);
 
-                    if (queue.QueueDriver.Name == "MyDLP XPS Printer Driver" ||
+                    if (queue.QueueDriver.Name == MyDLPDriver||
                         queue.QueuePort.Name == "MyDLP")
                     {
                         Logger.GetInstance().Debug("A secure printer found removing " + queue.Name);
@@ -261,24 +266,36 @@ namespace MyDLP.EndPoint.Service
         {
             try
             {
-                X509Store store = new X509Store(StoreName.TrustedPublisher, StoreLocation.LocalMachine);
-                X509Certificate2 mydlpPubCert = new X509Certificate2(Configuration.PrintingDirPath + "mydlppub.cer");
-                store.Open(OpenFlags.ReadWrite);
-                store.Add(mydlpPubCert);
+                ProcessStartInfo procStartInfo;
+
+                //PrintUI.dll does not work in a windows service on Windows XP
+                if (Configuration.GetOs() == Configuration.OsVersion.Win7_32
+                    || Configuration.GetOs() == Configuration.OsVersion.Win7_64)
+                {
+                    X509Store store = new X509Store(StoreName.TrustedPublisher, StoreLocation.LocalMachine);
+                    X509Certificate2 mydlpPubCert = new X509Certificate2(Configuration.PrintingDirPath + "mydlppub.cer");
+                    store.Open(OpenFlags.ReadWrite);
+                    store.Add(mydlpPubCert);
+
+                    procStartInfo = new ProcessStartInfo("rundll32", " printui.dll,PrintUIEntry /ia /m \"MyDLP XPS Printer Driver\" /f \"" + Configuration.PrintingDirPath + "MyDLPXPSDrv.inf\"");
 
 
-                ProcessStartInfo procStartInfo =
-                    new ProcessStartInfo("rundll32", " printui.dll,PrintUIEntry /ia /m \"MyDLP XPS Printer Driver\" /f \"" + Configuration.PrintingDirPath + "MyDLPXPSDrv.inf\"");
-                procStartInfo.RedirectStandardOutput = true;
-                procStartInfo.UseShellExecute = false;
-                procStartInfo.CreateNoWindow = true;
+                    procStartInfo.RedirectStandardOutput = true;
+                    procStartInfo.UseShellExecute = false;
+                    procStartInfo.CreateNoWindow = true;
 
-                Process proc = new Process();
-                proc.StartInfo = procStartInfo;
-                Logger.GetInstance().Debug("Starting process:" + procStartInfo.Arguments);
-                proc.Start();
-                string result = proc.StandardOutput.ReadToEnd();
-                Logger.GetInstance().Debug(result);
+                    Process proc = new Process();
+                    proc.StartInfo = procStartInfo;
+                    Logger.GetInstance().Debug("Starting process:" + procStartInfo.Arguments);
+                    proc.Start();
+                    string result = proc.StandardOutput.ReadToEnd();
+                    Logger.GetInstance().Debug(result);
+                }
+                //Check only if driver is preinstalled on Windows XP
+                else if (Configuration.GetOs() == Configuration.OsVersion.XP)
+                {
+                    return MyDLPEP.PrinterUtils.CheckIfPrinterDriverExists(MyDLPDriver);              
+                }
 
                 return true;
             }

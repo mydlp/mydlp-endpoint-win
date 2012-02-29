@@ -39,6 +39,7 @@ namespace MyDLPEP
 		static void SetPrinterSpoolMode(String^ printerName, bool spool);	
 		static void RemovePrinter(String^ printerName);
 		static bool SetPrinterSecurityDescriptor(String ^pName, String ^secDesc);
-		static String^ PrinterUtils::GetPrinterSecurityDescriptor(String ^pName);	
+		static String^ PrinterUtils::GetPrinterSecurityDescriptor(String ^pName);
+		static bool CheckIfPrinterDriverExists(String ^driverName);
 	};
 }

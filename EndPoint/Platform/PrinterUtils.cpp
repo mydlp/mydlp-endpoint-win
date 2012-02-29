@@ -31,7 +31,6 @@ namespace MyDLPEP
 	{
 		HANDLE pHandle = NULL;
 		DWORD pcbNeeded = 0;
-		DWORD cBuf = 0;
 		PRINTER_INFO_3* pPrinterInfo = NULL;
 		PSECURITY_DESCRIPTOR psd = NULL;
 		LPWSTR lpszSecDesc = NULL;
@@ -48,7 +47,6 @@ namespace MyDLPEP
 			}
 
 			GetPrinter(pHandle, 3, (LPBYTE)pPrinterInfo, 0, &pcbNeeded);
-			cBuf = pcbNeeded;
 			pPrinterInfo = (PRINTER_INFO_3*) malloc(pcbNeeded);
 
 			if (!pPrinterInfo)
@@ -146,7 +144,6 @@ namespace MyDLPEP
 	{
 		HANDLE pHandle = NULL;
 		DWORD pcbNeeded	= 0;
-		DWORD cBuf = 0;
 		PRINTER_INFO_3* pPrinterInfo = NULL;
 
 		PSECURITY_DESCRIPTOR psd = NULL;
@@ -167,7 +164,6 @@ namespace MyDLPEP
 			}
 
 			GetPrinter(pHandle, 3, (LPBYTE)pPrinterInfo, 0, &pcbNeeded);
-			cBuf = pcbNeeded;
 			pPrinterInfo = (PRINTER_INFO_3*) malloc(pcbNeeded);
 
 			if (!pPrinterInfo)
@@ -301,11 +297,9 @@ namespace MyDLPEP
 
 		HANDLE pHandle = PrinterUtils::GetPrinterHandle(pName);
 		DWORD pcbNeeded = 0;
-		DWORD cBuf = 0;
 		PRINTER_INFO_5* pPrinterInfo = NULL;
 
 		GetPrinter(pHandle, 5, (LPBYTE)pPrinterInfo, 0, &pcbNeeded);
-		cBuf = pcbNeeded;
 		pPrinterInfo = (PRINTER_INFO_5*) malloc(pcbNeeded);
 
 		if (pPrinterInfo)
@@ -338,6 +332,47 @@ namespace MyDLPEP
 			free(pPrinterInfo);
 			ClosePrinter(pHandle);
 		}
+	}
+
+	bool PrinterUtils::CheckIfPrinterDriverExists(String ^driverName)
+	{
+		bool foundFlag = false;
+		int i = 0;
+
+		DWORD pcbNeeded = 0;
+		DWORD pcbReturned = 0;
+		DRIVER_INFO_1* pDriverInfo = NULL;
+
+		try
+		{
+			EnumPrinterDrivers(NULL, NULL, 1, (LPBYTE)pDriverInfo, 0, &pcbNeeded, &pcbReturned);
+			pDriverInfo = (DRIVER_INFO_1*) malloc(pcbNeeded);
+
+			if ( !EnumPrinterDrivers(NULL, NULL, 1, (LPBYTE)pDriverInfo, pcbNeeded, &pcbNeeded, &pcbReturned))
+			{
+				throw gcnew Exception("EnumPrinterDrivers failed");
+			}
+
+			for (i = 0; i < pcbReturned; i++)
+			{
+				String^ dName = gcnew String(pDriverInfo[i].pName);
+				if (dName == driverName)
+				{
+					foundFlag = true;
+					break;
+				}
+			}
+			
+			if(pDriverInfo)
+				free(pDriverInfo);
+		}
+		catch(Exception ^ex)
+		{
+			if(pDriverInfo)
+				free(pDriverInfo);
+		}
+
+		return foundFlag;
 	}
 }
 	
