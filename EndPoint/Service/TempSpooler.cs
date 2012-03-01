@@ -61,7 +61,7 @@ namespace MyDLP.EndPoint.Service
         public static bool Stop()
         {
             spoolWatcher.EnableRaisingEvents = false;
-            return false;
+            return true;
         }
 
         private static void OnCreate(object source, FileSystemEventArgs e)

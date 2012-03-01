@@ -48,6 +48,7 @@ namespace MyDLP.EndPoint.Service
             else
             {
                 SvcController.StartService("Spooler", 5000);
+                TempSpooler.Stop();
             }
         }
 
