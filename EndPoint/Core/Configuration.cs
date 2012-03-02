@@ -33,6 +33,9 @@ namespace MyDLP.EndPoint.Core
 {
     public class Configuration
     {
+
+        public enum OsVersion { XP, Win7_32, Win7_64, Unknown };
+
         //app conf
         static String appPath;
         static String seapServer;
@@ -49,6 +52,8 @@ namespace MyDLP.EndPoint.Core
         static DateTime startTime;
         static String userName = "";
         static Timer userNameTimer;
+        static String printingDirPath;
+        static String printSpoolPath;
 
         //user conf
         static Logger.LogLevel logLevel = Logger.LogLevel.DEBUG;
@@ -100,18 +105,26 @@ namespace MyDLP.EndPoint.Core
         {
             try
             {
-                RegistryKey mydlpKey = Registry.LocalMachine.OpenSubKey("Software").OpenSubKey("MyDLP", true);
-
-                //Get loglevel
-                try
+                if (Environment.UserInteractive)
                 {
-                    logLevel = (Logger.LogLevel)mydlpKey.GetValue("log_level");
-                    if (logLevel > Logger.LogLevel.DEBUG) logLevel = Logger.LogLevel.DEBUG;
+                    logLevel = Logger.LogLevel.DEBUG;
                 }
-                catch (Exception e)
+                else
                 {
-                    mydlpKey.SetValue("log_level", 1, RegistryValueKind.DWord);
-                    logLevel = Logger.LogLevel.INFO;
+
+                    RegistryKey mydlpKey = Registry.LocalMachine.OpenSubKey("Software").OpenSubKey("MyDLP", true);
+
+                    //Get loglevel
+                    try
+                    {
+                        logLevel = (Logger.LogLevel)mydlpKey.GetValue("log_level");
+                        if (logLevel > Logger.LogLevel.DEBUG) logLevel = Logger.LogLevel.DEBUG;
+                    }
+                    catch (Exception e)
+                    {
+                        mydlpKey.SetValue("log_level", 1, RegistryValueKind.DWord);
+                        logLevel = Logger.LogLevel.INFO;
+                    }
                 }
 
             }
@@ -245,6 +258,8 @@ namespace MyDLP.EndPoint.Core
                     Logger.GetInstance().Info("32 bit platform, using MyDLPMF.sys");
                     minifilterPath = "C:\\workspace\\mydlp-endpoint-win\\EndPoint\\MiniFilter\\src\\objchk_wxp_x86\\i386\\MyDLPMF.sys";
                 }
+
+                printingDirPath = "C:\\workspace\\mydlp-endpoint-win\\EndPoint\\Service\\printing\\";
                 javaBackendPath = @"C:\workspace\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\backend\";
                 javaPath = @"C:\workspace\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\backend\target\";
                 erlangPath = @"C:\workspace\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\mydlp\";
@@ -254,6 +269,7 @@ namespace MyDLP.EndPoint.Core
                 seapServer = "127.0.0.1";
                 seapPort = 9099;
                 mydlpConfPath = Configuration.ErlangPath + "mydlp-ep.conf";
+                printSpoolPath = @"C:\windows\temp\mydlp\spool";
 
             }
             else
@@ -277,12 +293,14 @@ namespace MyDLP.EndPoint.Core
                             Logger.GetInstance().Info("32 bit platform, using MyDLPMF.sys");
                             minifilterPath = appPath + "MyDLPMF.sys";
                         }
+                        printingDirPath = appPath + "printing\\";
                         javaBackendPath = appPath + "engine\\java\\";
                         erlangPath = appPath + "engine\\erl\\";
                         erlangBinPaths = appPath + @"erl5.8.5\bin;" + appPath + @"erl5.8.5\erts-5.8.5\bin";
                         javaPath = appPath + "engine\\java\\";
                         javaBinPaths = appPath + "jre7\\bin\\";
                         mydlpConfPath = Configuration.AppPath + @"\mydlp.conf";
+                        printSpoolPath = Path.GetTempPath() + "\\mydlp\\spool";
                     }
                     catch (Exception e)
                     {
@@ -466,6 +484,35 @@ namespace MyDLP.EndPoint.Core
 
         [DllImport("kernel32", SetLastError = true, CallingConvention = CallingConvention.Winapi)]
         public extern static IntPtr GetProcAddress(IntPtr hwnd, string procedureName);
+
+
+        public static OsVersion GetOs()
+        {
+            OperatingSystem os = Environment.OSVersion;
+            Version vs = os.Version;
+
+            if (os.Platform == PlatformID.Win32NT)
+            {
+                if (vs.Major == 5 && vs.Minor != 0)
+                {
+                    return OsVersion.XP;
+                }
+                else if (vs.Major == 6 && vs.Minor != 0)
+                {
+                    if (IsOS64Bit())
+                    {
+                        return OsVersion.Win7_64;
+                    }
+                    else
+                    {
+                        return OsVersion.Win7_32;
+                    }
+                }
+            }
+
+            return OsVersion.Unknown;
+        }
+
 
         private delegate bool IsWow64ProcessDelegate([In] IntPtr handle, [Out] out bool isWow64Process);
 
@@ -691,6 +738,23 @@ namespace MyDLP.EndPoint.Core
                 return newFilterConfiguration;
             }
         }
+
+        public static String PrintingDirPath
+        {
+            get
+            {
+                return printingDirPath;
+            }
+        }
+        
+        public static String PrintSpoolPath
+        {
+            get
+            {
+                return printSpoolPath;
+            }
+        }
+
     }
 }
 

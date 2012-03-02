@@ -476,7 +476,7 @@ MyDLPMFConfigurationUpdate ()
 		&FilterConf.ReadTimeout );	
 
 	if (STATUS_SUCCESS == status) {
-		HANDLE pid = confReply->Pid;
+		HANDLE pid = (HANDLE)confReply->Pid;
 		status = PsLookupProcessByProcessId(pid, &FilterConf.ErlangProcess); 
 		FilterConf.ArchiveInbound = confReply->ArchiveInbound;
 		FilterConf.USBSerialAC = confReply->USBSerialAC;

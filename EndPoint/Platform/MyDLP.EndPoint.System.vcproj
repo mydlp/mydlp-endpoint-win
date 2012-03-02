@@ -204,6 +204,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\PrinterUtils.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\Stdafx.cpp"
 				>
 				<FileConfiguration
@@ -242,6 +246,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\PrinterUtils.h"
+				>
+			</File>
+			<File
 				RelativePath=".\resource.h"
 				>
 			</File>
@@ -264,10 +272,6 @@
 				>
 			</File>
 		</Filter>
-		<File
-			RelativePath="..\Service\Program.cs"
-			>
-		</File>
 		<File
 			RelativePath=".\ReadMe.txt"
 			>

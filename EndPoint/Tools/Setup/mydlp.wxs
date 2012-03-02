@@ -17,6 +17,7 @@
           <Directory Id="RUNDIR" Name="run" />
           <Directory Id="SPOOLDIR" Name="spool" />
           <Directory Id="MNESIADIR" Name="mnesia" />
+          <Directory Id="PRINTINGDIR" Name="printing" />
           <Directory Id="ENGINEDIR" Name="engine">
             <Directory Id="ENGINEJAVADIR" Name="java" />
             <Directory Id="ENGINEERLDIR" Name="erl" />
@@ -33,6 +34,7 @@
       <ComponentGroupRef Id="erl5.8.5" />
       <ComponentGroupRef Id="engine_erl" />
       <ComponentGroupRef Id="jre7" />
+      <ComponentGroupRef Id="printing" />
     </Feature>
 
     <Upgrade Id="9BA3E701-8F64-46B1-9D2A-8A29B22C0F65">
@@ -69,6 +71,7 @@
         <CreateFolder Directory="RUNDIR" />
         <CreateFolder Directory="SPOOLDIR" />
         <CreateFolder Directory="MNESIADIR" />
+        <CreateFolder Directory="PRINTINGDIR" />
       </Component>
 
       <Component Id="MyDLP.EndPoint.Watchdog.exe" Directory="INSTALLLOCATION" Guid="*">
