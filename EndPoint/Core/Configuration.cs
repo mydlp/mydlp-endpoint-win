@@ -388,9 +388,12 @@ namespace MyDLP.EndPoint.Core
                 //Get maximumObjectSize
                 maximumObjectSize = (int)getRegistryConfSafe(mydlpKey, "maximum_object_size", 10485760, RegistryValueKind.DWord);
 
-                //Get loglevel
-                logLevel = (Logger.LogLevel)getRegistryConfSafe(mydlpKey, "log_level", 1, RegistryValueKind.DWord);
-                if (logLevel > Logger.LogLevel.DEBUG) logLevel = Logger.LogLevel.DEBUG;
+                if (!Environment.UserInteractive)
+                {
+                    //Get loglevel
+                    logLevel = (Logger.LogLevel)getRegistryConfSafe(mydlpKey, "log_level", 1, RegistryValueKind.DWord);
+                    if (logLevel > Logger.LogLevel.DEBUG) logLevel = Logger.LogLevel.DEBUG;
+                }
 
             }
             catch (Exception e)
