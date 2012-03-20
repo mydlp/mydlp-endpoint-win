@@ -17,7 +17,7 @@ namespace MyDLP.EndPoint.Core
         {
             lock (typeof(USBController))
             {
-                return globalUsbLockFlag;
+                return globalUsbLockFlag && Configuration.UsbSerialAccessControl;
             }        
         }
 
@@ -29,6 +29,8 @@ namespace MyDLP.EndPoint.Core
                 {
                     ManagementObjectSearcher theSearcher = new ManagementObjectSearcher("SELECT * FROM Win32_DiskDrive WHERE InterfaceType='USB'");
                     globalUsbLockFlag = false;
+
+                    Logger.GetInstance().Debug("Enter GetUSBStorages globalUSbLockFlag:" + globalUsbLockFlag);
                     foreach (ManagementObject currentObject in theSearcher.Get())
                     {
                         String id = currentObject["PNPDeviceID"].ToString();
@@ -54,13 +56,14 @@ namespace MyDLP.EndPoint.Core
 
                                 if (Core.SeapClient.GetUSBSerialDecision(idHash) != FileOperation.Action.ALLOW)
                                 {
+                                    Logger.GetInstance().Debug("UsbLockFlag set true:" + globalUsbLockFlag);
                                     globalUsbLockFlag = true;
                                 }
                             }
 
                             catch (Exception e)
                             {
-                                Logger.GetInstance().Error(e.Message + e.StackTrace);
+                                Logger.GetInstance().Error(e.Message + e.StackTrace);                           
                             }
                         }
                     }
@@ -68,8 +71,11 @@ namespace MyDLP.EndPoint.Core
                 catch (Exception e)
                 {
                     Logger.GetInstance().Error(e.Message + e.StackTrace);
+                    globalUsbLockFlag = false;
                 }
             }
+
+            Logger.GetInstance().Debug("UsbLockFlag finall value:" + globalUsbLockFlag);
         }
 
         public static void AddUSBHandler()
@@ -99,6 +105,7 @@ namespace MyDLP.EndPoint.Core
         public static void RemoveUSBHandler()
         {
             w.Stop();
+            globalUsbLockFlag = false;
         }
 
         public static void USBInserted(object sender, EventArgs e)

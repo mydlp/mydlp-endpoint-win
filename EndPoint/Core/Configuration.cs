@@ -33,22 +33,27 @@ namespace MyDLP.EndPoint.Core
 {
     public class Configuration
     {
+
+        public enum OsVersion { XP, Win7_32, Win7_64, Unknown };
+
         //app conf
         static String appPath;
         static String seapServer;
         static int seapPort;
         static String minifilterPath;
-        static String pyBackendPath;
+        static String javaBackendPath;
         static String erlangPath;
-        static String pythonBinPaths;
+        static String javaBinPaths;
         static String erlangBinPaths;
-        static String pythonPath;
+        static String javaPath;
         static String mydlpConfPath;
         static int erlPid = 0;
-        static int pythonPid = 0;
+        static int javaPid = 0;
         static DateTime startTime;
         static String userName = "";
         static Timer userNameTimer;
+        static String printingDirPath;
+        static String printSpoolPath;
 
         //user conf
         static Logger.LogLevel logLevel = Logger.LogLevel.DEBUG;
@@ -100,18 +105,26 @@ namespace MyDLP.EndPoint.Core
         {
             try
             {
-                RegistryKey mydlpKey = Registry.LocalMachine.OpenSubKey("Software").OpenSubKey("MyDLP", true);
-
-                //Get loglevel
-                try
+                if (Environment.UserInteractive)
                 {
-                    logLevel = (Logger.LogLevel)mydlpKey.GetValue("log_level");
-                    if (logLevel > Logger.LogLevel.DEBUG) logLevel = Logger.LogLevel.DEBUG;
+                    logLevel = Logger.LogLevel.DEBUG;
                 }
-                catch (Exception e)
+                else
                 {
-                    mydlpKey.SetValue("log_level", 1, RegistryValueKind.DWord);
-                    logLevel = Logger.LogLevel.INFO;
+
+                    RegistryKey mydlpKey = Registry.LocalMachine.OpenSubKey("Software").OpenSubKey("MyDLP", true);
+
+                    //Get loglevel
+                    try
+                    {
+                        logLevel = (Logger.LogLevel)mydlpKey.GetValue("log_level");
+                        if (logLevel > Logger.LogLevel.DEBUG) logLevel = Logger.LogLevel.DEBUG;
+                    }
+                    catch (Exception e)
+                    {
+                        mydlpKey.SetValue("log_level", 1, RegistryValueKind.DWord);
+                        logLevel = Logger.LogLevel.INFO;
+                    }
                 }
 
             }
@@ -182,7 +195,7 @@ namespace MyDLP.EndPoint.Core
             }
         }
 
-        //this will run after erl and python started
+        //this will run after erl and java started
         public static void setPids()
         {
             int tryLimit = 30;
@@ -207,7 +220,7 @@ namespace MyDLP.EndPoint.Core
             }
 
             tryCount = 0;
-            path = appPath + @"\run\backend-py.pid";
+            path = appPath + @"\run\backend.pid";
             try
             {
                 DateTime dt = File.GetLastWriteTime(path);
@@ -217,14 +230,14 @@ namespace MyDLP.EndPoint.Core
                     dt = File.GetLastWriteTime(path);
                 }
                 string text = System.IO.File.ReadAllText(path);
-                pythonPid = Int32.Parse(text.Trim());
+                javaPid = Int32.Parse(text.Trim());
             }
             catch
             {
-                pythonPid = 0;
+                javaPid = 0;
             }
 
-            Logger.GetInstance().Info("Configuration.PythonPid = " + Configuration.PythonPid);
+            Logger.GetInstance().Info("Configuration.JavaPid = " + Configuration.JavaPid);
             Logger.GetInstance().Info("Configuration.ErlPid = " + Configuration.ErlPid);
         }
 
@@ -245,15 +258,18 @@ namespace MyDLP.EndPoint.Core
                     Logger.GetInstance().Info("32 bit platform, using MyDLPMF.sys");
                     minifilterPath = "C:\\workspace\\mydlp-endpoint-win\\EndPoint\\MiniFilter\\src\\objchk_wxp_x86\\i386\\MyDLPMF.sys";
                 }
-                pyBackendPath = @"C:\workspace\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\backend\py\";
+
+                printingDirPath = "C:\\workspace\\mydlp-endpoint-win\\EndPoint\\Service\\printing\\";
+                javaBackendPath = @"C:\workspace\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\backend\";
+                javaPath = @"C:\workspace\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\backend\target\";
                 erlangPath = @"C:\workspace\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\mydlp\";
                 erlangBinPaths = @"C:\workspace\mydlp-deployment-env\erl5.8.5\bin;C:\workspace\mydlp-deployment-env\erl5.8.5\erts-5.8.5\bin";
-                pythonBinPaths = @"C:\workspace\mydlp-deployment-env\Python26";
-                pythonPath = @"C:\workspace\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\thrift\gen-py";
+                javaBinPaths = @"C:\workspace\mydlp-deployment-env\jre7\bin";
                 appPath = @"C:\workspace\mydlp-development-env";
                 seapServer = "127.0.0.1";
                 seapPort = 9099;
                 mydlpConfPath = Configuration.ErlangPath + "mydlp-ep.conf";
+                printSpoolPath = @"C:\windows\temp\mydlp\spool";
 
             }
             else
@@ -277,12 +293,14 @@ namespace MyDLP.EndPoint.Core
                             Logger.GetInstance().Info("32 bit platform, using MyDLPMF.sys");
                             minifilterPath = appPath + "MyDLPMF.sys";
                         }
-                        pyBackendPath = appPath + "engine\\py\\";
+                        printingDirPath = appPath + "printing\\";
+                        javaBackendPath = appPath + "engine\\java\\";
                         erlangPath = appPath + "engine\\erl\\";
                         erlangBinPaths = appPath + @"erl5.8.5\bin;" + appPath + @"erl5.8.5\erts-5.8.5\bin";
-                        pythonPath = appPath + "engine\\py\\";
-                        pythonBinPaths = appPath + "Python26";
+                        javaPath = appPath + "engine\\java\\";
+                        javaBinPaths = appPath + "jre7\\bin\\";
                         mydlpConfPath = Configuration.AppPath + @"\mydlp.conf";
+                        printSpoolPath = Path.GetTempPath() + "\\mydlp\\spool";
                     }
                     catch (Exception e)
                     {
@@ -370,9 +388,12 @@ namespace MyDLP.EndPoint.Core
                 //Get maximumObjectSize
                 maximumObjectSize = (int)getRegistryConfSafe(mydlpKey, "maximum_object_size", 10485760, RegistryValueKind.DWord);
 
-                //Get loglevel
-                logLevel = (Logger.LogLevel)getRegistryConfSafe(mydlpKey, "log_level", 1, RegistryValueKind.DWord);
-                if (logLevel > Logger.LogLevel.DEBUG) logLevel = Logger.LogLevel.DEBUG;
+                if (!Environment.UserInteractive)
+                {
+                    //Get loglevel
+                    logLevel = (Logger.LogLevel)getRegistryConfSafe(mydlpKey, "log_level", 1, RegistryValueKind.DWord);
+                    if (logLevel > Logger.LogLevel.DEBUG) logLevel = Logger.LogLevel.DEBUG;
+                }
 
             }
             catch (Exception e)
@@ -466,6 +487,35 @@ namespace MyDLP.EndPoint.Core
 
         [DllImport("kernel32", SetLastError = true, CallingConvention = CallingConvention.Winapi)]
         public extern static IntPtr GetProcAddress(IntPtr hwnd, string procedureName);
+
+
+        public static OsVersion GetOs()
+        {
+            OperatingSystem os = Environment.OSVersion;
+            Version vs = os.Version;
+
+            if (os.Platform == PlatformID.Win32NT)
+            {
+                if (vs.Major == 5 && vs.Minor != 0)
+                {
+                    return OsVersion.XP;
+                }
+                else if (vs.Major == 6 && vs.Minor != 0)
+                {
+                    if (IsOS64Bit())
+                    {
+                        return OsVersion.Win7_64;
+                    }
+                    else
+                    {
+                        return OsVersion.Win7_32;
+                    }
+                }
+            }
+
+            return OsVersion.Unknown;
+        }
+
 
         private delegate bool IsWow64ProcessDelegate([In] IntPtr handle, [Out] out bool isWow64Process);
 
@@ -604,11 +654,11 @@ namespace MyDLP.EndPoint.Core
             }
         }
 
-        public static String PyBackendPath
+        public static String JavaBackendPath
         {
             get
             {
-                return pyBackendPath;
+                return javaBackendPath;
             }
         }
 
@@ -628,19 +678,19 @@ namespace MyDLP.EndPoint.Core
             }
         }
 
-        public static String PythonBinPaths
+        public static String JavaBinPaths
         {
             get
             {
-                return pythonBinPaths;
+                return javaBinPaths;
             }
         }
 
-        public static String PythonPath
+        public static String JavaPath
         {
             get
             {
-                return pythonPath;
+                return javaPath;
             }
         }
 
@@ -660,11 +710,11 @@ namespace MyDLP.EndPoint.Core
             }
         }
 
-        public static int PythonPid
+        public static int JavaPid
         {
             get
             {
-                return pythonPid;
+                return javaPid;
             }
         }
 
@@ -691,6 +741,23 @@ namespace MyDLP.EndPoint.Core
                 return newFilterConfiguration;
             }
         }
+
+        public static String PrintingDirPath
+        {
+            get
+            {
+                return printingDirPath;
+            }
+        }
+        
+        public static String PrintSpoolPath
+        {
+            get
+            {
+                return printSpoolPath;
+            }
+        }
+
     }
 }
 

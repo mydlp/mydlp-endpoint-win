@@ -37,9 +37,9 @@ namespace MyDLP.EndPoint.Core
                     service.Start();
                 service.WaitForStatus( ServiceControllerStatus.Running, timeout);
             }
-            catch
+            catch(Exception e)
             {
-                throw;
+                Logger.GetInstance().Error("Unable to start sevice: " + serviceName + " error: " + e.Message);                
             }
         }
 
@@ -53,9 +53,9 @@ namespace MyDLP.EndPoint.Core
                 service.Stop();
                 service.WaitForStatus(ServiceControllerStatus.Stopped, timeout);
             }
-            catch
+            catch(Exception e)
             {
-                throw;
+                Logger.GetInstance().Error("Unable to stop sevice: " + serviceName + " error: " + e.Message);
             }
         }
                

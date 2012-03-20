@@ -227,6 +227,10 @@ DWORD ListenerWorker(__in PMYDLPMF_THREAD_CONTEXT Context)
 				{
 					action = FileOperation::Action::BLOCK;
 				}	
+				else 
+				{
+					action = FileOperation::Action::ALLOW;
+				}
 			}
 
 			if (confRequest == false)

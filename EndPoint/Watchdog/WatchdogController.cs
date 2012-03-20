@@ -107,10 +107,10 @@ namespace MyDLP.EndPoint.Service
                 }
             }
 
-            if (!CheckProcRunningByName("python")) 
+            if (!CheckProcRunningByName("java")) 
             {
                 error = true;
-                Logger.GetInstance().Error("no python process");
+                Logger.GetInstance().Error("no java process");
             }
 
             ServiceController service = new ServiceController("mydlpepwin");
@@ -133,7 +133,7 @@ namespace MyDLP.EndPoint.Service
                     }
                     service.Start();
                     service.WaitForStatus(ServiceControllerStatus.Running);
-                    //Wait for proper initialisation of python and erlang
+                    //Wait for proper initialisation of java and erlang
                     System.Threading.Thread.Sleep(20000);
                     Configuration.setPids();   
                 }

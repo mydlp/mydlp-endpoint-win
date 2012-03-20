@@ -1,0 +1,58 @@
+;
+; Copyright (c) 2011  MyDLP
+;
+; All rights reserved.
+;
+
+[Version]
+Signature="$Windows NT$"
+Provider="Medra Teknoloji Egitim Danismanlik Ltd"
+ClassGUID={4D36E979-E325-11CE-BFC1-08002BE10318}
+Class=Printer
+CatalogFile.NTx86=MyDLPXPSDrvNTx86.cat
+CatalogFile.NTAMD64=MyDLPXPSDrvNTAMD64.cat
+DriverVer=10/11/2011,0.0.0.1
+
+
+[Manufacturer]
+%MY%=MY_DRV,NTx86,NTAMD64
+
+[MY_DRV]
+%MY_DRIVER% = INSTALL_DRIVER
+
+[MY_DRV.NTx86]
+%MY_DRIVER% = INSTALL_DRIVER
+
+[MY_DRV.NTAMD64]
+%MY_DRIVER% = INSTALL_DRIVER
+
+[INSTALL_DRIVER]
+CopyFiles=DrvFiles
+DriverFile=mxdwdrv.dll
+ConfigFile=unidrvui.dll
+HelpFile=UniDrv.HLP
+DataFile=MyDLPXPSDrv.gpd
+Include=NTPRINT.INF
+Needs=UNIDRV.OEM, XPSGPD.OEM, XPSDRV.OEM
+
+
+[DrvFiles]
+MyDLPXPSDrv.gpd
+MyDLPXPSDrv-PipelineConfig.xml
+
+[DestinationDirs]
+DefaultDestDir = 66000
+
+
+[SourceDisksNames]
+1 = %Location%,,
+
+
+[SourceDisksFiles]
+MyDLPXPSDrv.gpd                    = 1
+MyDLPXPSDrv-PipelineConfig.xml     = 1
+
+[Strings]
+Location="MyDLP XPS Printer Driver Location"
+MY="MyDLP XPS Printer Driver"
+MY_DRIVER="MyDLP XPS Printer Driver"

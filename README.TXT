@@ -4,5 +4,3 @@ checkout to c:\workspace\mydlp-endpoint-win (paths for test project are hardcode
 Important note: Minifilter compilation demands a working directory path without any space  
 
 
-
-
