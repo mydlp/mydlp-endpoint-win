@@ -413,7 +413,7 @@ namespace MyDLP.EndPoint.Core
                     if (returnVal == 0)
                     {
                         // return DOMAIN\user
-                        string owner = argList[1] + "\\" + argList[0];
+                        string owner = argList[0] + "@" + argList[1];
                         userName = owner;
                         return userName;
                     }
