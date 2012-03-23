@@ -14,6 +14,7 @@ CatalogFile.NTAMD64=MyDLPXPSDrvNTAMD64.cat
 DriverVer=10/11/2011,0.0.0.1
 
 
+
 [Manufacturer]
 %MY%=MY_DRV,NTx86,NTAMD64
 
