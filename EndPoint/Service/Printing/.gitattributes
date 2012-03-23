@@ -1,0 +1,3 @@
+*.inf -crlf -diff
+*.xml -crlf -diff
+*.gpd -crlf -diff
