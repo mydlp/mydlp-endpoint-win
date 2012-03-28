@@ -439,7 +439,7 @@ namespace MyDLP.EndPoint.Core
                 String response;
                 String[] splitResp;
 
-                response = sClient.sendMessage("CONFUPDATE");
+                response = sClient.sendMessage("CONFUPDATE " + Configuration.GetLoggedOnUser());
                 splitResp = response.Split(' ');
                 if (!splitResp[0].Equals("OK"))
                 {

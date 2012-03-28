@@ -433,7 +433,7 @@ namespace MyDLP.EndPoint.Core
                     int returnVal = Convert.ToInt32(obj.InvokeMethod("GetOwner", argList));
                     if (returnVal == 0)
                     {
-                        // return DOMAIN\user
+                        // return user@domain
                         string owner = argList[0] + "@" + argList[1];
                         userName = owner;
                         return userName;
