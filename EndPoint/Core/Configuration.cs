@@ -342,7 +342,7 @@ namespace MyDLP.EndPoint.Core
 
             try
             {
-                RegistryKey mydlpKey = Registry.LocalMachine.OpenSubKey("Software").OpenSubKey("MyDLP", true);
+                RegistryKey mydlpKey = Registry.LocalMachine.OpenSubKey("Software", true).CreateSubKey("MyDLP");
 
                 //Get archiveInbound
                 if ((int)(getRegistryConfSafe(mydlpKey, "archive_inbound", 0, RegistryValueKind.DWord)) == 0)
@@ -380,7 +380,7 @@ namespace MyDLP.EndPoint.Core
 
                 //Try to use old management server if local host found for management server
                 if (managementServer == "127.0.0.1")
-                    managementServer = (String)getRegistryConfSafe(mydlpKey, "ManagementServer", "127.0.0.1", RegistryValueKind.String);
+                    managementServer = (String)getRegistryConfSafe(mydlpKey, "ManagementServer", "127.0.0.1", RegistryValueKind.String, false);
 
                 //Get logLimit
                 logLimit = (int)getRegistryConfSafe(mydlpKey, "log_limit", 10485760, RegistryValueKind.DWord);
@@ -447,6 +447,11 @@ namespace MyDLP.EndPoint.Core
 
         public static object getRegistryConfSafe(RegistryKey key, String valueName, Object defaultValue, RegistryValueKind kind)
         {
+            return getRegistryConfSafe(key, valueName, defaultValue, kind, true);
+        }
+
+        public static object getRegistryConfSafe(RegistryKey key, String valueName, Object defaultValue, RegistryValueKind kind, bool create)
+        {
             object retVal;
             try
             {
@@ -457,7 +462,7 @@ namespace MyDLP.EndPoint.Core
                 Logger.GetInstance().Error("Unable to get registry value: " + key.ToString() + " " + valueName + " creating with default value:" + defaultValue);
                 try
                 {
-                    key.SetValue(valueName, defaultValue, kind);
+                    if (create) key.SetValue(valueName, defaultValue, kind);
                 }
                 catch
                 {
@@ -472,7 +477,7 @@ namespace MyDLP.EndPoint.Core
                 retVal = defaultValue;
                 try
                 {
-                    key.SetValue(valueName, defaultValue, kind);
+                    if (create) key.SetValue(valueName, defaultValue, kind);
                 }
                 catch
                 {
