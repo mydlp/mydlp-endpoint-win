@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections;
 using System.Text;
 using System.Management;
 using System.Threading;
@@ -11,6 +12,10 @@ namespace MyDLP.EndPoint.Core
     public class USBController
     {
         static ManagementEventWatcher w = null;
+        //USBSerialCache: key=idHash, value=isBlocked
+        static Hashtable USBSerialCache = null;
+        static bool active = false;
+
         public static Boolean globalUsbLockFlag = false;
 
         public static Boolean IsUsbBlocked()
@@ -18,19 +23,25 @@ namespace MyDLP.EndPoint.Core
             lock (typeof(USBController))
             {
                 return globalUsbLockFlag && Configuration.UsbSerialAccessControl;
-            }        
+            }
         }
 
         public static void GetUSBStorages()
         {
             lock (typeof(USBController))
             {
+                //If USB Serial Access is not active do nothing
+                if (!active)
+                {
+                    globalUsbLockFlag = false;
+                    return;
+                }
+
                 try
                 {
-                    ManagementObjectSearcher theSearcher = new ManagementObjectSearcher("SELECT * FROM Win32_DiskDrive WHERE InterfaceType='USB'");
+                    Logger.GetInstance().Debug("GetUSBStorages()");
                     globalUsbLockFlag = false;
-
-                    Logger.GetInstance().Debug("Enter GetUSBStorages globalUSbLockFlag:" + globalUsbLockFlag);
+                    ManagementObjectSearcher theSearcher = new ManagementObjectSearcher("SELECT * FROM Win32_DiskDrive WHERE InterfaceType='USB'");
                     foreach (ManagementObject currentObject in theSearcher.Get())
                     {
                         String id = currentObject["PNPDeviceID"].ToString();
@@ -54,16 +65,33 @@ namespace MyDLP.EndPoint.Core
                                     idHash += b.ToString("X2");
                                 }
 
-                                if (Core.SeapClient.GetUSBSerialDecision(idHash) != FileOperation.Action.ALLOW)
+                                if (USBSerialCache.ContainsKey(idHash))
                                 {
-                                    Logger.GetInstance().Debug("UsbLockFlag set true:" + globalUsbLockFlag);
-                                    globalUsbLockFlag = true;
+                                    Logger.GetInstance().Debug("USBSerialCache contains:" + idHash);
+                                    if ((bool)USBSerialCache[idHash] == true)
+                                    {
+                                        Logger.GetInstance().Debug("UsbLockFlag set true");
+                                        globalUsbLockFlag = true;
+                                    }
+                                }
+                                else
+                                {
+                                    if (Core.SeapClient.GetUSBSerialDecision(idHash) != FileOperation.Action.ALLOW)
+                                    {
+                                        Logger.GetInstance().Debug("UsbLockFlag set true");
+                                        globalUsbLockFlag = true;
+                                        USBSerialCache.Add(idHash, true);
+                                    }
+                                    else
+                                    {
+                                        USBSerialCache.Add(idHash, false);
+                                    }
                                 }
                             }
 
                             catch (Exception e)
                             {
-                                Logger.GetInstance().Error(e.Message + e.StackTrace);                           
+                                Logger.GetInstance().Error(e.Message + e.StackTrace);
                             }
                         }
                     }
@@ -71,47 +99,40 @@ namespace MyDLP.EndPoint.Core
                 catch (Exception e)
                 {
                     Logger.GetInstance().Error(e.Message + e.StackTrace);
+                    USBSerialCache = new Hashtable();
                     globalUsbLockFlag = false;
                 }
             }
 
-            Logger.GetInstance().Debug("UsbLockFlag finall value:" + globalUsbLockFlag);
+            Logger.GetInstance().Debug("UsbLockFlag final value:" + globalUsbLockFlag);
         }
 
-        public static void AddUSBHandler()
+        public static void Activate()
         {
-            WqlEventQuery q;
 
-            ManagementScope scope = new ManagementScope("root\\CIMV2");
-
-            scope.Options.EnablePrivileges = true;
-            try
+            InvalidateCache();
+            lock (typeof(USBController))
             {
-                q = new WqlEventQuery();
-                q.EventClassName = "__InstanceCreationEvent";
-                q.WithinInterval = new TimeSpan(0, 0, 3);
-                q.Condition = @"TargetInstance ISA 'Win32_USBControllerdevice'";
-                w = new ManagementEventWatcher(scope, q);
-
-                w.EventArrived += new EventArrivedEventHandler(USBInserted);
-                w.Start();
-            }
-            catch (Exception e)
-            {
-                w.Stop();
+                active = true;
             }
         }
 
-        public static void RemoveUSBHandler()
+        public static void Deactive()
         {
-            w.Stop();
-            globalUsbLockFlag = false;
+            lock (typeof(USBController))
+            {
+                active = false;
+                globalUsbLockFlag = false;
+            }
         }
 
-        public static void USBInserted(object sender, EventArgs e)
+        public static void InvalidateCache()
         {
-            GetUSBStorages();
+            lock (typeof(USBController))
+            {
+                Logger.GetInstance().Debug("Invalidate USBSerialCache");
+                USBSerialCache = new Hashtable();
+            }
         }
-
     }
 }

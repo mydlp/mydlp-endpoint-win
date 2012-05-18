@@ -25,10 +25,10 @@ namespace MyDLP.EndPoint.Core
 {
     public abstract class FileOperation
     {
-        public enum Action{ALLOW, BLOCK, NOACTION, UNDEFINED};        
-        public String path {get ; set; }
-        public DateTime date {get ; set; }
-        public enum OperationType {OPEN, WRITE}
+        public enum Action { ALLOW, BLOCK, NOACTION, UNDEFINED };
+        public String path { get; set; }
+        public DateTime date { get; set; }
+        public enum OperationType { OPEN, WRITE }
         public OperationType type { get; set; }
     }
 }

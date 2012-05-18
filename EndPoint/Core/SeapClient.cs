@@ -44,13 +44,13 @@ namespace MyDLP.EndPoint.Core
 
         public static FileOperation.Action GetWriteDecisionByPath(String filePath, String tempFilePath)
         {
-
-            if (tempFilePath.Equals("") || Engine.GetShortPath(tempFilePath).Equals(""))
-                return FileOperation.Action.ALLOW;
-
             try
             {
-                //Logger.GetInstance().Debug("GetWriteDecisionByPath filePath:" + filePath + " tempFilePath:" + tempFilePath);
+                Logger.GetInstance().Debug("GetWriteDecisionByPath filePath:" + filePath + " tempFilePath:" + tempFilePath);
+
+                if (tempFilePath.Equals("") || Engine.GetShortPath(tempFilePath).Equals(""))
+                    return FileOperation.Action.ALLOW;
+
                 SeapClient sClient = SeapClient.GetInstance();
                 String response;
                 String[] splitResp;
@@ -145,9 +145,13 @@ namespace MyDLP.EndPoint.Core
 
         public static FileOperation.Action GetWriteDecisionByCache(String filePath, MemoryStream cache)
         {
-            //Logger.GetInstance().Debug("GetWriteDecisionByCache path: " + filePath +" length:" + cache.Length);
             try
             {
+                Logger.GetInstance().Debug("GetWriteDecisionByCache path: " + filePath + " length:" + cache.Length);
+
+                if (cache.Length == 0)
+                    return FileOperation.Action.ALLOW;
+
                 SeapClient sClient = SeapClient.GetInstance();
                 String response;
                 String[] splitResp;
@@ -236,15 +240,15 @@ namespace MyDLP.EndPoint.Core
 
         public static FileOperation.Action GetReadDecisionByPath(String filePath)
         {
-            String shortFilePath = Engine.GetShortPath(filePath);
-            if (filePath.Equals("") || shortFilePath.Equals(""))
-                return FileOperation.Action.ALLOW;
-
             try
             {
-                SeapClient sClient = SeapClient.GetInstance();
                 Logger.GetInstance().Debug("GetReadDecisionByPath path: " + filePath);
 
+                String shortFilePath = Engine.GetShortPath(filePath);
+                if (filePath.Equals("") || shortFilePath.Equals(""))
+                    return FileOperation.Action.ALLOW;
+
+                SeapClient sClient = SeapClient.GetInstance();
                 String response;
                 String[] splitResp;
                 long id;
@@ -340,12 +344,11 @@ namespace MyDLP.EndPoint.Core
 
         public static FileOperation.Action GetUSBSerialDecision(String serial)
         {
-
             try
             {
-                SeapClient sClient = SeapClient.GetInstance();
                 Logger.GetInstance().Debug("GetUSBSerialDecision serial: " + serial);
 
+                SeapClient sClient = SeapClient.GetInstance();
                 String response;
                 String[] splitResp;
                 long id;
@@ -433,9 +436,8 @@ namespace MyDLP.EndPoint.Core
         {
             try
             {
-                SeapClient sClient = SeapClient.GetInstance();
                 Logger.GetInstance().Debug("GetConfUpdateNotification");
-
+                SeapClient sClient = SeapClient.GetInstance();
                 String response;
                 String[] splitResp;
 
@@ -470,7 +472,7 @@ namespace MyDLP.EndPoint.Core
             try
             {
                 SeapClient sClient = SeapClient.GetInstance();
-                Logger.GetInstance().Debug("NotitfyPrintOperation " + 
+                Logger.GetInstance().Debug("NotitfyPrintOperation " +
                     " documentName: " + documentName + " printerName : " + printerName +
                     " path: " + path);
 
@@ -585,7 +587,6 @@ namespace MyDLP.EndPoint.Core
 
         public static bool SeapConnectionTest()
         {
-
             try
             {
                 SeapClient sClient = SeapClient.GetInstance();

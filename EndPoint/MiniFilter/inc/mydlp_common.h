@@ -25,7 +25,8 @@ typedef enum _MSG_TYPE
 	POSTCREATE,
 	PRECLEANUP,
 	CONF,
-	USBSAC
+	USBSAC,
+	USBMOUNT
 } MSG_TYPE;
 
 //write notifcation for PREWRITE

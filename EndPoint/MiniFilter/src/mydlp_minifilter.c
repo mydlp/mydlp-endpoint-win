@@ -436,6 +436,31 @@ MyDLPMFInstanceSetup (
 			return STATUS_FLT_DO_NOT_ATTACH;
 		}
 
+#ifdef DBG_PRINT
+		DbgPrint("USB Dev Mount Notification");
+#endif
+		notification->Type = USBMOUNT;
+		replyLength = 0;
+		status = FltSendMessage( FilterConf.Filter,
+			&FilterConf.ClientPort,
+			notification,
+			sizeof( MYDLPMF_NOTIFICATION ),
+			NULL,
+			&replyLength,
+			&FilterConf.ReadTimeout );
+
+		if (STATUS_SUCCESS == status) {
+#ifdef DBG_PRINT
+			DbgPrint("USBMOUNT notified successfully");
+#endif
+		}
+		else
+		{
+#ifdef DBG_PRINT
+			DbgPrint("USBMOUNT notify failed");
+#endif
+		}
+
 		ExFreePoolWithTag(Descriptor, 'mdlp');
 	}
 	else

@@ -101,7 +101,7 @@ namespace MyDLP.EndPoint.Service
 
                 if (Configuration.UsbSerialAccessControl)
                 {
-                    Core.USBController.AddUSBHandler();
+                    Core.USBController.Activate();
                     Core.USBController.GetUSBStorages();
                 }
             }
@@ -117,9 +117,7 @@ namespace MyDLP.EndPoint.Service
                 watchdogTimer.Enabled = true;
             }
 
-
             //initialize configuration timer
-
             Logger.GetInstance().Info("Configuration check enabled");
             confTimer = new Timer(confCheckTimerPeriod);
             confTimer.Elapsed += new ElapsedEventHandler(OnTimedConfCheckEvent);
@@ -134,7 +132,7 @@ namespace MyDLP.EndPoint.Service
 
             if (Configuration.UsbSerialAccessControl)
             {
-                Core.USBController.RemoveUSBHandler();
+                Core.USBController.Deactive();
             }
 
             if (Configuration.PrinterMonitor)
@@ -177,12 +175,17 @@ namespace MyDLP.EndPoint.Service
 
                 if (Configuration.UsbSerialAccessControl && !oldUSBSerialAC)
                 {
-                    Core.USBController.AddUSBHandler();
-                    Core.USBController.GetUSBStorages();
+                    Core.USBController.Activate();
                 }
                 else if (!Configuration.UsbSerialAccessControl && oldUSBSerialAC)
                 {
-                    Core.USBController.RemoveUSBHandler();
+                    Core.USBController.Deactive();
+                }
+
+                if (Configuration.UsbSerialAccessControl)
+                {
+                    USBController.InvalidateCache();
+                    Core.USBController.GetUSBStorages();
                 }
 
                 if (Configuration.PrinterMonitor && !oldPrinterMonitor)

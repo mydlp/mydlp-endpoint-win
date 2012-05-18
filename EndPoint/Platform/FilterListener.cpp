@@ -231,6 +231,10 @@ DWORD ListenerWorker(__in PMYDLPMF_THREAD_CONTEXT Context)
 				{
 					action = FileOperation::Action::ALLOW;
 				}
+			//USBMOUNT if USBSAC enabled
+			} else if (notification->Type == USBMOUNT){
+				MyDLP::EndPoint::Core::Logger::GetInstance()->Error("New USB mass strorage mounted");					
+				MyDLP::EndPoint::Core::USBController::GetUSBStorages();
 			}
 
 			if (confRequest == false)
