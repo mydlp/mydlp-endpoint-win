@@ -441,14 +441,14 @@ MyDLPMFInstanceSetup (
 #endif
 		notification->Type = USBMOUNT;
 		replyLength = 0;
+		replyLength = sizeof( FILTER_REPLY_HEADER ) + sizeof(MYDLPMF_REPLY);
 		status = FltSendMessage( FilterConf.Filter,
 			&FilterConf.ClientPort,
 			notification,
 			sizeof( MYDLPMF_NOTIFICATION ),
-			NULL,
+			reply,
 			&replyLength,
-			&FilterConf.ReadTimeout );
-
+			&FilterConf.ReadTimeout );	
 		if (STATUS_SUCCESS == status) {
 #ifdef DBG_PRINT
 			DbgPrint("USBMOUNT notified successfully");
