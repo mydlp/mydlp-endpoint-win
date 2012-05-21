@@ -20,11 +20,13 @@
 #include "Stdafx.h"
 #include "FilterListener.h"
 #include <mydlp_common.h>
+#include "MiniFilterController.h"
 
 using namespace System::Runtime::InteropServices;
 using namespace MyDLP::EndPoint::Core;
 using namespace System::Diagnostics;
 using namespace System::ComponentModel;
+using namespace System;
 
 namespace MyDLPEP
 {	
@@ -179,8 +181,8 @@ DWORD ListenerWorker(__in PMYDLPMF_THREAD_CONTEXT Context)
 
 #pragma warning(push)
 #pragma warning(disable:4127) // conditional expression is constant
-
-		while (TRUE) {
+		while (TRUE)
+		{
 #pragma warning(pop)
 			result = GetQueuedCompletionStatus( Context->Completion, &outSize, &key, &pOvlp, INFINITE );
 			message = CONTAINING_RECORD( pOvlp, MYDLPMF_MESSAGE, Ovlp );
@@ -195,13 +197,17 @@ DWORD ListenerWorker(__in PMYDLPMF_THREAD_CONTEXT Context)
 			notification = (PMYDLPMF_NOTIFICATION)&message->Notification;
 
 			//Archive inbound files if enabled
-			if(notification->Type == POSTCREATE) {
+			if(notification->Type == POSTCREATE)
+			{
 				fileNotification = (PMYDLPMF_FILE_NOTIFICATION)notification;			
 				listener = MyDLPEP::FilterListener::getInstance();
 				action = listener->HandleFileOpen(fileNotification ->FileName);
 			
+			
+			} 
 			//Control write outbound files
-			} else if (notification->Type == PREWRITE) {
+			else if (notification->Type == PREWRITE) 
+			{
 				writeNotification = (PMYDLPMF_WRITE_NOTIFICATION)notification;
 				listener = MyDLPEP::FilterListener::getInstance();
 
@@ -209,20 +215,23 @@ DWORD ListenerWorker(__in PMYDLPMF_THREAD_CONTEXT Context)
 				{
 					MyDLP::EndPoint::Core::Logger::GetInstance()->Error("ListenerWorker error writeNotification->BytesToScan > MYDLPMF_READ_BUFFER_SIZE");
 				}
-				action = listener->HandleFileWrite(writeNotification->FileName, writeNotification->Contents, writeNotification->BytesToScan);
-
-			//Notify file outbound file operation ending
-			} else if (notification->Type == PRECLEANUP) {
+				action = listener->HandleFileWrite(writeNotification->FileName, writeNotification->Contents, writeNotification->BytesToScan);			
+			}
+			//Notify file outbound file operation ending			
+			else if (notification->Type == PRECLEANUP)
+			{
 				fileNotification = (PMYDLPMF_FILE_NOTIFICATION)notification;
 				listener = MyDLPEP::FilterListener::getInstance();
-				listener->HandleFileCleanup(fileNotification->FileName);
-
+				listener->HandleFileCleanup(fileNotification->FileName);			
+			}
 			//Send configuration to minifilter
-			} else if (notification->Type == CONF){
-				confRequest = true;				
-
+			else if (notification->Type == CONF)
+			{
+				confRequest = true;						
+			} 
 			//USBSAC if enabled
-			} else if (notification->Type == USBSAC){
+			else if (notification->Type == USBSAC)
+			{
 				if(MyDLP::EndPoint::Core::USBController::IsUsbBlocked())
 				{
 					action = FileOperation::Action::BLOCK;
@@ -230,12 +239,14 @@ DWORD ListenerWorker(__in PMYDLPMF_THREAD_CONTEXT Context)
 				else 
 				{
 					action = FileOperation::Action::ALLOW;
-				}
+				}			
+			} 
 			//USBMOUNT if USBSAC enabled
-			} else if (notification->Type == USBMOUNT){
+			else if (notification->Type == USBMOUNT)
+			{
 				MyDLP::EndPoint::Core::Logger::GetInstance()->Debug("New USB mass strorage mounted");					
 				MyDLP::EndPoint::Core::USBController::GetUSBStorages();			
-				//threr is no actual file operation just convenience
+				//there is no actual file operation just convenience
 				action = FileOperation::Action::NOACTION;
 			}
 
@@ -271,8 +282,23 @@ DWORD ListenerWorker(__in PMYDLPMF_THREAD_CONTEXT Context)
 				}
 			}
 			else
-			{
+			{	
 				MyDLP::EndPoint::Core::Logger::GetInstance()->Info("Filter conf init");
+				
+				//Check config errors
+				if (MyDLPEP::MiniFilterController::configAttempt > 5)
+				{	
+					//Catastrophic failure: stoping service MyDLP EP Win
+					//MyDLP Ep Win will be restarted by MyDLP Watchdog service	
+
+					MyDLP::EndPoint::Core::Logger::GetInstance()->Error("Fatal error in filter conf init, maximum attempts exceeded");
+
+					//Stop engine first
+					MyDLP::EndPoint::Core::Engine::Stop();
+					Environment::Exit(-1);
+
+				}			
+				MyDLPEP::MiniFilterController::configAttempt++;
 
 				confRequest = 0;
 				result = FALSE;
@@ -280,6 +306,7 @@ DWORD ListenerWorker(__in PMYDLPMF_THREAD_CONTEXT Context)
 				confMessage.ReplyHeader.MessageId = message->MessageHeader.MessageId;
 				
 				//Set Confuration of minifilter
+				MyDLP::EndPoint::Core::Configuration::SetPids();
 				confMessage.Reply.Pid = MyDLP::EndPoint::Core::Configuration::ErlPid;
 				MyDLP::EndPoint::Core::Logger::GetInstance()->Info("New USBSerialAC:" + MyDLP::EndPoint::Core::Configuration::UsbSerialAccessControl);
 				MyDLP::EndPoint::Core::Logger::GetInstance()->Info("New ArchiveInbound:" + MyDLP::EndPoint::Core::Configuration::ArchiveInbound);

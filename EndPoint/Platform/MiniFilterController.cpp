@@ -47,6 +47,9 @@ namespace MyDLPEP
 	void MiniFilterController::Start()
 	{		
 		Logger::GetInstance()->Debug("Installing mydlpmf service");
+
+        configAttempt = 0;
+
 		const LPCTSTR DRV_NAME = _T("MyDLPMF");
 		RegistryKey ^key = nullptr;
 
@@ -119,8 +122,11 @@ namespace MyDLPEP
 				CloseServiceHandle(hSCManager);
 				Logger::GetInstance()->Error("Unable to start MyDLPMF service, win error no" + gcnew Int32(GetLastError()));
 				return;
-			} else
+			}
+			else
+			{
 				Logger::GetInstance()->Error("MyLDLPMF service already running");
+			}
 		}
 		else 
 		{

@@ -29,10 +29,11 @@ namespace MyDLPEP
 
 	private:
 		MiniFilterController( void );
-		static MiniFilterController ^controller = nullptr;
+		static MiniFilterController ^controller = nullptr;		
 
 	public:
 		static MiniFilterController ^GetInstance();
+		static int configAttempt = 0;
 		void Start();
 		void Stop();
 	};

@@ -22,6 +22,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using System.Runtime.InteropServices;
+using System.IO;
 using Microsoft.Win32;
 using System.Diagnostics;
 
@@ -38,14 +39,22 @@ namespace MyDLP.EndPoint.Core
             int shortPathLength
             );
 
-        String javaStartCmd = @"cd " + Configuration.JavaBackendPath + " && Run.bat";
+        static String javaStartCmd = @"cd " + Configuration.JavaBackendPath + " && Run.bat";
         // String javaManualStartCmd = @"cd " + Configuration.JavaBackendPath + " && ManualRun.bat";
-        String javaManualStartCmd = @"cd " + Configuration.JavaBackendPath + " && Run.bat";
-        String erlStartCmd = @"cd " + Configuration.ErlangPath + " && Run.bat";
-        String erlStartInteractiveCmd = @"cd " + Configuration.ErlangPath + " && InteractiveRun.bat";
+        static String javaManualStartCmd = @"cd " + Configuration.JavaBackendPath + " && Run.bat";
+        static String erlStartCmd = @"cd " + Configuration.ErlangPath + " && Run.bat";
+        static String erlStartInteractiveCmd = @"cd " + Configuration.ErlangPath + " && InteractiveRun.bat";
 
-        public void Start()
+        public static void Start()
         {
+            //clear pid files befire startup
+            String path = Configuration.AppPath + @"\run\mydlp.pid";
+            File.Delete(path);
+
+            path = Configuration.AppPath + @"\run\backend.pid";
+            File.Delete(path);
+
+            Logger.GetInstance().Info("Starting Java Backend");
             if (System.Environment.UserInteractive)
             {
                 ExecuteCommandAsync(javaStartCmd);
@@ -54,11 +63,12 @@ namespace MyDLP.EndPoint.Core
             {
                 ExecuteCommandAsync(javaManualStartCmd);
             }
-            
+
             // TODO: When SetErlConf fails service is consuming system resources, user
             // can hardly use system. When this command fails service should exit.
             Configuration.SetErlConf();
 
+            Logger.GetInstance().Info("Starting Erlang Backend");
             if (System.Environment.UserInteractive)
             {
                 ExecuteCommandAsync(erlStartInteractiveCmd);
@@ -69,8 +79,9 @@ namespace MyDLP.EndPoint.Core
             }
         }
 
-        public void Stop()
-        {   //TODO:Handle process with pid files
+        public static void Stop()
+        {
+            Logger.GetInstance().Info("Stopping Java Backend");
             Logger.GetInstance().Debug("Kill java by pid:" + Configuration.JavaPid);
             if (Configuration.JavaPid != 0)
             {
@@ -85,14 +96,15 @@ namespace MyDLP.EndPoint.Core
                     KillProcByName("java");
                 }
             }
-            else 
+            else
             {
                 KillProcByName("java");
             }
 
             KillProcByName("epmd");
 
-            Logger.GetInstance().Debug("Kill erlang by pid:" + Configuration.JavaPid);
+            Logger.GetInstance().Info("Stopping Erlang Backend");
+            Logger.GetInstance().Debug("Kill erlang by pid:" + Configuration.ErlPid);
             if (Configuration.ErlPid != 0)
             {
                 try
@@ -121,7 +133,7 @@ namespace MyDLP.EndPoint.Core
             return shortPath.ToString();
         }
 
-        public void KillProcByName(String procname)
+        public static void KillProcByName(String procname)
         {
             try
             {
@@ -139,7 +151,7 @@ namespace MyDLP.EndPoint.Core
             }
         }
 
-        public void ExecuteCommandAsync(string command)
+        public static void ExecuteCommandAsync(string command)
         {
             try
             {
@@ -160,7 +172,7 @@ namespace MyDLP.EndPoint.Core
             }
         }
 
-        public void ExecuteCommandSync(object command)
+        public static void ExecuteCommandSync(object command)
         {
             //TODO:this is dirty
             try

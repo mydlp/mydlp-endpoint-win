@@ -24,6 +24,7 @@ using MyDLP.EndPoint.Core;
 using System.Diagnostics;
 using System.Timers;
 using System.ServiceProcess;
+using Microsoft.Win32;
 
 namespace MyDLP.EndPoint.Service
 {
@@ -55,6 +56,31 @@ namespace MyDLP.EndPoint.Service
         {
             //notify logger that we are in main service
             Logger.GetInstance().InitializeMainLogger(serviceLogger);
+            
+            //Keep watchdog tied up during debugging
+            if (System.Environment.UserInteractive == false)
+            {
+
+                ServiceController service = new ServiceController("mydlpepwatchdog");
+                try
+                {
+                    if (!service.Status.Equals(ServiceControllerStatus.Running) && !service.Status.Equals(ServiceControllerStatus.StartPending))
+                    {
+                        Logger.GetInstance().Info("Starting mydlpepwatchdog at start up");
+                        service.Start();
+                    }
+                }
+                catch (Exception e)
+                {
+                    Logger.GetInstance().Error("Unable to start watchdog" + e.Message);
+                }
+                //enable watchdog check
+
+                Logger.GetInstance().Info("Watchdog check enabled");
+                watchdogTimer = new Timer(watchdogTimerPeriod);
+                watchdogTimer.Elapsed += new ElapsedEventHandler(OnTimedWatchdogEvent);
+                watchdogTimer.Enabled = true;
+            }
 
             Logger.GetInstance().Info("Starting mydlpepwin service");
 
@@ -69,9 +95,9 @@ namespace MyDLP.EndPoint.Service
 
                 Configuration.GetUserConf();
                 Configuration.StartTime = DateTime.Now;
-                engine = new Engine();
-                engine.Start();
-                Configuration.setPids();
+                                
+                Engine.Start();
+                Configuration.SetPids();
 
                 Logger.GetInstance().Debug("mydlpepwin tries to install mydlpmf");
                 MyDLPEP.MiniFilterController.GetInstance().Start();
@@ -92,6 +118,7 @@ namespace MyDLP.EndPoint.Service
                 if (!testSuccess)
                 {
                     Logger.GetInstance().Error("Seap connection test failed");
+                    Stop();
                 }
 
                 if (Configuration.PrinterMonitor)
@@ -104,18 +131,7 @@ namespace MyDLP.EndPoint.Service
                     Core.USBController.Activate();
                     Core.USBController.GetUSBStorages();
                 }
-            }
-
-            //Keep watchdog tied up during debugging
-            if (System.Environment.UserInteractive == false)
-            {
-                //enable watchdog check
-
-                Logger.GetInstance().Info("Watchdog check enabled");
-                watchdogTimer = new Timer(watchdogTimerPeriod);
-                watchdogTimer.Elapsed += new ElapsedEventHandler(OnTimedWatchdogEvent);
-                watchdogTimer.Enabled = true;
-            }
+            }        
 
             //initialize configuration timer
             Logger.GetInstance().Info("Configuration check enabled");
@@ -123,12 +139,15 @@ namespace MyDLP.EndPoint.Service
             confTimer.Elapsed += new ElapsedEventHandler(OnTimedConfCheckEvent);
             confTimer.Enabled = true;
 
+            //GetLoggedOnUser
+            //This is not working hidden form required
+            //SystemEvents.SessionSwitch += new SessionSwitchEventHandler(Configuration.LoggedOnUserChangeHandler);
         }
 
         public void Stop()
         {
             MyDLPEP.MiniFilterController.GetInstance().Stop();
-            engine.Stop();
+            Engine.Stop();
 
             if (Configuration.UsbSerialAccessControl)
             {
@@ -156,9 +175,9 @@ namespace MyDLP.EndPoint.Service
                     service.Start();
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                //todo:
+                Logger.GetInstance().Error("Unable to start watchdog" + ex.Message);
             }
         }
 
@@ -168,9 +187,15 @@ namespace MyDLP.EndPoint.Service
             bool oldPrinterMonitor = Configuration.PrinterMonitor;
             bool oldArchiveInbound = Configuration.ArchiveInbound;
 
+            if (Configuration.GetLoggedOnUser() == "NO OWNER")
+            {
+                Configuration.ResetLoggedOnUser();            
+            }
+
             if (SeapClient.HasNewConfiguration())
             {
                 Logger.GetInstance().Info("New configuration notified.");
+
                 Configuration.GetUserConf();
 
                 if (Configuration.UsbSerialAccessControl && !oldUSBSerialAC)

@@ -303,6 +303,9 @@ MyDLPMFPortDisconnect(
 #endif
     FltCloseClientPort( FilterConf.Filter, &FilterConf.ClientPort );
 
+	if (FilterConf.ErlangProcess != NULL)
+		ObDereferenceObject(FilterConf.ErlangProcess);
+
     FilterConf.UserProcess = NULL;
 	FilterConf.ErlangProcess = NULL;
 }
@@ -516,7 +519,8 @@ MyDLPMFConfigurationUpdate ()
 		else
 		{
 #ifdef DBG_PRINT
-			DbgPrint("Configuration update failed");
+			DbgPrint("Configuration update failed status 0x%X\n", status);
+			DbgPrint("confReply->Pid:%d", (HANDLE)confReply->Pid);
 #endif
 		}
 	}
@@ -564,6 +568,10 @@ MyDLPMFPreCreate (
 
 	if (!Configured)
 	{
+
+#ifdef DBG_PRINT
+	DbgPrint("In Precreate");
+#endif
 		MyDLPMFConfigurationUpdate();
 	}
 
@@ -588,23 +596,33 @@ MyDLPMFPreCreate (
 				&replyLength,
 				&FilterConf.ReadTimeout);
 
-		if (STATUS_TIMEOUT == status) {
+		if (STATUS_SUCCESS == status) {
+
+			action = reply->Action;
+
+			if (action == BLOCK)
+			{
 #ifdef DBG_PRINT
-			DbgPrint("Usb block failed");
+				//	DbgPrint("Precreate block");
+#endif
+				//disables any read write for un authorized USB device
+				Data->IoStatus.Status = STATUS_ACCESS_DENIED;
+				Data->IoStatus.Information = 0;
+				return FLT_PREOP_COMPLETE;
+			}
+		}
+
+		else if (STATUS_TIMEOUT == status) {
+#ifdef DBG_PRINT
+			DbgPrint("Usb block failed due to timeout");
 #endif
 		}
 
-		action = reply->Action;
-
-		if (action == BLOCK)
+		else
 		{
-	#ifdef DBG_PRINT
-			//	DbgPrint("Precreate block");
-	#endif
-			//disables any read write for un authorized USB device
-			Data->IoStatus.Status = STATUS_ACCESS_DENIED;
-			Data->IoStatus.Information = 0;
-			return FLT_PREOP_COMPLETE;
+#ifdef DBG_PRINT
+			DbgPrint("Usb block failed  status 0x%X\n", status);
+#endif
 		}
 	}   
     return FLT_PREOP_SUCCESS_WITH_CALLBACK;
@@ -619,8 +637,8 @@ MyDLPMFPostCreate (
     __in_opt PVOID CompletionContext,
     __in FLT_POST_OPERATION_FLAGS Flags
     )
-{	
-	
+{
+
 	POBJECT_NAME_INFORMATION dosNameInfo = NULL;
 	NTSTATUS status = STATUS_SUCCESS;
 	ULONG replyLength;
@@ -637,6 +655,9 @@ MyDLPMFPostCreate (
 
 	if (!Configured)
 	{
+#ifdef DBG_PRINT
+	DbgPrint("In Postcreate");
+#endif
 		MyDLPMFConfigurationUpdate();
 	}
 
@@ -644,7 +665,7 @@ MyDLPMFPostCreate (
         (STATUS_REPARSE == Data->IoStatus.Status)) {
 
         return FLT_POSTOP_FINISHED_PROCESSING;
-    }  
+    }
 
 	
 	//We do not need to analyze a post create if archive inbound is not enabled
@@ -775,6 +796,9 @@ MyDLPMFPreCleanup (
 	
 	if (!Configured)
 	{
+#ifdef DBG_PRINT
+	DbgPrint("In Precleanup");
+#endif
 		MyDLPMFConfigurationUpdate();
 	}
 
@@ -842,6 +866,9 @@ MyDLPMFPreWrite (
 	if (!Configured)
 	{
 		MyDLPMFConfigurationUpdate();
+#ifdef DBG_PRINT
+	DbgPrint("In Prewrite");
+#endif
 	}
 
 	if (FLT_IS_FASTIO_OPERATION(Data))

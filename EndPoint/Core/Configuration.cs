@@ -51,7 +51,7 @@ namespace MyDLP.EndPoint.Core
         static int javaPid = 0;
         static DateTime startTime;
         static String userName = "";
-        static Timer userNameTimer;
+        //static Timer userNameTimer;
         static String printingDirPath;
         static String printSpoolPath;
 
@@ -136,7 +136,8 @@ namespace MyDLP.EndPoint.Core
             }
         }
 
-        public static void InitUserNameCacheTimer()
+        // No need for seperate cache\ handled in MainController
+        /* public static void InitUserNameCacheTimer()
         {
             userNameTimer = new Timer(20000);
             userNameTimer.Elapsed += new ElapsedEventHandler(OnTimeUserNameCacheEvent);
@@ -147,7 +148,7 @@ namespace MyDLP.EndPoint.Core
         private static void OnTimeUserNameCacheEvent(object source, ElapsedEventArgs e)
         {
             userName = "";
-        }
+        }*/
 
         public static int GetErlPid()
         {
@@ -196,7 +197,7 @@ namespace MyDLP.EndPoint.Core
         }
 
         //this will run after erl and java started
-        public static void setPids()
+        public static void SetPids()
         {
             int tryLimit = 30;
             int tryCount = 0;
@@ -415,13 +416,19 @@ namespace MyDLP.EndPoint.Core
             return true;
         }
 
+        public static void ResetLoggedOnUser()
+        {
+            Logger.GetInstance().Debug("ResetLoggedOnUser");
+            userName = "";
+        }
+
         public static string GetLoggedOnUser()
         {
             if (userName != "")
                 return userName;
             else
             {
-
+                //TODO: use loggedonuser wmi class
                 String processName = "explorer.exe";
                 string query = "Select * from Win32_Process Where Name = \"" + processName + "\"";
                 ManagementObjectSearcher searcher = new ManagementObjectSearcher(query);
@@ -441,9 +448,26 @@ namespace MyDLP.EndPoint.Core
                 }
 
                 userName = "NO OWNER";
+
+                /*ManagementObjectSearcher searcher =
+                   new ManagementObjectSearcher("root\\CIMV2",
+                       "SELECT * FROM Win32_ComputerSystem");
+                foreach (ManagementObject queryObj in searcher.Get())
+                {
+                    userName = queryObj["UserName"] + "@" + queryObj["Domain"];
+                    Logger.GetInstance().Debug("Wmi says logged on user:" + userName);
+                }*/
+
+                Logger.GetInstance().Info("Current logged on user:" + userName);
             }
             return userName;
         }
+
+        /*public static void LoggedOnUserChangeHandler(object sender, SessionSwitchEventArgs e) 
+        {
+            Logger.GetInstance().Info("Session switch logged on user:" + userName);
+            userName = "";         
+        }*/
 
         public static object getRegistryConfSafe(RegistryKey key, String valueName, Object defaultValue, RegistryValueKind kind)
         {
@@ -754,7 +778,7 @@ namespace MyDLP.EndPoint.Core
                 return printingDirPath;
             }
         }
-        
+
         public static String PrintSpoolPath
         {
             get
