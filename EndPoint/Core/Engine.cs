@@ -54,6 +54,24 @@ namespace MyDLP.EndPoint.Core
             path = Configuration.AppPath + @"\run\backend.pid";
             File.Delete(path);
 
+            if (!System.Environment.UserInteractive)
+            {
+                SvcController.StopService("mydlpengine", 5000);
+                ExecuteCommandSync("sc delete mydlpengine");
+
+                try
+                {
+                    using (RegistryKey key = Registry.LocalMachine.OpenSubKey("Software\\Ericsson\\Erlang", true))
+                    {
+                        key.DeleteSubKeyTree("ErlSrv");
+                    }
+                }
+                catch
+                {
+                    Logger.GetInstance().Info("Unable to delete uneccessary keys or keys do not exists");
+                }
+            }
+
             Logger.GetInstance().Info("Starting Java Backend");
             if (System.Environment.UserInteractive)
             {
