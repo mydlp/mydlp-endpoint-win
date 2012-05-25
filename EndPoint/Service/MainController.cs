@@ -219,7 +219,7 @@ namespace MyDLP.EndPoint.Service
                 }
                 else if (!Configuration.PrinterMonitor && oldPrinterMonitor)
                 {
-                    Service.PrinterController.getInstance().Start();
+                    Service.PrinterController.getInstance().Stop();
                 }
 
 
