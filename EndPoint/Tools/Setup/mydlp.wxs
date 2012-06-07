@@ -3,7 +3,7 @@
   <?include ProductVersion.wxi?>
   <Product Id="*" Name="MyDLP" Language="1033" Version="$(var.ProductVersion)" Manufacturer="Medra Tech."
            UpgradeCode="9BA3E701-8F64-46B1-9D2A-8A29B22C0F65">
-    
+
     <Package Id='*' Keywords='Installer' Description="MyDLP Endpoint Installer"
     Comments='comment' Manufacturer='Medra Tech.'
     InstallerVersion='100' Languages='1033' Compressed='yes' SummaryCodepage='1252' />
@@ -21,20 +21,21 @@
           <Directory Id="ENGINEDIR" Name="engine">
             <Directory Id="ENGINEJAVADIR" Name="java" />
             <Directory Id="ENGINEERLDIR" Name="erl" />
-          </Directory>                    
-        </Directory>        
+          </Directory>
+        </Directory>
       </Directory>
     </Directory>
 
     <Feature Id="Complete" Level="1">
       <!-- TODO: Remove the comments around this ComponentRef element and the Component above in order to add resources to this installer. -->
       <ComponentGroupRef Id="MainComponent" />
+      <ComponentGroupRef Id="ControlPanel" />
       <!-- Note: The following ComponentGroupRef is required to pull in generated authoring from project references. -->
       <ComponentGroupRef Id="cygwin" />
       <ComponentGroupRef Id="erl5.8.5" />
       <ComponentGroupRef Id="engine_erl" />
       <ComponentGroupRef Id="jre7" />
-      <ComponentGroupRef Id="printing" />            
+      <ComponentGroupRef Id="printing" />
     </Feature>
 
     <Upgrade Id="9BA3E701-8F64-46B1-9D2A-8A29B22C0F65">
@@ -51,7 +52,7 @@
       <Custom Action='NoDowngrade' After='FindRelatedProducts'>NEWERFOUND</Custom>
       <Custom Action='AlreadyUpdated' After='FindRelatedProducts'>SELFFOUND</Custom>
       <RemoveExistingProducts After="InstallInitialize" />
-      
+
     </InstallExecuteSequence>
     <CustomAction Id='NoDowngrade' Error='A later version of [ProductName] is already installed.' />
     <CustomAction Id='AlreadyUpdated' Error='This version of [ProductName] is already installed.' />
@@ -83,7 +84,7 @@
         <CreateFolder Directory="SPOOLDIR" />
         <CreateFolder Directory="MNESIADIR" />
       </Component>
-      
+
       <Component Id="MyDLP.EndPoint.Core.dll" Directory="INSTALLLOCATION" Guid="*">
         <File Id="MyDLP.EndPoint.Core.dll" Name="MyDLP.EndPoint.Core.dll" KeyPath="yes" Vital="yes" DiskId="1" Source="..\..\Service\bin\Release\MyDLP.EndPoint.Core.dll" />
       </Component>
@@ -121,12 +122,36 @@
       </Component>
 
       <Component Id="AppPath" Directory="INSTALLLOCATION" Guid="*">
-        <RegistryValue Id="AppPath" Root="HKLM" Key="Software\MyDLP" Name="AppPath" Value="[INSTALLLOCATION]" Type="string" KeyPath="yes" />     
+        <RegistryValue Id="AppPath" Root="HKLM" Key="Software\MyDLP" Name="AppPath" Value="[INSTALLLOCATION]" Type="string" KeyPath="yes" />
       </Component>
-      
+
       <Component Id="ManagementServerComp" Directory="INSTALLLOCATION" Guid="*" Permanent="yes" NeverOverwrite="no">
         <RegistryValue Id="ManagementServerKey" Root="HKLM" Key="Software\MyDLP" Name="management_server" Value="[MANAGEMENTSERVER]" Type="string" />
       </Component>
+    </ComponentGroup>
+
+    <ComponentGroup Id ="ControlPanel">
+      <Component Id="mydlpcpl.exe" Directory="INSTALLLOCATION" Guid="*">
+        <File Id="mydlpcpl.exe" Name="mydlpcpl.exe" KeyPath="yes" Vital="yes" DiskId="1" Source="..\..\Tools\ControlPanel\bin\Release\MyDLP.EndPoint.Tools.ControlPanel.exe" />
+      </Component>
+      
+      <Component Id="ControlPanelCLSIDEntries" Directory="INSTALLLOCATION" Guid="*" >
+        <RegistryKey Root="HKCR" Key="CLSID\{2CA4E47D-F0DA-4726-9E5C-BE52DF347249}"  Action="createAndRemoveOnUninstall">
+          <RegistryValue Type="string" Name="LocalizedString" Value="MyDLP Settings"/>
+          <RegistryValue Type="string" Name="InfoTip" Value="Configure MyDLP Endpoint Agent"/>
+          <RegistryValue Type="string" Name="System.ApplicationName" Value="MyDLP.Settings"/>
+          <RegistryValue Type="string" Name="System.ControlPanel.Category" Value="5"/>
+          <RegistryValue Type="string" Value="MyDLP" KeyPath="yes"/>
+        </RegistryKey>
+        <RegistryKey Root="HKCR" Key="CLSID\{2CA4E47D-F0DA-4726-9E5C-BE52DF347249}\DefaultIcon" Action="createAndRemoveOnUninstall">
+          <RegistryValue Type="string" Value="[INSTALLLOCATION]mydlpcpl.exe"/>
+        </RegistryKey>
+        <RegistryKey Root="HKCR" Key="CLSID\{2CA4E47D-F0DA-4726-9E5C-BE52DF347249}\Shell\Open\Command" Action="createAndRemoveOnUninstall">
+          <RegistryValue Type="string" Value="[INSTALLLOCATION]mydlpcpl.exe"/>
+        </RegistryKey>
+        <RegistryKey Root="HKLM" Key="Software\Microsoft\Windows\CurrentVersion\Explorer\ControlPanel\NameSpace\{2CA4E47D-F0DA-4726-9E5C-BE52DF347249}" Action="createAndRemoveOnUninstall"/>        
+      </Component>
+      
     </ComponentGroup>
 
     <UI>
@@ -135,7 +160,7 @@
       <Dialog Id="InstallDlg" Width="370" Height="270" Title="[ProductName] [Setup]" NoMinimize="yes">
         <Control Id="Title" Type="Text" X="15" Y="6" Width="200" Height="15" Transparent="yes" NoPrefix="yes">
           <Text>{\DlgTitleFont}Ready to Install</Text>
-        </Control>      
+        </Control>
 
         <Control Id="Install" Type="PushButton" X="304" Y="243" Width="56" Height="17" Default="yes" Text="Install">
           <Publish Event="EndDialog" Value="Return" />
@@ -152,7 +177,7 @@
 
         <Control Id="EditDescription" Type="Text" X="25" Y="50" Width="280" Height="15"
         Transparent="yes" NoPrefix="yes">
-        <Text>Enter MyDLP Network Server IP address</Text>
+          <Text>Enter MyDLP Network Server IP address</Text>
         </Control>
 
         <Control Id="RegEdit" Type="Edit" X="25" Y="65" Width="220" Height="18" Property="MANAGEMENTSERVER" Text="{80}" />
@@ -178,8 +203,8 @@
 	      Name="management_server"
 	      Type="raw" />
     </Property>
-  
-  </Product>   
-  
+
+  </Product>
+
 </Wix>
 
