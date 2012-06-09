@@ -34,7 +34,7 @@
       <ComponentGroupRef Id="erl5.8.5" />
       <ComponentGroupRef Id="engine_erl" />
       <ComponentGroupRef Id="jre7" />
-      <ComponentGroupRef Id="printing" />
+      <ComponentGroupRef Id="printing" />            
     </Feature>
 
     <Upgrade Id="9BA3E701-8F64-46B1-9D2A-8A29B22C0F65">
@@ -121,10 +121,65 @@
       </Component>
 
       <Component Id="AppPath" Directory="INSTALLLOCATION" Guid="*">
-        <RegistryValue Id="AppPath" Root="HKLM" Key="Software\MyDLP" Name="AppPath" Value="[INSTALLLOCATION]" Type="string" KeyPath="yes" />
+        <RegistryValue Id="AppPath" Root="HKLM" Key="Software\MyDLP" Name="AppPath" Value="[INSTALLLOCATION]" Type="string" KeyPath="yes" />     
       </Component>
       
-    </ComponentGroup>        
-  </Product> 
+      <Component Id="ManagementServerComp" Directory="INSTALLLOCATION" Guid="*" Permanent="yes" NeverOverwrite="no">
+        <RegistryValue Id="ManagementServerKey" Root="HKLM" Key="Software\MyDLP" Name="management_server" Value="[MANAGEMENTSERVER]" Type="string" />
+      </Component>
+    </ComponentGroup>
+
+    <UI>
+      <Property Id="DefaultUIFont">DlgFont8</Property>
+
+      <Dialog Id="InstallDlg" Width="370" Height="270" Title="[ProductName] [Setup]" NoMinimize="yes">
+        <Control Id="Title" Type="Text" X="15" Y="6" Width="200" Height="15" Transparent="yes" NoPrefix="yes">
+          <Text>{\DlgTitleFont}Ready to Install</Text>
+        </Control>      
+
+        <Control Id="Install" Type="PushButton" X="304" Y="243" Width="56" Height="17" Default="yes" Text="Install">
+          <Publish Event="EndDialog" Value="Return" />
+        </Control>
+
+        <Control Id="CancelButton" Type="PushButton" Text="Cancel" Height="17" Width="56" X="241" Y="243" Cancel="yes">
+          <Publish Event="EndDialog" Value="Exit" />
+        </Control>
+
+        <Control Id="Description" Type="Text" X="25" Y="23" Width="280" Height="15"
+         Transparent="yes" NoPrefix="yes">
+          <Text>The [Wizard] is ready to begin the installation</Text>
+        </Control>
+
+        <Control Id="EditDescription" Type="Text" X="25" Y="50" Width="280" Height="15"
+        Transparent="yes" NoPrefix="yes">
+        <Text>Enter MyDLP Network Server IP address</Text>
+        </Control>
+
+        <Control Id="RegEdit" Type="Edit" X="25" Y="65" Width="220" Height="18" Property="MANAGEMENTSERVER" Text="{80}" />
+
+        <Control Id="BannerLine" Type="Line" X="0" Y="44" Width="370" Height="0" />
+        <Control Id="BottomLine" Type="Line" X="0" Y="234" Width="370" Height="0" />
+      </Dialog>
+
+      <TextStyle Id="DlgFont8" FaceName="Tahoma" Size="8" />
+      <TextStyle Id="DlgTitleFont" FaceName="Tahoma" Size="8" Bold="yes" />
+
+      <InstallUISequence>
+        <Show Dialog="InstallDlg" After="CostFinalize" />
+      </InstallUISequence>
+    </UI>
+
+    <Property Id="Wizard">Setup Wizard</Property>
+
+    <Property Id="MANAGEMENTSERVER">
+      <RegistrySearch Id="ManagementServerSearch"
+        Root="HKLM"
+        Key="Software\MyDLP"
+	      Name="management_server"
+	      Type="raw" />
+    </Property>
+  
+  </Product>   
+  
 </Wix>
 
