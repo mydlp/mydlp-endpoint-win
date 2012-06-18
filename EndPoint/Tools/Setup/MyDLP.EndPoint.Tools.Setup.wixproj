@@ -20,6 +20,7 @@
 -dengine_javaPath=$(SolutionDir)..\..\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\backend
 -djre7Path=$(SolutionDir)..\..\mydlp-deployment-env\jre7
 -dcygwinPath=$(SolutionDir)..\..\mydlp-deployment-env\cygwin</CompilerAdditionalOptions>
+    <SuppressIces>ICE20</SuppressIces>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
     <OutputPath>bin\$(Configuration)\</OutputPath>
