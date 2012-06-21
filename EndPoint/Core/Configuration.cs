@@ -375,13 +375,20 @@ namespace MyDLP.EndPoint.Core
                     printerMonitor = true;
                 }
 
-
                 //Get managementServer
                 managementServer = (String)getRegistryConfSafe(mydlpKey, "management_server", "127.0.0.1", RegistryValueKind.String);
 
                 //Try to use old management server if local host found for management server
                 if (managementServer == "127.0.0.1")
+                {
                     managementServer = (String)getRegistryConfSafe(mydlpKey, "ManagementServer", "127.0.0.1", RegistryValueKind.String, false);
+
+                    //set new key
+                    mydlpKey.SetValue("management_server", managementServer, RegistryValueKind.String);
+                }
+
+                //try to delete old key anyway
+                mydlpKey.DeleteValue("ManagementServer", false);
 
                 //Get logLimit
                 logLimit = (int)getRegistryConfSafe(mydlpKey, "log_limit", 10485760, RegistryValueKind.DWord);
