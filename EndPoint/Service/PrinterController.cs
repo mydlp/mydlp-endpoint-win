@@ -8,12 +8,19 @@ using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.IO;
+using System.Runtime.InteropServices;
 using MyDLP.EndPoint.Core;
-
+using System.ComponentModel;
 namespace MyDLP.EndPoint.Service
 {
     public class PrinterController
     {
+        [DllImport("printui.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        private static extern void PrintUIEntryW(IntPtr hwnd,
+            IntPtr hinst, string lpszCmdLine, int nCmdShow);
+        [DllImport("kernel32.dll")]
+        static extern void SetLastError(uint dwErrCode);
+
         static PrinterController instance = null;
 
         ArrayList spooledNativePrinters;
@@ -23,7 +30,7 @@ namespace MyDLP.EndPoint.Service
 
         public const String SystemPrinterSecurityDescriptor =
             "O:SYG:SYD:(A;;LCSWSDRCWDWO;;;SY)(A;OIIO;RPWPSDRCWDWO;;;SY)";
-        
+
         public const String BuiltinAdminsPrinterSecurityDescriptor =
             "O:SYG:SYD:(A;;LCSWSDRCWDWO;;;SY)(A;OIIO;RPWPSDRCWDWO;;;SY)(A;;LCSWSDRCWDWO;;;BA)(A;OIIO;RPWPSDRCWDWO;;;BA)";
 
@@ -37,13 +44,12 @@ namespace MyDLP.EndPoint.Service
             {
                 SvcController.StartService("Spooler", 5000);
                 Thread.Sleep(1000);
-                
+
                 if (CheckAndInstallXPSDriver())
                 {
                     InstallSecurePrinters();
                     TempSpooler.Start();
                 }
-
             }
             else
             {
@@ -128,7 +134,6 @@ namespace MyDLP.EndPoint.Service
         {
             try
             {
-                Logger.GetInstance().Debug("InstallSecurePrinters started");
                 Logger.GetInstance().Debug("RemoveSecurePrinters started");
 
                 LocalPrintServer pServer = new LocalPrintServer();
@@ -138,7 +143,7 @@ namespace MyDLP.EndPoint.Service
                     Logger.GetInstance().Debug("Process printer queue: " + queue.Name
                        + " driver: " + queue.QueueDriver.Name + " port: " + queue.QueuePort.Name);
 
-                    if (queue.QueueDriver.Name == MyDLPDriver||
+                    if (queue.QueueDriver.Name == MyDLPDriver ||
                         queue.QueuePort.Name == "MyDLP")
                     {
                         Logger.GetInstance().Debug("A secure printer found removing " + queue.Name);
@@ -267,7 +272,7 @@ namespace MyDLP.EndPoint.Service
         {
             try
             {
-                ProcessStartInfo procStartInfo;
+                //ProcessStartInfo procStartInfo;
 
                 //PrintUI.dll does not work in a windows service on Windows XP
                 if (Configuration.GetOs() == Configuration.OsVersion.Win7_32
@@ -278,24 +283,17 @@ namespace MyDLP.EndPoint.Service
                     store.Open(OpenFlags.ReadWrite);
                     store.Add(mydlpPubCert);
 
-                    procStartInfo = new ProcessStartInfo("rundll32", " printui.dll,PrintUIEntry /ia /m \"MyDLP XPS Printer Driver\" /f \"" + Configuration.PrintingDirPath + "MyDLPXPSDrv.inf\"");
+                    SetLastError(0);
+                    PrintUIEntryW(IntPtr.Zero, IntPtr.Zero, "/ia /m \"MyDLP XPS Printer Driver\" /q /f \"" + Configuration.PrintingDirPath + "MyDLPXPSDrv.inf\"", 0);
+                    int lastError = Marshal.GetLastWin32Error();
+                    Logger.GetInstance().Debug("PrintUIEntryW last error no:" + lastError + " message:" + (new Win32Exception(lastError)).Message);
+                    if (lastError != 0) throw new Win32Exception(lastError);
 
-
-                    procStartInfo.RedirectStandardOutput = true;
-                    procStartInfo.UseShellExecute = false;
-                    procStartInfo.CreateNoWindow = true;
-
-                    Process proc = new Process();
-                    proc.StartInfo = procStartInfo;
-                    Logger.GetInstance().Debug("Starting process:" + procStartInfo.Arguments);
-                    proc.Start();
-                    string result = proc.StandardOutput.ReadToEnd();
-                    Logger.GetInstance().Debug(result);
                 }
                 //Check only if driver is preinstalled on Windows XP
                 else if (Configuration.GetOs() == Configuration.OsVersion.XP)
                 {
-                    return MyDLPEP.PrinterUtils.CheckIfPrinterDriverExists(MyDLPDriver);              
+                    return MyDLPEP.PrinterUtils.CheckIfPrinterDriverExists(MyDLPDriver);
                 }
 
                 return true;
@@ -306,67 +304,6 @@ namespace MyDLP.EndPoint.Service
                 return false;
             }
         }
-
-        //this is for printing from local system account
-        /*public bool SetSystemPrinterRegistry()
-        {
-            Logger.GetInstance().Debug("SetSystemPrinterRegistry started");
-            try
-            {
-                RegistryKey currentUserKey = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows NT\CurrentVersion", true);
-                RegistryKey currentUserDevicesKey = currentUserKey.OpenSubKey("Devices", true);
-                RegistryKey currentUserPortsKey = currentUserKey.OpenSubKey("PrinterPorts", true);
-
-                RegistryKey defaultUserKey = Registry.Users.OpenSubKey(@".DEFAULT\Software\Microsoft\Windows NT\CurrentVersion", true);
-                RegistryKey defaultUserDevicesKey;
-                RegistryKey defaultUserPortsKey;
-
-                if (HasSubKey(defaultUserKey, "Devices"))
-                {
-                    defaultUserDevicesKey = defaultUserKey.OpenSubKey("Devices", true);
-                }
-                else
-                {
-                    defaultUserDevicesKey = defaultUserKey.CreateSubKey("Devices",
-                        RegistryKeyPermissionCheck.ReadWriteSubTree);
-                }
-
-                if (HasSubKey(defaultUserKey, "PrinterPorts"))
-                {
-                    defaultUserPortsKey = defaultUserKey.OpenSubKey("PrinterPorts", true);
-                }
-                else
-                {
-                    defaultUserPortsKey = defaultUserKey.CreateSubKey("PrinterPorts", 
-                        RegistryKeyPermissionCheck.ReadWriteSubTree);
-                }
-
-                String[] currentUserDeviceValueNames = currentUserDevicesKey.GetValueNames();
-
-                foreach (String currentValueName in currentUserDeviceValueNames)
-                {
-                    String value = (String)currentUserDevicesKey.GetValue(currentValueName, "");
-                    defaultUserDevicesKey.SetValue(currentValueName, value, RegistryValueKind.String);
-                }
-
-                String[] currentUserPortValueNames = currentUserPortsKey.GetValueNames();
-
-                foreach (String currentValueName in currentUserPortValueNames)
-                {
-                    String value = (String)currentUserPortsKey.GetValue(currentValueName, "");
-                    defaultUserPortsKey.SetValue(currentValueName, value, RegistryValueKind.String);
-                }
-
-                return true;
-            }
-            catch (Exception e)
-            {
-                Logger.GetInstance().Error("SetSystemPrinterRegistry error: " + 
-                    e.Message + " " + e.StackTrace);
-                
-                return false;
-            } 
-        }*/
 
         public bool HasSubKey(RegistryKey key, String subKeyName)
         {
@@ -386,7 +323,7 @@ namespace MyDLP.EndPoint.Service
         public static PrinterController getInstance()
         {
             if (instance == null)
-                instance = new PrinterController(); 
+                instance = new PrinterController();
             return instance;
         }
 

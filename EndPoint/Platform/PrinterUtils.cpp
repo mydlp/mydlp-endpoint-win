@@ -137,6 +137,7 @@ namespace MyDLPEP
 				ClosePrinter(pHandle);			
 		}
 
+		Logger::GetInstance()->Debug("GetSecurityDescriptorStringForPrinter pName:" + pName + " result, secDesc:" + securityDescriptor);
 		return securityDescriptor;
 	}
 
@@ -153,6 +154,8 @@ namespace MyDLPEP
 
 		IntPtr cPtr = IntPtr::Zero;
 		bool errorFlag = false;
+
+		Logger::GetInstance()->Debug("SetPrinterSecurityDescriptor  pName:" + pName + " secDesc: " + secDesc);
 
 		try
 		{

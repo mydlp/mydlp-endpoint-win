@@ -36,12 +36,9 @@ namespace MyDLP.EndPoint.Core
         string path,
             [MarshalAs(UnmanagedType.LPTStr)]
         StringBuilder shortPath,
-            int shortPathLength
-            );
+            int shortPathLength);
 
         static String javaStartCmd = @"cd " + Configuration.JavaBackendPath + " && Run.bat";
-        // String javaManualStartCmd = @"cd " + Configuration.JavaBackendPath + " && ManualRun.bat";
-        static String javaManualStartCmd = @"cd " + Configuration.JavaBackendPath + " && Run.bat";
         static String erlStartCmd = @"cd " + Configuration.ErlangPath + " && Run.bat";
         static String erlStartInteractiveCmd = @"cd " + Configuration.ErlangPath + " && InteractiveRun.bat";
 
@@ -57,7 +54,7 @@ namespace MyDLP.EndPoint.Core
             if (!System.Environment.UserInteractive)
             {
                 SvcController.StopService("mydlpengine", 5000);
-                ExecuteCommandSync("sc delete mydlpengine");
+                ProcessControl.ExecuteCommandSync(new ExecuteParameters("sc delete mydlpengine", "SC", new EnvVar[]{}));
 
                 try
                 {
@@ -72,28 +69,32 @@ namespace MyDLP.EndPoint.Core
                 }
             }
 
-            Logger.GetInstance().Info("Starting Java Backend");
-            if (System.Environment.UserInteractive)
-            {
-                ExecuteCommandAsync(javaStartCmd);
-            }
-            else
-            {
-                ExecuteCommandAsync(javaManualStartCmd);
-            }
+            Logger.GetInstance().Info("Starting Java Backend");           
+            EnvVar[] javaEnv = new EnvVar[] {
+                new EnvVar("JRE_BIN_DIR", GetShortPath(Configuration.JavaBinPaths)), 
+                new EnvVar("BACKEND_DIR",GetShortPath(Configuration.JavaPath)), 
+                new EnvVar("MYDLP_APPDIR",GetShortPath(Configuration.AppPath))
+            };
 
-            // TODO: When SetErlConf fails service is consuming system resources, user
-            // can hardly use system. When this command fails service should exit.
+            ProcessControl.ExecuteCommandAsync(javaStartCmd, "JAVA:", javaEnv);
+
+            EnvVar[] erlEnv = new EnvVar[] {
+                new EnvVar("MYDLP_CONF", GetShortPath(Configuration.MydlpConfPath).Replace(@"\", @"/")), 
+                new EnvVar("MYDLPBEAMDIR",GetShortPath(Configuration.ErlangPath)), 
+                new EnvVar("MYDLP_APPDIR",GetShortPath(Configuration.AppPath)),
+                new EnvVar("path", @";" + Configuration.ErlangBinPaths)
+            };
+
             Configuration.SetErlConf();
 
             Logger.GetInstance().Info("Starting Erlang Backend");
             if (System.Environment.UserInteractive)
             {
-                ExecuteCommandAsync(erlStartInteractiveCmd);
+                ProcessControl.ExecuteCommandAsync(erlStartInteractiveCmd, "WERL", erlEnv);
             }
             else
             {
-                ExecuteCommandAsync(erlStartCmd);
+                ProcessControl.ExecuteCommandAsync(erlStartCmd, "ERL", erlEnv);
             }
         }
 
@@ -162,75 +163,6 @@ namespace MyDLP.EndPoint.Core
                     Logger.GetInstance().Debug("Killing pid:" + p.Id + " name: " + p.ProcessName);
                     p.Kill();
                 }
-            }
-            catch (Exception e)
-            {
-                Logger.GetInstance().Error(e.Message + " " + e.StackTrace);
-            }
-        }
-
-        public static void ExecuteCommandAsync(string command)
-        {
-            try
-            {
-                Thread objThread = new Thread(new ParameterizedThreadStart(ExecuteCommandSync));
-                objThread.Start(command);
-            }
-            catch (ThreadStartException e)
-            {
-                Logger.GetInstance().Error(e.Message + " " + e.StackTrace);
-            }
-            catch (ThreadAbortException e)
-            {
-                Logger.GetInstance().Error(e.Message + " " + e.StackTrace);
-            }
-            catch (Exception e)
-            {
-                Logger.GetInstance().Error(e.Message + " " + e.StackTrace);
-            }
-        }
-
-        public static void ExecuteCommandSync(object command)
-        {
-            //TODO:this is dirty
-            try
-            {
-                System.Diagnostics.ProcessStartInfo procStartInfo =
-                    new System.Diagnostics.ProcessStartInfo("cmd", "/c " + command);
-                procStartInfo.RedirectStandardOutput = true;
-                procStartInfo.UseShellExecute = false;
-                procStartInfo.CreateNoWindow = true;
-
-                if (command.ToString() == javaStartCmd || command.ToString() == javaManualStartCmd)
-                {
-                    procStartInfo.EnvironmentVariables.Add("JRE_BIN_DIR", GetShortPath(Configuration.JavaBinPaths));
-                    procStartInfo.EnvironmentVariables.Add("BACKEND_DIR", GetShortPath(Configuration.JavaPath));
-                    procStartInfo.EnvironmentVariables.Add("MYDLP_APPDIR", GetShortPath(Configuration.AppPath));
-
-                    Logger.GetInstance().Debug("Environment JRE_BIN_DIR for backend:" + procStartInfo.EnvironmentVariables["JRE_BIN_DIR"]);
-                    Logger.GetInstance().Debug("Environment BACKEND_DIR for backend:" + procStartInfo.EnvironmentVariables["BACKEND_DIR"]);
-                    Logger.GetInstance().Debug("Environment MYDLP_APPDIR for backend:" + procStartInfo.EnvironmentVariables["MYDLP_APPDIR"]);
-
-                }
-
-                if (command.ToString() == erlStartCmd)
-                {
-                    procStartInfo.EnvironmentVariables.Add("MYDLP_CONF", GetShortPath(Configuration.MydlpConfPath).Replace(@"\", @"/"));
-                    procStartInfo.EnvironmentVariables.Add("MYDLPBEAMDIR", GetShortPath(Configuration.ErlangPath));
-                    procStartInfo.EnvironmentVariables.Add("MYDLP_APPDIR", GetShortPath(Configuration.AppPath));
-                    procStartInfo.EnvironmentVariables["path"] = procStartInfo.EnvironmentVariables["path"] + @";" + Configuration.ErlangBinPaths;
-
-                    Logger.GetInstance().Debug("Environment path for erlang:" + procStartInfo.EnvironmentVariables["path"]);
-                    Logger.GetInstance().Debug("Environment MYDLP_CONF:" + procStartInfo.EnvironmentVariables["MYDLP_CONF"]);
-                    Logger.GetInstance().Debug("Environment MYDLP_APPDIR:" + procStartInfo.EnvironmentVariables["MYDLP_APPDIR"]);
-                }
-
-                System.Diagnostics.Process proc = new System.Diagnostics.Process();
-                proc.StartInfo = procStartInfo;
-                Logger.GetInstance().Debug("Starting process:" + command);
-                proc.Start();
-                string result = proc.StandardOutput.ReadToEnd();
-                Logger.GetInstance().Debug(result);
             }
             catch (Exception e)
             {

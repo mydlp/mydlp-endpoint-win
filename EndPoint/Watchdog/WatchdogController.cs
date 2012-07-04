@@ -106,7 +106,7 @@ namespace MyDLP.EndPoint.Service
                 }
             }
 
-            if (!CheckProcRunningByName("java")) 
+            if (!CheckProcRunningByName("java"))
             {
                 error = true;
                 Logger.GetInstance().Error("no java process");
@@ -125,7 +125,7 @@ namespace MyDLP.EndPoint.Service
                 {
 
                     Logger.GetInstance().Info("Starting service");
-                    if(service.Status.Equals(ServiceControllerStatus.Running))
+                    if (service.Status.Equals(ServiceControllerStatus.Running))
                     {
                         service.Stop();
                         service.WaitForStatus(ServiceControllerStatus.Stopped);
@@ -138,11 +138,11 @@ namespace MyDLP.EndPoint.Service
                 }
             }
             catch (Exception ex)
-            {                
+            {
                 Logger.GetInstance().Error("service exception" + ex.Message);
                 Logger.GetInstance().Error("mydlpepwin service not found reinstall MyDLP Endpoint");
                 Environment.Exit(1);
-            }           
+            }
         }
 
         public bool CheckProcRunningByName(String procname)
