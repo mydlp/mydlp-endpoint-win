@@ -25,13 +25,13 @@ namespace MyDLP.EndPoint.Service
 
         ArrayList spooledNativePrinters;
 
-        public const String PrinterPrefix = "(MyDLP)";
-        public const String MyDLPDriver = "MyDLP XPS Printer Driver";
+        const String PrinterPrefix = "(MyDLP)";
+        const String MyDLPDriver = "MyDLP XPS Printer Driver";
 
-        public const String SystemPrinterSecurityDescriptor =
+        const String SystemPrinterSecurityDescriptor =
             "O:SYG:SYD:(A;;LCSWSDRCWDWO;;;SY)(A;OIIO;RPWPSDRCWDWO;;;SY)";
 
-        public const String BuiltinAdminsPrinterSecurityDescriptor =
+        const String BuiltinAdminsPrinterSecurityDescriptor =
             "O:SYG:SYD:(A;;LCSWSDRCWDWO;;;SY)(A;OIIO;RPWPSDRCWDWO;;;SY)(A;;LCSWSDRCWDWO;;;BA)(A;OIIO;RPWPSDRCWDWO;;;BA)";
 
         public void Start()
@@ -63,7 +63,14 @@ namespace MyDLP.EndPoint.Service
             RemoveSecurePrinters();
         }
 
-        public void InstallSecurePrinters()
+        public static PrinterController getInstance()
+        {
+            if (instance == null)
+                instance = new PrinterController();
+            return instance;
+        }
+
+        private void InstallSecurePrinters()
         {
             Configuration.OsVersion version = Configuration.GetOs();
             try
@@ -72,6 +79,7 @@ namespace MyDLP.EndPoint.Service
 
                 LocalPrintServer pServer = new LocalPrintServer();
                 PrintQueueCollection queueCollection = pServer.GetPrintQueues();
+
                 foreach (PrintQueue queue in queueCollection)
                 {
                     Logger.GetInstance().Debug("Process printer queue: " + queue.Name
@@ -114,9 +122,8 @@ namespace MyDLP.EndPoint.Service
                         }
                         catch (Exception e)
                         {
-                            Logger.GetInstance().Debug("Unable to install printer " + queue.Name + " error:" + e.Message);
+                            Logger.GetInstance().Debug("Unable to process non-secure printer " + queue.Name + " error:" + e.Message);
                         }
-
                     }
                 }
             }
@@ -130,7 +137,7 @@ namespace MyDLP.EndPoint.Service
             }
         }
 
-        public void RemoveSecurePrinters()
+        private void RemoveSecurePrinters()
         {
             try
             {
@@ -184,7 +191,7 @@ namespace MyDLP.EndPoint.Service
             }
         }
 
-        public bool CheckAndInstallPortMonitor()
+        private bool CheckAndInstallPortMonitor()
         {
             try
             {
@@ -268,12 +275,11 @@ namespace MyDLP.EndPoint.Service
             return true;
         }
 
-        public bool CheckAndInstallXPSDriver()
+        private bool CheckAndInstallXPSDriver()
         {
             try
             {
                 //ProcessStartInfo procStartInfo;
-
                 //PrintUI.dll does not work in a windows service on Windows XP
                 if (Configuration.GetOs() == Configuration.OsVersion.Win7_32
                     || Configuration.GetOs() == Configuration.OsVersion.Win7_64)
@@ -305,7 +311,7 @@ namespace MyDLP.EndPoint.Service
             }
         }
 
-        public bool HasSubKey(RegistryKey key, String subKeyName)
+        private bool HasSubKey(RegistryKey key, String subKeyName)
         {
             bool hasKey = false;
 
@@ -318,13 +324,6 @@ namespace MyDLP.EndPoint.Service
                 }
             }
             return hasKey;
-        }
-
-        public static PrinterController getInstance()
-        {
-            if (instance == null)
-                instance = new PrinterController();
-            return instance;
         }
 
         private PrinterController()
