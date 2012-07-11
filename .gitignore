@@ -11,6 +11,7 @@
 *.meta
 *.exe
 *.log
+*.Cache
 objchk_wxp_x86/
 objchk_win7_amd64/
 Debug/
