@@ -1,4 +1,23 @@
-﻿using System;
+﻿//    Copyright (C) 2011 Huseyin Ozgur Batur <ozgur@medra.com.tr>
+//
+//--------------------------------------------------------------------------
+//    This file is part of MyDLP.
+//
+//    MyDLP is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    MyDLP is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with MyDLP.  If not, see <http://www.gnu.org/licenses/>.
+//--------------------------------------------------------------------------
+
+using System;
 using System.Collections;
 using System.Text;
 using System.Printing;
@@ -15,6 +34,9 @@ namespace MyDLP.EndPoint.Service
 {
     public class PrinterController
     {
+        [DllImport("Advapi32.dll")]
+        static extern bool GetUserName(StringBuilder lpBuffer, ref int nSize);
+
         [DllImport("printui.dll", SetLastError = true, CharSet = CharSet.Unicode)]
         private static extern void PrintUIEntryW(IntPtr hwnd,
             IntPtr hinst, string lpszCmdLine, int nCmdShow);
@@ -34,12 +56,17 @@ namespace MyDLP.EndPoint.Service
         const String BuiltinAdminsPrinterSecurityDescriptor =
             "O:SYG:SYD:(A;;LCSWSDRCWDWO;;;SY)(A;OIIO;RPWPSDRCWDWO;;;SY)(A;;LCSWSDRCWDWO;;;BA)(A;OIIO;RPWPSDRCWDWO;;;BA)";
 
+        const String sysEntry1 = "(A;OIIO;RPWPSDRCWDWO;;;SY)";
+        const String sysEntry2 = "(A;;LCSWSDRCWDWO;;;SY)";
+        const String admEntry1 = "(A;OIIO;RPWPSDRCWDWO;;;BA)";
+        const String admEntry2 = "(A;;LCSWSDRCWDWO;;;BA)";
+
         public void Start()
         {
             SvcController.StopService("Spooler", 5000);
             //this is ugly but necessary
             Thread.Sleep(1000);
-            //if (CheckAndInstallPortMonitor() && SetSystemPrinterRegistry())
+
             if (CheckAndInstallPortMonitor())
             {
                 SvcController.StartService("Spooler", 5000);
@@ -72,13 +99,13 @@ namespace MyDLP.EndPoint.Service
 
         private void InstallSecurePrinters()
         {
-            Configuration.OsVersion version = Configuration.GetOs();
             try
             {
                 Logger.GetInstance().Debug("InstallSecurePrinters started");
 
                 LocalPrintServer pServer = new LocalPrintServer();
                 PrintQueueCollection queueCollection = pServer.GetPrintQueues();
+                String securityDesc;
 
                 foreach (PrintQueue queue in queueCollection)
                 {
@@ -97,10 +124,19 @@ namespace MyDLP.EndPoint.Service
                                 new String[] { "MyDLP" },
                                 "winprint",
                                 PrintQueueAttributes.Direct);
-
-                            String securityDesc = MyDLPEP.PrinterUtils.GetPrinterSecurityDescriptor(queue.Name);
+                            MyDLPEP.PrinterUtils.TakePrinterOwnership(queue.Name);
+                            securityDesc = MyDLPEP.PrinterUtils.GetPrinterSecurityDescriptor(queue.Name);
                             if (securityDesc != "")
                             {
+                                if (!securityDesc.Contains(admEntry1))
+                                    securityDesc += admEntry1;
+                                if (!securityDesc.Contains(admEntry2))
+                                    securityDesc += admEntry2;
+                                if (!securityDesc.Contains(sysEntry1))
+                                    securityDesc += sysEntry1;
+                                if (!securityDesc.Contains(sysEntry2))
+                                    securityDesc += sysEntry2;
+
                                 MyDLPEP.PrinterUtils.SetPrinterSecurityDescriptor(PrinterPrefix + queue.Name, securityDesc);
                             }
 
@@ -113,7 +149,8 @@ namespace MyDLP.EndPoint.Service
                                 MyDLPEP.PrinterUtils.SetPrinterSecurityDescriptor(queue.Name, SystemPrinterSecurityDescriptor);
                             }
 
-                            if (!queue.IsDirect)
+                            //This is netiher required nor working in windows 7
+                            if (!queue.IsDirect && Configuration.GetOs() == Configuration.OsVersion.XP)
                             {
                                 Logger.GetInstance().Debug("Found spooling native printer " + queue.Name);
                                 MyDLPEP.PrinterUtils.SetPrinterSpoolMode(queue.Name, false);
@@ -122,7 +159,8 @@ namespace MyDLP.EndPoint.Service
                         }
                         catch (Exception e)
                         {
-                            Logger.GetInstance().Debug("Unable to process non-secure printer " + queue.Name + " error:" + e.Message);
+                            Logger.GetInstance().Debug("Unable to process non-secure printer " + queue.Name
+                                + " error:" + e.Message + " " + e.StackTrace);
                         }
                     }
                 }
@@ -135,7 +173,7 @@ namespace MyDLP.EndPoint.Service
             {
                 Logger.GetInstance().Debug("InstallSecurePrinters ended");
             }
-        }
+        }        
 
         private void RemoveSecurePrinters()
         {
@@ -279,11 +317,16 @@ namespace MyDLP.EndPoint.Service
         {
             try
             {
-                //ProcessStartInfo procStartInfo;
-                //PrintUI.dll does not work in a windows service on Windows XP
-                if (Configuration.GetOs() == Configuration.OsVersion.Win7_32
+                if (MyDLPEP.PrinterUtils.CheckIfPrinterDriverExists(MyDLPDriver))
+                {
+                    Logger.GetInstance().Debug("MyDLP XPS Driver exists");
+                    return true;
+                }
+                //PrintUI.dll does not work in a windows service on Windows XP use manual
+                else if (Configuration.GetOs() == Configuration.OsVersion.Win7_32
                     || Configuration.GetOs() == Configuration.OsVersion.Win7_64)
                 {
+                    Logger.GetInstance().Debug("Installing MyDLP XPS Driver automatically");
                     X509Store store = new X509Store(StoreName.TrustedPublisher, StoreLocation.LocalMachine);
                     X509Certificate2 mydlpPubCert = new X509Certificate2(Configuration.PrintingDirPath + "mydlppub.cer");
                     store.Open(OpenFlags.ReadWrite);
@@ -294,15 +337,13 @@ namespace MyDLP.EndPoint.Service
                     int lastError = Marshal.GetLastWin32Error();
                     Logger.GetInstance().Debug("PrintUIEntryW last error no:" + lastError + " message:" + (new Win32Exception(lastError)).Message);
                     if (lastError != 0) throw new Win32Exception(lastError);
-
+                    return true;
                 }
-                //Check only if driver is preinstalled on Windows XP
-                else if (Configuration.GetOs() == Configuration.OsVersion.XP)
+                else
                 {
-                    return MyDLPEP.PrinterUtils.CheckIfPrinterDriverExists(MyDLPDriver);
+                    Logger.GetInstance().Error("MyDLP XPS Driver not found on XP machine, run installdriverXP.bat manually");
+                    return false;
                 }
-
-                return true;
             }
             catch (Exception e)
             {

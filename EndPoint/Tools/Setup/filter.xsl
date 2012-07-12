@@ -21,6 +21,7 @@
   <xsl:template match="wix:Component[wix:File[substring(@Source, string-length(@Source) - 3) = '.cpp']]"/>
   <xsl:template match="wix:Component[wix:File[substring(@Source, string-length(@Source) - 3) = '.git']]"/>
   <xsl:template match="wix:Component[wix:File[substring(@Source, string-length(@Source) - 3) = '.svn']]"/>
+  <xsl:template match="wix:Component[wix:File[substring(@Source, string-length(@Source) - 13) = '.gitattributes']]"/>
   <xsl:template match="wix:Component[wix:File[substring(@Source, string-length(@Source) - 0) = '~']]"/>
     
 </xsl:stylesheet>

@@ -24,42 +24,54 @@ using namespace MyDLP::EndPoint::Core;
 using namespace Microsoft::Win32;
 using namespace System;
 using namespace System::Runtime::InteropServices;
+using namespace System::ComponentModel;
 
 namespace MyDLPEP
 {
 	String^ PrinterUtils::GetPrinterSecurityDescriptor(String ^pName)
 	{
 		HANDLE pHandle = NULL;
+		HANDLE hToken = NULL;
 		DWORD pcbNeeded = 0;
 		PRINTER_INFO_3* pPrinterInfo = NULL;
 		PSECURITY_DESCRIPTOR psd = NULL;
 		LPWSTR lpszSecDesc = NULL;
-
 		String^ securityDescriptor = "";
+		IntPtr cPtr = Marshal::StringToHGlobalUni(pName);
 
 		try
 		{
-			pHandle = PrinterUtils::GetPrinterHandle(pName);
-
-			if (!pHandle)
+			if (!OpenProcessToken(GetCurrentProcess(),
+				TOKEN_ADJUST_PRIVILEGES,
+				&hToken))
 			{
-				throw gcnew Exception("Unable to get printer handle");
+				throw gcnew Exception("Unable to open proces token");
 			}
 
-			GetPrinter(pHandle, 3, (LPBYTE)pPrinterInfo, 0, &pcbNeeded);
-			pPrinterInfo = (PRINTER_INFO_3*) malloc(pcbNeeded);
-
-			if (!pPrinterInfo)
+			if (!SetPrivilege(hToken, SE_BACKUP_NAME, TRUE))
 			{
-				throw gcnew Exception("Memory allocation error for PRINTER_INFO_3");
+				throw gcnew Exception("SetPriviledge SE_BACKUP_NAME true failed");
 			}
 
-			if (!GetPrinter(pHandle, 3, (LPBYTE)pPrinterInfo, pcbNeeded, &pcbNeeded))
+			int error = GetNamedSecurityInfo(
+						(LPWSTR)cPtr.ToPointer(),
+						SE_PRINTER,
+						OWNER_SECURITY_INFORMATION|GROUP_SECURITY_INFORMATION|
+						DACL_SECURITY_INFORMATION|SACL_SECURITY_INFORMATION,
+						NULL,
+						NULL,
+						NULL,
+						NULL,
+						&psd); 
+			if (error != ERROR_SUCCESS)
 			{
-				throw gcnew Exception("Unable to get PRINTER_INFO_3");
+				throw gcnew Win32Exception(error); 
 			}
 
-			psd = pPrinterInfo->pSecurityDescriptor;
+			if (!SetPrivilege(hToken, SE_BACKUP_NAME, FALSE))
+			{
+				throw gcnew Exception("SetPriviledge SE_BACKUP_NAME false failed");
+			}
 
 			if (!ConvertSecurityDescriptorToStringSecurityDescriptor(
 				psd,
@@ -114,27 +126,28 @@ namespace MyDLPEP
 			}
 
 			securityDescriptor +=  gcnew String(lpszSecDesc);
-			LocalFree(lpszSecDesc);
-			lpszSecDesc == NULL;
 		}
-
 		catch (Exception ^ex)
 		{
+			int error = (int) GetLastError();
 			Logger::GetInstance()->Error("GetSecurityDescriptorStringForPrinter error: " +
 				ex->Message + " " +
-				" LastError: " + GetLastError() + " " +
+				" LastError: " + (gcnew Win32Exception(error))->Message + " " +
 				ex->StackTrace);
-
-			if (lpszSecDesc)
-				LocalFree(lpszSecDesc);
 		}
-
 		finally
 		{
 			if (pPrinterInfo)
 				free(pPrinterInfo);
 			if (pHandle)
-				ClosePrinter(pHandle);			
+				ClosePrinter(pHandle);
+			if (lpszSecDesc)
+				LocalFree(lpszSecDesc);
+			if (psd)
+				LocalFree(psd);
+
+			Marshal::FreeHGlobal(cPtr);
+			CloseHandle(hToken);
 		}
 
 		Logger::GetInstance()->Debug("GetSecurityDescriptorStringForPrinter pName:" + pName + " result, secDesc:" + securityDescriptor);
@@ -146,39 +159,27 @@ namespace MyDLPEP
 		HANDLE pHandle = NULL;
 		DWORD pcbNeeded	= 0;
 		PRINTER_INFO_3* pPrinterInfo = NULL;
-
 		PSECURITY_DESCRIPTOR psd = NULL;
 		LPWSTR lpszSecDesc = NULL;
-
 		HANDLE hToken = NULL;
-
 		IntPtr cPtr = IntPtr::Zero;
+		IntPtr cPtrSec = IntPtr::Zero;
+
+
+		PSID psidOwner = NULL;
+		PSID psidGroup = NULL;
+		PACL pDacl = NULL;
+		PACL pSacl =NULL;
+
+		cPtr = Marshal::StringToHGlobalUni(pName);
+		cPtrSec = Marshal::StringToHGlobalUni(secDesc);
+
 		bool errorFlag = false;
 
 		Logger::GetInstance()->Debug("SetPrinterSecurityDescriptor  pName:" + pName + " secDesc: " + secDesc);
 
 		try
 		{
-			pHandle = PrinterUtils::GetPrinterHandle(pName);
-
-			if (!pHandle)
-			{
-				throw gcnew Exception("Unable to get printer handle");
-			}
-
-			GetPrinter(pHandle, 3, (LPBYTE)pPrinterInfo, 0, &pcbNeeded);
-			pPrinterInfo = (PRINTER_INFO_3*) malloc(pcbNeeded);
-
-			if (!pPrinterInfo)
-			{
-				throw gcnew Exception("Memory allocation error for PRINTER_INFO_3");
-			}
-
-			if (!GetPrinter(pHandle, 3, (LPBYTE)pPrinterInfo, pcbNeeded, &pcbNeeded))
-			{
-				throw gcnew Exception("Unable to get PRINTER_INFO_3");
-			}
-
 			if (!OpenProcessToken(GetCurrentProcess(),
 				TOKEN_ADJUST_PRIVILEGES,
 				&hToken))
@@ -186,21 +187,24 @@ namespace MyDLPEP
 				throw gcnew Exception("Unable to open proces token");
 			}
 
-			
-			if (!SetPrivilege(hToken, SE_TAKE_OWNERSHIP_NAME, TRUE)) 
+			if (!SetPrivilege(hToken, SE_RESTORE_NAME, TRUE))
 			{
-				throw gcnew Exception("SetPriviledge SE_TAKE_OWNERSHIP_NAME failed");
-			}
-			
-			if (!SetPrivilege(hToken, SE_RESTORE_NAME, TRUE)) 
-			{
-				throw gcnew Exception("SetPriviledge SE_RESTORE_NAME failed");
+				throw gcnew Exception("SetPriviledge SE_RESTORE_NAME true failed");
 			}
 
-			cPtr = Marshal::StringToHGlobalUni(secDesc);	
+			if (!SetPrivilege(hToken, SE_TAKE_OWNERSHIP_NAME, TRUE))
+			{
+				throw gcnew Exception("SetPriviledge SE_TAKE_OWNERSHIP_NAME true failed");
+			}
+
+			if (!SetPrivilege(hToken, SE_SECURITY_NAME, TRUE))
+			{
+				throw gcnew Exception("SetPriviledge SE_SECURITY_NAME true failed");
+			}
+
 
 			if (!ConvertStringSecurityDescriptorToSecurityDescriptor(
-				(LPWSTR)cPtr.ToPointer(),
+				(LPWSTR)cPtrSec.ToPointer(),
 				SDDL_REVISION_1,
 				&psd,
 				NULL
@@ -209,34 +213,41 @@ namespace MyDLPEP
 				throw gcnew Exception("ConvertStringSecurityDescriptorToSecurityDescriptor failed");
 			}
 
-			pPrinterInfo->pSecurityDescriptor = psd;
-			Marshal::FreeHGlobal(cPtr);
-			cPtr = IntPtr::Zero;
+			BOOL bOwnerDefaulted;
+			GetSecurityDescriptorOwner(psd, &psidOwner, &bOwnerDefaulted);
 
-			if (!SetPrinter(pHandle,3,(LPBYTE)pPrinterInfo,0))
-			{
-				throw gcnew Exception("SetPrinter failed");
-			}
+			BOOL bGroupDefaulted;
+			GetSecurityDescriptorGroup(psd, &psidGroup, &bGroupDefaulted);
 
-			if (!SetPrivilege(hToken, SE_TAKE_OWNERSHIP_NAME, FALSE))
-			{
-				throw gcnew Exception("SetPrivilidge SE_TAKE_OWNERSHIP_NAME false failed");
-			}
+			BOOL bSaclPresent;
+			BOOL bSaclDefaulted;
+			GetSecurityDescriptorSacl(psd, &bSaclPresent, &pSacl, &bSaclDefaulted);
 
-			if (!SetPrivilege(hToken, SE_RESTORE_NAME, FALSE))
+			BOOL bDaclPresent;
+			BOOL bDaclDefaulted;
+			GetSecurityDescriptorDacl(psd,  &bDaclPresent, &pDacl, &bDaclDefaulted);
+
+
+			int error = SetNamedSecurityInfo(
+						(LPWSTR)cPtr.ToPointer(),
+						SE_PRINTER,
+						OWNER_SECURITY_INFORMATION|GROUP_SECURITY_INFORMATION|
+						DACL_SECURITY_INFORMATION|SACL_SECURITY_INFORMATION,
+						psidOwner,
+						psidGroup,
+						pDacl,
+						pSacl);
+
+			if (error != ERROR_SUCCESS)
 			{
-				throw gcnew Exception("SetPrivilidge SE_RESTORE_NAME false failed");	
+				throw gcnew Win32Exception(error); 
 			}
 		}
 		catch (Exception ^ex)
 		{
-			Logger::GetInstance()->Error("GetSecurityDescriptorStringForPrinter error: " +
+			Logger::GetInstance()->Error("SetSecurityDescriptorStringForPrinter error: " +
 				ex->Message + " " +
-				" LastError: " + GetLastError() + " " +
 				ex->StackTrace);
-
-			if (cPtr != IntPtr::Zero)				
-				Marshal::FreeHGlobal(cPtr);
 
 			errorFlag = true;
 		}
@@ -244,17 +255,31 @@ namespace MyDLPEP
 		{
 			if( pPrinterInfo)
 				free(pPrinterInfo);
-			if (pHandle)	
-				ClosePrinter(pHandle);		
-		}	
+			if (pHandle)
+				ClosePrinter(pHandle);
+			if (cPtr != IntPtr::Zero)
+				Marshal::FreeHGlobal(cPtr);
+			if (cPtrSec != IntPtr::Zero)
+				Marshal::FreeHGlobal(cPtrSec);
+			CloseHandle(hToken);
+			LocalFree(psd);
+		}
 		return errorFlag;
-	}	
+	}
 
 	void PrinterUtils::RemovePrinter(String^ pName)
 	{
 		SetLastError(0);
 		Logger::GetInstance()->Debug("Removing Printer: " + pName);
 		HANDLE pHandle = GetPrinterHandle(pName);
+		if (!pHandle)
+		{
+			int error = (int)GetLastError();
+			Logger::GetInstance()->Error("RemovePrinter failed null handle" + pName);
+			Logger::GetInstance()->Error("LastError: " + (gcnew Win32Exception(error))->Message);
+			return;
+		}
+
 		SetPrinter(pHandle,0,NULL,PRINTER_CONTROL_PURGE);
 		if (DeletePrinter(pHandle))
 		{
@@ -262,9 +287,9 @@ namespace MyDLPEP
 		}
 		else
 		{
-			Logger::GetInstance()->Debug("Remove printer failed: " + pName);
-			DWORD word = GetLastError();
-			Logger::GetInstance()->Debug("LastError: " + word.ToString());
+			Logger::GetInstance()->Error("Remove printer failed: " + pName);
+			int error = (int)GetLastError();
+			Logger::GetInstance()->Error("LastError: " + (gcnew Win32Exception(error))->Message);
 		}
 		ClosePrinter(pHandle);
 	}
@@ -275,30 +300,164 @@ namespace MyDLPEP
 		pdAiO.pDevMode		= NULL;
 		pdAiO.pDatatype		= NULL;
 		pdAiO.DesiredAccess = PRINTER_ALL_ACCESS;
+		LPVOID sidAndAttrBuffer = NULL;
+		DWORD returnLength = 0;
 
 		HANDLE hPrinter = NULL;
+		HANDLE hToken = NULL;
 
-		IntPtr cPtr = Marshal::StringToHGlobalUni(pName);	
+		IntPtr cPtr = Marshal::StringToHGlobalUni(pName);
+
+		SetLastError(0);
 
 		if(OpenPrinter((LPWSTR)cPtr.ToPointer(), &hPrinter, &pdAiO))
 		{
-			Logger::GetInstance()->Debug("Get handle success:<" + gcnew String((LPWSTR)cPtr.ToPointer()) + "> hadle no: <" + gcnew INT32((int)hPrinter) + ">");		
+			Logger::GetInstance()->Debug("Get handle success: " + pName + "<" + gcnew String((LPWSTR)cPtr.ToPointer()) + "> hadle no: <" + gcnew INT32((int)hPrinter) + ">");
 		}
 		else
 		{
-			Logger::GetInstance()->Debug("Get handle failed");
+			int error = (int)GetLastError();
+
+			if (error == ERROR_ACCESS_DENIED)
+			{
+				Logger::GetInstance()->Error("Get handle failed ACCESS_DENIED");
+				return NULL;
+			}
+			else
+			{
+			Logger::GetInstance()->Error("Get handle failed: " + pName + " " + (gcnew Win32Exception(error))->Message + "||");
+			}
 		}
 
 		Marshal::FreeHGlobal(cPtr);
 
-		return hPrinter;	
+		if(!hToken)
+			CloseHandle(hToken);
+
+		if(!sidAndAttrBuffer)
+			free(sidAndAttrBuffer);
+
+		return hPrinter;
+	}
+
+	void PrinterUtils::TakePrinterOwnership(System::String ^pName)
+	{
+		HANDLE hToken = NULL;
+		IntPtr cPtr = Marshal::StringToHGlobalUni(pName);
+		SetLastError(0);
+
+		try
+		{
+			if (!OpenProcessToken(GetCurrentProcess(),
+				TOKEN_ADJUST_PRIVILEGES,
+				&hToken))
+			{
+				throw gcnew Exception("Unable to open proces token");
+			}
+
+			if (!SetPrivilege(hToken, SE_TAKE_OWNERSHIP_NAME, TRUE)) 
+			{
+				throw gcnew Exception("SetPriviledge SE_TAKE_OWNERSHIP_NAME failed");
+			}
+
+			if (!SetPrivilege(hToken, SE_RESTORE_NAME, TRUE))
+			{
+				throw gcnew Exception("SetPriviledge SE_RESTORE_NAME failed");
+			}
+
+			if (!SetPrivilege(hToken, SE_BACKUP_NAME, TRUE))
+			{
+				throw gcnew Exception("SetPriviledge SE_BACKUP_NAME failed");
+			}
+
+			if (!SetPrivilege(hToken, SE_SECURITY_NAME, TRUE))
+			{
+				throw gcnew Exception("SetPriviledge SE_SECURITY_NAME failed");
+			}
+
+			PSID pSID = NULL;
+
+			if (System::Environment::UserInteractive == true)
+			{
+				SID_IDENTIFIER_AUTHORITY SIDAuthNT = SECURITY_NT_AUTHORITY;
+				AllocateAndInitializeSid(&SIDAuthNT, 2,
+				 SECURITY_BUILTIN_DOMAIN_RID,
+				 DOMAIN_ALIAS_RID_ADMINS,
+				 0, 0, 0, 0, 0, 0,
+				 &pSID);
+			}
+			else
+			{
+				SID_IDENTIFIER_AUTHORITY SIDAuthNT = SECURITY_NT_AUTHORITY;
+				AllocateAndInitializeSid(&SIDAuthNT, 1,
+				 SECURITY_LOCAL_SYSTEM_RID,
+				 0, 0, 0, 0, 0, 0, 0,
+				 &pSID);
+			}
+
+			int error = SetNamedSecurityInfo(
+				(LPWSTR)cPtr.ToPointer(),
+				SE_PRINTER,
+				OWNER_SECURITY_INFORMATION,
+				pSID, // SID
+				NULL,
+				NULL,
+				NULL);
+
+			if (error != ERROR_SUCCESS)
+			{
+				throw gcnew Win32Exception(error); 
+			}
+
+			if (!SetPrivilege(hToken, SE_SECURITY_NAME, FALSE))
+			{
+				throw gcnew Exception("SetPriviledge SE_SECURITY_NAME falsefailed");
+			}
+
+			if (!SetPrivilege(hToken, SE_BACKUP_NAME, FALSE))
+			{
+				throw gcnew Exception("SetPriviledge SE_BACKUP_NAME false failed");
+			}
+
+
+			if (!SetPrivilege(hToken, SE_TAKE_OWNERSHIP_NAME, FALSE))
+			{
+				throw gcnew Exception("SetPrivilidge SE_TAKE_OWNERSHIP_NAME false failed");
+			}
+
+			if (!SetPrivilege(hToken, SE_RESTORE_NAME, FALSE))
+			{
+				throw gcnew Exception("SetPrivilidge SE_RESTORE_NAME false failed");
+			}
+		}
+		catch(Exception ^ex)
+		{
+			Logger::GetInstance()->Error("GetPrinterHandle error: " +
+				ex->Message + " " +
+				ex->StackTrace);
+		}
+
+		Marshal::FreeHGlobal(cPtr);
+
+		if(!hToken)
+			CloseHandle(hToken);
+		return;
 	}
 
 	void PrinterUtils::SetPrinterSpoolMode(String^ pName, bool spool)
-	{	
-		Logger::GetInstance()->Debug("Set pinter spooling mode " + pName + " " + spool);	
+	{
+		Logger::GetInstance()->Debug("Set pinter spooling mode " + pName + " " + spool);
 
 		HANDLE pHandle = PrinterUtils::GetPrinterHandle(pName);
+
+		if (!pHandle)
+		{
+			int error = (int)GetLastError();
+			Logger::GetInstance()->Error("Set pinter spooling mode failed null handle" + pName + " " + spool);
+			Logger::GetInstance()->Error("LastError: " + (gcnew Win32Exception(error))->Message);
+			return;
+		}
+
 		DWORD pcbNeeded = 0;
 		PRINTER_INFO_5* pPrinterInfo = NULL;
 
@@ -320,17 +479,17 @@ namespace MyDLPEP
 				{
 					Logger::GetInstance()->Debug("SetPrinterInfo succeded: " + pName);
 				}
-				else 
-				{					
-					Logger::GetInstance()->Debug("SetPrinterInfo failed: " + pName);
-					DWORD word = GetLastError();
-					Logger::GetInstance()->Debug("LastError: " + word.ToString());
+				else
+				{
+					int error = (int) GetLastError();
+					Logger::GetInstance()->Error("SetPrinterInfo failed: " + pName);
+					Logger::GetInstance()->Error("LastError: " + (gcnew Win32Exception(error))->Message);
 
 				}
 			}
-			else 
-			{					
-				Logger::GetInstance()->Debug("GetPrinterInfo failed: " + pName);
+			else
+			{
+				Logger::GetInstance()->Error("GetPrinterInfo failed: " + pName);
 			}
 			free(pPrinterInfo);
 			ClosePrinter(pHandle);
@@ -365,7 +524,7 @@ namespace MyDLPEP
 					break;
 				}
 			}
-			
+
 			if(pDriverInfo)
 				free(pDriverInfo);
 		}
@@ -378,22 +537,23 @@ namespace MyDLPEP
 		return foundFlag;
 	}
 }
-	
+
 BOOL SetPrivilege(
 	HANDLE hToken,
-	LPCTSTR lpszPrivilege, 
-	BOOL bEnablePrivilege) 
+	LPCTSTR lpszPrivilege,
+	BOOL bEnablePrivilege)
 {
 	TOKEN_PRIVILEGES tp;
 	LUID luid;
 
-	if (!LookupPrivilegeValue( 
-		NULL, 
+	if (!LookupPrivilegeValue(
+		NULL,
 		lpszPrivilege,
 		&luid ) )
 	{
-		Logger::GetInstance()->Debug("LookupPrivilegeValue error: " + gcnew Int32(GetLastError())); 
-		return FALSE; 
+		int error = (int)GetLastError();
+		Logger::GetInstance()->Error("LookupPrivilegeValue error: " + (gcnew Win32Exception(error))->Message);
+		return FALSE;
 	}
 
 	tp.PrivilegeCount = 1;
@@ -408,20 +568,21 @@ BOOL SetPrivilege(
 	}
 
 	if ( !AdjustTokenPrivileges(
-		   hToken, 
-		   FALSE, 
-		   &tp, 
-		   sizeof(TOKEN_PRIVILEGES), 
-		   (PTOKEN_PRIVILEGES) NULL, 
+		   hToken,
+		   FALSE,
+		   &tp,
+		   sizeof(TOKEN_PRIVILEGES),
+		   (PTOKEN_PRIVILEGES) NULL,
 		   (PDWORD) NULL) )
-	{ 
-		  Logger::GetInstance()->Debug("AdjustTokenPrivileges error: " + GetLastError()); 
-		  return FALSE; 
-	} 
+	{
+		  int error = (int) GetLastError();
+		  Logger::GetInstance()->Error("AdjustTokenPrivileges LastError: " + (gcnew Win32Exception(error))->Message);
+		  return FALSE;
+	}
 
 	if (GetLastError() == ERROR_NOT_ALL_ASSIGNED)
 	{
-		  Logger::GetInstance()->Debug("The token does not have the specified privilege.");
+		  Logger::GetInstance()->Error("The token does not have the specified privilege.");
 		  return FALSE;
 	}
 	return TRUE;

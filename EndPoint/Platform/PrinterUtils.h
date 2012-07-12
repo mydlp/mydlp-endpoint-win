@@ -23,6 +23,8 @@
 #include <stdlib.h>
 #include <vcclr.h>
 #include <sddl.h>
+#include <accctrl.h>
+#include <aclapi.h>
 
 
 BOOL SetPrivilege(HANDLE hToken, LPCTSTR lpszPrivilege, BOOL bEnablePrivilege);
@@ -39,7 +41,9 @@ namespace MyDLPEP
 		static void SetPrinterSpoolMode(String^ printerName, bool spool);	
 		static void RemovePrinter(String^ printerName);
 		static bool SetPrinterSecurityDescriptor(String ^pName, String ^secDesc);
-		static String^ PrinterUtils::GetPrinterSecurityDescriptor(String ^pName);
+		static String^ GetPrinterSecurityDescriptor(String ^pName);
 		static bool CheckIfPrinterDriverExists(String ^driverName);
+		static void TakePrinterOwnership(String ^pName);
 	};
+
 }
