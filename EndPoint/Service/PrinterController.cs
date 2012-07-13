@@ -73,7 +73,9 @@ namespace MyDLP.EndPoint.Service
                 Thread.Sleep(1000);
 
                 if (CheckAndInstallXPSDriver())
-                {
+                {   
+                    //Correct incase of an improper shutdown
+                    RemoveSecurePrinters();
                     InstallSecurePrinters();
                     TempSpooler.Start();
                 }
