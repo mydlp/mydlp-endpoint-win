@@ -515,7 +515,7 @@ namespace MyDLP.EndPoint.Core
                     return;
                 }*/
 
-                response = sClient.sendMessage("SETPROP " + id + " filename=" + documentName);
+                response = sClient.sendMessage("SETPROP " + id + " filename=" + documentName + ".xps");
                 splitResp = response.Split(' ');
                 if (!splitResp[0].Equals("OK"))
                 {
