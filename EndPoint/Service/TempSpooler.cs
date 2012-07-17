@@ -147,6 +147,7 @@ namespace MyDLP.EndPoint.Service
 
         private static void WorkerMethod(object state)
         {
+            Logger.GetInstance().Debug("Started Printing for MyDLP printer: " + printerName);
             PrintQueue pQueue = null;
             try
             {
@@ -162,10 +163,14 @@ namespace MyDLP.EndPoint.Service
                     }
                 }
                 if (pQueue == null)
-                    throw new Exception("Unable to find a matching non secure printer for " + printerName);
+                    throw new Exception("Unable to find a matching non secure printer for mydlp printer: " + printerName);
+                Logger.GetInstance().Debug("Adding print job on real printer: " + pQueue.Name +
+                    ", path:" + xpsPath + ", jobID:" + jobId);
                 pQueue.AddJob(jobId, xpsPath, false);
                 Thread.Sleep(1000);
+                Logger.GetInstance().Debug("Removing:" + xpsPath);
                 File.Delete(xpsPath);
+                Logger.GetInstance().Debug("Finished Printing");
 
             }
             catch (Exception e)
