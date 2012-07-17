@@ -51,20 +51,20 @@ namespace MyDLP.EndPoint.Service
                 catch (System.IO.IOException e)
                 {
                     Logger.GetInstance().Error(e.Message);
-                }            
+                }
             }
 
             try
             {
                 System.IO.Directory.CreateDirectory(Configuration.PrintSpoolPath);
             }
-                
+
             catch (System.IO.IOException e)
             {
                 Logger.GetInstance().Error(e.Message);
             }
 
-            spoolWatcher.Path = Configuration.PrintSpoolPath;            
+            spoolWatcher.Path = Configuration.PrintSpoolPath;
             spoolWatcher.IncludeSubdirectories = true;
             spoolWatcher.Filter = "*.meta";
             spoolWatcher.NotifyFilter = NotifyFilters.LastAccess | NotifyFilters.LastWrite
@@ -89,7 +89,7 @@ namespace MyDLP.EndPoint.Service
             String metaPath;
             String printerDir;
             String docName;
-           
+
             metaPath = e.FullPath;
             jobId = Path.GetFileNameWithoutExtension(metaPath);
 
@@ -105,7 +105,7 @@ namespace MyDLP.EndPoint.Service
 
             try
             {
-                string[] metaText = System.IO.File.ReadAllLines(metaPath,System.Text.Encoding.Unicode);
+                string[] metaText = System.IO.File.ReadAllLines(metaPath, System.Text.Encoding.Unicode);
 
                 if (metaText.Length > 0)
                 {
@@ -144,69 +144,29 @@ namespace MyDLP.EndPoint.Service
             File.Delete(metaPath);
 
         }
-        
+
         private static void WorkerMethod(object state)
         {
             PrintQueue pQueue = null;
             try
-            {                
+            {
                 LocalPrintServer pServer = new LocalPrintServer();
 
-                //try
-               // {
-                    //get print queue by name
-
-                    PrintQueueCollection qCollection = pServer.GetPrintQueues();
-                    foreach (PrintQueue q in qCollection)
+                PrintQueueCollection qCollection = pServer.GetPrintQueues();
+                foreach (PrintQueue q in qCollection)
+                {
+                    //Find mathicng non secure printer
+                    if (PrinterController.GetSecurePrinterName(q.Name) == printerName)
                     {
-                        //Find mathicng non secure printer
-                        if (PrinterController.GetSecurePrinterName(q.Name) == printerName)
-                        {
-                            pQueue = q;                         
-                        }
+                        pQueue = q;
                     }
+                }
+                if (pQueue == null)
+                    throw new Exception("Unable to find a matching non secure printer for " + printerName);
+                pQueue.AddJob(jobId, xpsPath, false);
+                Thread.Sleep(1000);
+                File.Delete(xpsPath);
 
-                    //pQueue = pServer.GetPrintQueue(printerName.Replace("(MyDLP)", "").Trim());
-                    if (pQueue == null)
-                        throw new Exception("Unable to find a matching non secure printer for " + printerName);
-                    pQueue.AddJob(jobId, xpsPath, false);
-                    Thread.Sleep(1000);
-                    File.Delete(xpsPath);
-                //}
-                //catch
-                //{
-                    //printer does not exist or has "_" for offending chars
-                   /* foreach (PrintQueue queue in pServer.GetPrintQueues())
-                    {
-                        if (
-                            (queue.Name
-                            .Replace(":", "_")
-                            .Replace("\\", "_")
-                            .Replace("/", "_")
-                            .Replace("|", "_")
-                            .Replace("<", "_")
-                            .Replace(">", "_")
-                            .Replace("*", "_")
-                            ) == printerName.Replace("(MyDLP)","").Trim()) 
-                        {
-                            try
-                            {
-                                pQueue = pServer.GetPrintQueue(queue.Name);
-                                pQueue.AddJob(jobId, xpsPath, false);
-                                Thread.Sleep(1000);
-                                File.Delete(xpsPath);
-                            }
-                            catch (Exception ex)
-                            {
-                                Logger.GetInstance().Error(ex.Message + ex.StackTrace);
-                                if (ex.InnerException != null)
-                                {
-                                    Logger.GetInstance().Error(ex.InnerException.Message + ex.InnerException.StackTrace);
-                                }
-                            }
-                        }                          
-                    }*/
-               // }               
             }
             catch (Exception e)
             {
@@ -215,7 +175,7 @@ namespace MyDLP.EndPoint.Service
                 {
                     Logger.GetInstance().Error(e.InnerException.Message + e.InnerException.StackTrace);
                 }
-            }          
-        }        
+            }
+        }
     }
 }
