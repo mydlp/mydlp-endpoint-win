@@ -147,23 +147,36 @@ namespace MyDLP.EndPoint.Service
         
         private static void WorkerMethod(object state)
         {
-            PrintQueue pQueue;
+            PrintQueue pQueue = null;
             try
             {                
                 LocalPrintServer pServer = new LocalPrintServer();
 
-                try
-                {
+                //try
+               // {
                     //get print queue by name
-                    pQueue = pServer.GetPrintQueue(printerName.Replace("(MyDLP)", "").Trim());
+
+                    PrintQueueCollection qCollection = pServer.GetPrintQueues();
+                    foreach (PrintQueue q in qCollection)
+                    {
+                        //Find mathicng non secure printer
+                        if (PrinterController.GetSecurePrinterName(q.Name) == printerName)
+                        {
+                            pQueue = q;                         
+                        }
+                    }
+
+                    //pQueue = pServer.GetPrintQueue(printerName.Replace("(MyDLP)", "").Trim());
+                    if (pQueue == null)
+                        throw new Exception("Unable to find a matching non secure printer for " + printerName);
                     pQueue.AddJob(jobId, xpsPath, false);
                     Thread.Sleep(1000);
                     File.Delete(xpsPath);
-                }
-                catch
-                {
+                //}
+                //catch
+                //{
                     //printer does not exist or has "_" for offending chars
-                    foreach (PrintQueue queue in pServer.GetPrintQueues())
+                   /* foreach (PrintQueue queue in pServer.GetPrintQueues())
                     {
                         if (
                             (queue.Name
@@ -192,8 +205,8 @@ namespace MyDLP.EndPoint.Service
                                 }
                             }
                         }                          
-                    }
-                }               
+                    }*/
+               // }               
             }
             catch (Exception e)
             {
