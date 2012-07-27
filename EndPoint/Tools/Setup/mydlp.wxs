@@ -190,7 +190,7 @@
       <TextStyle Id="DlgTitleFont" FaceName="Tahoma" Size="8" Bold="yes" />
 
       <InstallUISequence>
-        <Show Dialog="InstallDlg" After="CostFinalize" />
+        <Show Dialog="InstallDlg" After="ValidateProductID" />
       </InstallUISequence>
     </UI>
 
