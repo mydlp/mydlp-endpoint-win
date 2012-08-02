@@ -130,7 +130,7 @@ DriverEntry (
 	
 	//Timeouts hardcoded for now
 	FilterConf.ReadTimeout.QuadPart = (LONGLONG) - 10 * 1000 * 1000;  //1 seconds
-	FilterConf.WriteTimeout.QuadPart = (LONGLONG) - 50 * 1000 * 1000;  //5 seconds
+	FilterConf.WriteTimeout.QuadPart = (LONGLONG) - 300 * 1000 * 1000;  //30 seconds
 
 
 #ifdef DBG_PRINT
