@@ -118,7 +118,11 @@
       </Component>
 
       <Component Id="engine_java_jar" Directory="ENGINEJAVADIR" Guid="*">
-        <File Id="engine_java_jar" Name="mydlp-backend-1.0-jar-with-dependencies.jar" Vital="yes" KeyPath="yes" DiskId="1" Source="..\..\Engine\mydlp\src\backend\target\mydlp-backend-1.0-jar-with-dependencies.jar" />
+        <File Id="engine_java_jar" Name="mydlp-backend.jar" Vital="yes" KeyPath="yes" DiskId="1" Source="..\..\Engine\mydlp\src\backend\target\mydlp-backend.jar" />
+      </Component>
+
+      <Component Id="tika_xps_java_jar" Directory="ENGINEJAVADIR" Guid="*">
+        <File Id="tika_xps_java_jar" Name="tika-xps.jar" Vital="yes" KeyPath="yes" DiskId="1" Source="..\..\Engine\mydlp\src\backend\target\tika-xps.jar" />
       </Component>
 
       <Component Id="AppPath" Directory="INSTALLLOCATION" Guid="*">
