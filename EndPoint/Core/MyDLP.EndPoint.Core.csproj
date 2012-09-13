@@ -45,6 +45,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ProcessControl.cs" />
+    <Compile Include="SessionServer.cs" />
     <Compile Include="SpoolFile.cs" />
     <Compile Include="USBController.cs" />
     <Compile Include="WatchdogConfiguration.cs" />

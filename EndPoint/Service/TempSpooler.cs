@@ -33,6 +33,7 @@ namespace MyDLP.EndPoint.Service
         static string jobId;
         static string xpsPath;
         static string printerName;
+        static bool started = false;
 
         static FileSystemWatcher spoolWatcher;
 
@@ -73,13 +74,26 @@ namespace MyDLP.EndPoint.Service
             spoolWatcher.Changed += new FileSystemEventHandler(OnCreate);
             spoolWatcher.EnableRaisingEvents = true;
 
+            //todo check this
             Logger.GetInstance().Debug("TempSpooler watch started on path:" + spoolWatcher.Path);
+            started = true;
             return true;
         }
 
         public static bool Stop()
         {
-            spoolWatcher.EnableRaisingEvents = false;
+            try
+            {
+                if (started)
+                {
+                    spoolWatcher.EnableRaisingEvents = false;
+                    started = false;
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.GetInstance().Error("TempSpooler watch cannot be stopped on path:" + spoolWatcher.Path + " " + ex.StackTrace + " " + ex.Message);
+            }
             return true;
         }
 

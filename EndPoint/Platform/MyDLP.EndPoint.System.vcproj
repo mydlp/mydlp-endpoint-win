@@ -135,7 +135,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="fltlib.lib Setupapi.lib"
+				AdditionalDependencies="fltlib.lib Setupapi.lib Secur32.lib"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="C:\WinDDK\7600.16385.1\lib\wxp\i386"
 				GenerateDebugInformation="true"
@@ -208,6 +208,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\SessionUtils.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\Stdafx.cpp"
 				>
 				<FileConfiguration
@@ -251,6 +255,10 @@
 			</File>
 			<File
 				RelativePath=".\resource.h"
+				>
+			</File>
+			<File
+				RelativePath=".\SessionUtils.h"
 				>
 			</File>
 			<File

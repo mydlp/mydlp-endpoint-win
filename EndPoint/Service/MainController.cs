@@ -56,7 +56,7 @@ namespace MyDLP.EndPoint.Service
         {
             //notify logger that we are in main service
             Logger.GetInstance().InitializeMainLogger(serviceLogger);
-            
+
             //Keep watchdog tied up during debugging
             if (System.Environment.UserInteractive == false)
             {
@@ -95,7 +95,9 @@ namespace MyDLP.EndPoint.Service
 
                 Configuration.GetUserConf();
                 Configuration.StartTime = DateTime.Now;
-                                
+
+                SessionManager.Start();
+
                 Engine.Start();
                 Configuration.SetPids();
 
@@ -121,6 +123,8 @@ namespace MyDLP.EndPoint.Service
                     Stop();
                 }
 
+                //SessionServer.GetInstance();
+
                 if (Configuration.PrinterMonitor)
                 {
                     Service.PrinterController.getInstance().Start();
@@ -131,7 +135,7 @@ namespace MyDLP.EndPoint.Service
                     Core.USBController.Activate();
                     Core.USBController.GetUSBStorages();
                 }
-            }        
+            }
 
             //initialize configuration timer
             Logger.GetInstance().Info("Configuration check enabled");
@@ -148,6 +152,8 @@ namespace MyDLP.EndPoint.Service
         {
             MyDLPEP.MiniFilterController.GetInstance().Stop();
             Engine.Stop();
+
+            //SessionServer.GetInstance().Stop();
 
             if (Configuration.UsbSerialAccessControl)
             {
@@ -187,10 +193,10 @@ namespace MyDLP.EndPoint.Service
             bool oldPrinterMonitor = Configuration.PrinterMonitor;
             bool oldArchiveInbound = Configuration.ArchiveInbound;
 
-            if (Configuration.GetLoggedOnUser() == "NO OWNER")
+            /*if (Configuration.GetLoggedOnUser() == "NO OWNER")
             {
                 Configuration.ResetLoggedOnUser();            
-            }
+            }*/
 
             if (SeapClient.HasNewConfiguration())
             {
