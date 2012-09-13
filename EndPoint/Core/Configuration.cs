@@ -35,6 +35,9 @@ namespace MyDLP.EndPoint.Core
     {
 
         public enum OsVersion { XP, Win7_32, Win7_64, Unknown };
+        //Resolving cicular dependency with Platform.dll
+        public delegate string GetLoggedOnUserDeleagate();
+        public static GetLoggedOnUserDeleagate GetLoggedOnUser;
 
         //app conf
         static String appPath;
@@ -423,52 +426,61 @@ namespace MyDLP.EndPoint.Core
             return true;
         }
 
-        public static void ResetLoggedOnUser()
+        /*public static void ResetLoggedOnUser()
         {
             Logger.GetInstance().Debug("ResetLoggedOnUser");
             userName = "";
-        }
+        }*/
 
-        public static string GetLoggedOnUser()
+        /*public static string GetLoggedOnUser()
         {
             if (userName != "")
                 return userName;
             else
             {
-                //TODO: use loggedonuser wmi class
-                String processName = "explorer.exe";
-                string query = "Select * from Win32_Process Where Name = \"" + processName + "\"";
-                ManagementObjectSearcher searcher = new ManagementObjectSearcher(query);
-                ManagementObjectCollection processList = searcher.Get();
-
-                foreach (ManagementObject obj in processList)
+                try
                 {
-                    string[] argList = new string[] { string.Empty, string.Empty };
-                    int returnVal = Convert.ToInt32(obj.InvokeMethod("GetOwner", argList));
-                    if (returnVal == 0)
+                    //TODO: use loggedonuser wmi class
+                    String processName = "explorer.exe";
+                    string query = "Select * from Win32_Process Where Name = \"" + processName + "\"";
+                    ManagementObjectSearcher searcher = new ManagementObjectSearcher(query);
+                    ManagementObjectCollection processList = searcher.Get();
+
+                    foreach (ManagementObject obj in processList)
                     {
-                        // return user@domain
-                        string owner = argList[0] + "@" + argList[1];
-                        userName = owner;
-                        return userName;
+                        string[] argList = new string[] { string.Empty, string.Empty };
+                        int returnVal = Convert.ToInt32(obj.InvokeMethod("GetOwner", argList));
+                        if (returnVal == 0)
+                        {
+                            // return user@domain
+                            string owner = argList[0] + "@" + argList[1];
+                            userName = owner;
+                            return userName;
+                        }
                     }
+                }
+                catch 
+                {
+                    Logger.GetInstance().Error("Failed to get current user"); 
                 }
 
                 userName = "NO OWNER";
 
-                /*ManagementObjectSearcher searcher =
-                   new ManagementObjectSearcher("root\\CIMV2",
-                       "SELECT * FROM Win32_ComputerSystem");
-                foreach (ManagementObject queryObj in searcher.Get())
-                {
-                    userName = queryObj["UserName"] + "@" + queryObj["Domain"];
-                    Logger.GetInstance().Debug("Wmi says logged on user:" + userName);
-                }*/
+                */
+        /*ManagementObjectSearcher searcher =
+         new ManagementObjectSearcher("root\\CIMV2",
+             "SELECT * FROM Win32_ComputerSystem");
+      foreach (ManagementObject queryObj in searcher.Get())
+      {
+          userName = queryObj["UserName"] + "@" + queryObj["Domain"];
+          Logger.GetInstance().Debug("Wmi says logged on user:" + userName);
+      }*/
+        /*
 
-                Logger.GetInstance().Info("Current logged on user:" + userName);
-            }
-            return userName;
-        }
+     Logger.GetInstance().Info("Current logged on user:" + userName);
+ }
+ return userName;
+}*/
 
         /*public static void LoggedOnUserChangeHandler(object sender, SessionSwitchEventArgs e) 
         {

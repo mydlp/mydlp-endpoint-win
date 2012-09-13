@@ -19,6 +19,7 @@
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Text;
 using System.Printing;
 using Microsoft.Win32;
@@ -46,6 +47,7 @@ namespace MyDLP.EndPoint.Service
         static PrinterController instance = null;
 
         ArrayList spooledNativePrinters;
+        Dictionary<string, string> printerPermissions;
 
         const String PrinterPrefix = "(MyDLP)";
         const String MyDLPDriver = "MyDLP XPS Printer Driver";
@@ -56,32 +58,32 @@ namespace MyDLP.EndPoint.Service
         const String BuiltinAdminsPrinterSecurityDescriptor =
             "O:SYG:SYD:(A;;LCSWSDRCWDWO;;;SY)(A;OIIO;RPWPSDRCWDWO;;;SY)(A;;LCSWSDRCWDWO;;;BA)(A;OIIO;RPWPSDRCWDWO;;;BA)";
 
-        const String sysEntry1 = "(A;OIIO;RPWPSDRCWDWO;;;SY)";
+        /*const String sysEntry1 = "(A;OIIO;RPWPSDRCWDWO;;;SY)";
         const String sysEntry2 = "(A;;LCSWSDRCWDWO;;;SY)";
         const String admEntry1 = "(A;OIIO;RPWPSDRCWDWO;;;BA)";
-        const String admEntry2 = "(A;;LCSWSDRCWDWO;;;BA)";
+        const String admEntry2 = "(A;;LCSWSDRCWDWO;;;BA)";*/
+        const String authUserPrint = "(A;OI;SWRC;;;AU)";
 
         public void Start()
         {
-            SvcController.StopService("Spooler", 5000);
-            //this is ugly but necessary
-            Thread.Sleep(1000);
+            printerPermissions = new Dictionary<string, string>();
+            spooledNativePrinters = new ArrayList();
 
             if (CheckAndInstallPortMonitor())
             {
-                SvcController.StartService("Spooler", 5000);
-                Thread.Sleep(1000);
-
                 if (CheckAndInstallXPSDriver())
                 {
                     //Correct incase of an improper shutdown
                     RemoveSecurePrinters();
                     InstallSecurePrinters();
                     TempSpooler.Start();
+                    Thread changeListeningThread = new Thread(new ThreadStart(MyDLPEP.PrinterUtils.StartBlockingLocalChangeListener));
+                    changeListeningThread.Start();
                 }
             }
             else
             {
+                MyDLPEP.PrinterUtils.listenChanges = false;
                 SvcController.StartService("Spooler", 5000);
                 TempSpooler.Stop();
             }
@@ -89,7 +91,46 @@ namespace MyDLP.EndPoint.Service
 
         public void Stop()
         {
+            //listen changes should be changed before removing secure printers
+            MyDLPEP.PrinterUtils.listenChanges = false;
             RemoveSecurePrinters();
+        }
+
+        public void LocalPrinterRemoveHandler()
+        {
+            Logger.GetInstance().Debug("LocalPrinterRemoveHandler started");
+            LocalPrintServer pServer = new LocalPrintServer();
+            PrintQueueCollection queueCollection = pServer.GetPrintQueues();
+
+            foreach (PrintQueue mQueue in queueCollection)
+            {
+                if (mQueue.QueueDriver.Name == MyDLPDriver ||
+                    mQueue.QueuePort.Name == "MyDLP")
+                {
+                    bool exists = false;
+                    foreach (PrintQueue queue in queueCollection)
+                    {
+                        if (queue.QueueDriver.Name != MyDLPDriver ||
+                            queue.QueuePort.Name != "MyDLP")
+                        {
+                            if (mQueue.Name == GetSecurePrinterName(queue.Name))
+                            {
+                                exists = true;
+                            }
+                        }
+                    }
+                    if (!exists)
+                    {
+                        MyDLPEP.PrinterUtils.RemovePrinter(mQueue.Name);
+                    }
+                }
+            }
+        }
+
+        public void LocalPrinterAddHandler()
+        {
+            Logger.GetInstance().Debug("LocalPrinterAddHandler started");
+            InstallSecurePrinters();
         }
 
         public static PrinterController getInstance()
@@ -123,6 +164,7 @@ namespace MyDLP.EndPoint.Service
                 Logger.GetInstance().Debug("InstallSecurePrinters started");
 
                 LocalPrintServer pServer = new LocalPrintServer();
+                PrintQueue mydlpQueue;
                 PrintQueueCollection queueCollection = pServer.GetPrintQueues();
                 String securityDesc;
 
@@ -131,56 +173,92 @@ namespace MyDLP.EndPoint.Service
                     Logger.GetInstance().Debug("Process printer queue: " + queue.Name
                         + " driver: " + queue.QueueDriver.Name + " port: " + queue.QueuePort.Name);
 
+
                     if (queue.QueueDriver.Name != MyDLPDriver ||
                         queue.QueuePort.Name != "MyDLP")
                     {
-                        Logger.GetInstance().Debug(
-                            "Not a secure printer installing installing secure version:" + queue.Name + "(MyDLP)");
-                        try
+
+                        //check if secure printer already exists
+                        bool exists = false;
+                        PrintQueueCollection collection = pServer.GetPrintQueues();
+                        foreach (PrintQueue q in queueCollection)
                         {
-                            String mydlpQueueName = GetSecurePrinterName(queue.Name);
-                            pServer.InstallPrintQueue(mydlpQueueName,
-                                MyDLPDriver,
-                                new String[] { "MyDLP" },
-                                "winprint",
-                                PrintQueueAttributes.Direct);
-                            MyDLPEP.PrinterUtils.TakePrinterOwnership(queue.Name);
-                            securityDesc = MyDLPEP.PrinterUtils.GetPrinterSecurityDescriptor(queue.Name);
-                            if (securityDesc != "")
+                            if (q.Name == GetSecurePrinterName(queue.Name))
                             {
-                                if (!securityDesc.Contains(admEntry1))
-                                    securityDesc += admEntry1;
-                                if (!securityDesc.Contains(admEntry2))
-                                    securityDesc += admEntry2;
-                                if (!securityDesc.Contains(sysEntry1))
-                                    securityDesc += sysEntry1;
-                                if (!securityDesc.Contains(sysEntry2))
-                                    securityDesc += sysEntry2;
-
-                                MyDLPEP.PrinterUtils.SetPrinterSecurityDescriptor(GetSecurePrinterName(queue.Name), securityDesc);
-                            }
-
-                            if (Environment.UserInteractive)
-                            {
-                                MyDLPEP.PrinterUtils.SetPrinterSecurityDescriptor(queue.Name, BuiltinAdminsPrinterSecurityDescriptor);
-                            }
-                            else
-                            {
-                                MyDLPEP.PrinterUtils.SetPrinterSecurityDescriptor(queue.Name, SystemPrinterSecurityDescriptor);
-                            }
-
-                            //This is netiher required nor working in windows 7
-                            if (!queue.IsDirect && Configuration.GetOs() == Configuration.OsVersion.XP)
-                            {
-                                Logger.GetInstance().Debug("Found spooling native printer " + queue.Name);
-                                MyDLPEP.PrinterUtils.SetPrinterSpoolMode(queue.Name, false);
-                                spooledNativePrinters.Add(queue.Name);
+                                if (q.QueueDriver.Name == MyDLPDriver && q.QueuePort.Name == "MyDLP")
+                                {
+                                    exists = true;
+                                }
+                                else
+                                {
+                                    //fix any incorrect ports
+                                    Logger.GetInstance().Debug(q.QueueDriver.Name + q.QueuePort.Name);
+                                    MyDLPEP.PrinterUtils.RemovePrinter(q.Name);
+                                }
                             }
                         }
-                        catch (Exception e)
+
+                        if (!exists)
                         {
-                            Logger.GetInstance().Debug("Unable to process non-secure printer " + queue.Name
-                                + " error:" + e.Message + " " + e.StackTrace);
+                            Logger.GetInstance().Debug(
+                                "Not a secure printer installing installing secure version:" + queue.Name + "(MyDLP)");
+                            try
+                            {
+                                String mydlpQueueName = GetSecurePrinterName(queue.Name);
+                                mydlpQueue = pServer.InstallPrintQueue(mydlpQueueName,
+                                    MyDLPDriver,
+                                    new String[] { "MyDLP" },
+                                    "winprint",
+                                    PrintQueueAttributes.Direct);
+                                MyDLPEP.PrinterUtils.TakePrinterOwnership(queue.Name);
+                                securityDesc = MyDLPEP.PrinterUtils.GetPrinterSecurityDescriptor(queue.Name);
+
+                                //save original permissions
+                                printerPermissions.Add(mydlpQueue.Name, securityDesc);
+
+                                /*add necessary permissions to mydlp printer
+                                if (securityDesc != "")
+                                {
+                                    if (Environment.UserInteractive)
+                                    {
+                                        if (!securityDesc.Contains(admEntry1))
+                                            securityDesc += admEntry1;
+                                        if (!securityDesc.Contains(admEntry2))
+                                            securityDesc += admEntry2;
+                                    }
+
+                                    if (!securityDesc.Contains(sysEntry1))
+                                        securityDesc += sysEntry1;
+                                    if (!securityDesc.Contains(sysEntry2))
+                                        securityDesc += sysEntry2;
+
+                                    //MyDLPEP.PrinterUtils.SetPrinterSecurityDescriptor(mydlpQueueName, securityDesc);                                   
+                                }*/
+
+                                if (Environment.UserInteractive)
+                                {
+                                    MyDLPEP.PrinterUtils.SetPrinterSecurityDescriptor(queue.Name, BuiltinAdminsPrinterSecurityDescriptor);
+                                    MyDLPEP.PrinterUtils.SetPrinterSecurityDescriptor(mydlpQueue.Name, BuiltinAdminsPrinterSecurityDescriptor + authUserPrint);
+                                }
+                                else
+                                {
+                                    MyDLPEP.PrinterUtils.SetPrinterSecurityDescriptor(queue.Name, SystemPrinterSecurityDescriptor);
+                                    MyDLPEP.PrinterUtils.SetPrinterSecurityDescriptor(mydlpQueue.Name, SystemPrinterSecurityDescriptor + authUserPrint);
+                                }
+
+                                //This is netiher required nor working in windows 7
+                                if (!queue.IsDirect && Configuration.GetOs() == Configuration.OsVersion.XP)
+                                {
+                                    Logger.GetInstance().Debug("Found spooling native printer " + queue.Name);
+                                    MyDLPEP.PrinterUtils.SetPrinterSpoolMode(queue.Name, false);
+                                    spooledNativePrinters.Add(queue.Name);
+                                }
+                            }
+                            catch (Exception e)
+                            {
+                                Logger.GetInstance().Debug("Unable to process non-secure printer " + queue.Name
+                                    + " error:" + e.Message + " " + e.StackTrace);
+                            }
                         }
                     }
                 }
@@ -215,21 +293,30 @@ namespace MyDLP.EndPoint.Service
 
                         if (queue.Name.StartsWith(PrinterPrefix))
                         {
-                            String securityDesc = MyDLPEP.PrinterUtils.GetPrinterSecurityDescriptor(queue.Name);
-                            if (securityDesc != "")
+                            //String securityDesc = MyDLPEP.PrinterUtils.GetPrinterSecurityDescriptor(queue.Name);
+                            //if (securityDesc != "")
+                            //{        
+
+                            PrintQueueCollection qCollection = pServer.GetPrintQueues();
+                            foreach (PrintQueue q in qCollection)
                             {
-                                PrintQueueCollection qCollection = pServer.GetPrintQueues();
-                                foreach (PrintQueue q in qCollection)
+                                //Find mathing non secure printer
+                                if (GetSecurePrinterName(q.Name) == queue.Name)
                                 {
-                                    //Find mathicng non secure printer
-                                    if (GetSecurePrinterName(q.Name) == queue.Name)
+                                    if (printerPermissions.ContainsKey(queue.Name))
                                     {
                                         MyDLPEP.PrinterUtils.SetPrinterSecurityDescriptor(
+                                           q.Name,
+                                           printerPermissions[queue.Name]);
+                                    }
+                                    else
+                                    {
+                                        //fallback make printer usable
+                                        MyDLPEP.PrinterUtils.SetPrinterSecurityDescriptor(
                                             q.Name,
-                                            securityDesc);
+                                            BuiltinAdminsPrinterSecurityDescriptor + authUserPrint);
                                     }
                                 }
-
                             }
                         }
                         MyDLPEP.PrinterUtils.RemovePrinter(queue.Name);
@@ -260,86 +347,101 @@ namespace MyDLP.EndPoint.Service
 
         private bool CheckAndInstallPortMonitor()
         {
-            try
+            if (MyDLPEP.PrinterUtils.CheckIfPrinterPortExists("MyDLP"))
             {
-                String system32Path = Environment.GetEnvironmentVariable("windir") + @"\\System32";
+                return true;
+            }
+            else
+            {
+                try
+                {
+                    Logger.GetInstance().Debug("No MyDLP Port found, installing");
+                    SvcController.StopService("Spooler", 10000);
+                    //this is ugly but necessary
+                    Thread.Sleep(5000);
 
-                if (Configuration.GetOs() == Configuration.OsVersion.Win7_64)
-                {
-                    system32Path = Environment.GetEnvironmentVariable("windir") + @"\\Sysnative";
-                }
+                    String system32Path = Environment.GetEnvironmentVariable("windir") + @"\\System32";
 
-                String sourceFile;
-                String sourceUIFile;
-                String destinationFile;
-                String destinationUIFile;
+                    if (Configuration.GetOs() == Configuration.OsVersion.Win7_64)
+                    {
+                        system32Path = Environment.GetEnvironmentVariable("windir") + @"\\Sysnative";
+                    }
 
-                Configuration.OsVersion version = Configuration.GetOs();
+                    String sourceFile;
+                    String sourceUIFile;
+                    String destinationFile;
+                    String destinationUIFile;
 
-                if (version == Configuration.OsVersion.Win7_32)
-                {
-                    sourceFile = System.IO.Path.Combine(Configuration.PrintingDirPath, "mydlpportmon_win7_x86.dll");
-                    sourceUIFile = System.IO.Path.Combine(Configuration.PrintingDirPath, "mydlpportui_win7_x86.dll");
+                    Configuration.OsVersion version = Configuration.GetOs();
+
+                    if (version == Configuration.OsVersion.Win7_32)
+                    {
+                        sourceFile = System.IO.Path.Combine(Configuration.PrintingDirPath, "mydlpportmon_win7_x86.dll");
+                        sourceUIFile = System.IO.Path.Combine(Configuration.PrintingDirPath, "mydlpportui_win7_x86.dll");
+                    }
+                    else if (version == Configuration.OsVersion.Win7_64)
+                    {
+                        sourceFile = System.IO.Path.Combine(Configuration.PrintingDirPath, "mydlpportmon_win7_x64.dll");
+                        sourceUIFile = System.IO.Path.Combine(Configuration.PrintingDirPath, "mydlpportui_win7_x64.dll");
+                    }
+                    else if (version == Configuration.OsVersion.XP)
+                    {
+                        sourceFile = System.IO.Path.Combine(Configuration.PrintingDirPath, "mydlpportmon_xp_x86.dll");
+                        sourceUIFile = System.IO.Path.Combine(Configuration.PrintingDirPath, "mydlpportui_xp_x86.dll");
+                    }
+                    else
+                    {
+                        Logger.GetInstance().Error("Unknown incompatible windows version");
+                        return false;
+                    }
+
+                    destinationFile = System.IO.Path.Combine(system32Path, "mydlpportmon.dll");
+                    destinationUIFile = System.IO.Path.Combine(system32Path, "mydlpportui.dll");
+
+                    //Copy files
+                    System.IO.File.Copy(sourceFile, destinationFile, true);
+                    System.IO.File.Copy(sourceUIFile, destinationUIFile, true);
+
+                    //Set registry for spooler service
+                    RegistryKey monitorsKey = Registry.LocalMachine.OpenSubKey(@"System\CurrentControlSet\Control\Print\Monitors", true);
+                    RegistryKey mydlpMonitorKey;
+                    RegistryKey mydlpPortsKey;
+
+                    if (HasSubKey(monitorsKey, "MyDLP Port Monitor"))
+                    {
+                        mydlpMonitorKey = monitorsKey.OpenSubKey("MyDLP Port Monitor", true);
+                    }
+                    else
+                    {
+                        mydlpMonitorKey = monitorsKey.CreateSubKey("MyDLP Port Monitor", RegistryKeyPermissionCheck.ReadWriteSubTree);
+                    }
+
+                    mydlpMonitorKey.SetValue("Driver", "mydlpportmon.dll", RegistryValueKind.String);
+
+
+                    if (HasSubKey(mydlpMonitorKey, "Ports"))
+                    {
+                        mydlpPortsKey = mydlpMonitorKey.OpenSubKey("Ports", true);
+                    }
+                    else
+                    {
+                        mydlpPortsKey = mydlpMonitorKey.CreateSubKey("Ports", RegistryKeyPermissionCheck.ReadWriteSubTree);
+                    }
+
+                    mydlpPortsKey.SetValue("MyDLP", "", RegistryValueKind.String);
+
+                    SvcController.StartService("Spooler", 5000);
+                    Thread.Sleep(1000);
+                    Logger.GetInstance().Debug("MyDLP Port installation complete");
+                    return true;
+
                 }
-                else if (version == Configuration.OsVersion.Win7_64)
+                catch (Exception e)
                 {
-                    sourceFile = System.IO.Path.Combine(Configuration.PrintingDirPath, "mydlpportmon_win7_x64.dll");
-                    sourceUIFile = System.IO.Path.Combine(Configuration.PrintingDirPath, "mydlpportui_win7_x64.dll");
-                }
-                else if (version == Configuration.OsVersion.XP)
-                {
-                    sourceFile = System.IO.Path.Combine(Configuration.PrintingDirPath, "mydlpportmon_xp_x86.dll");
-                    sourceUIFile = System.IO.Path.Combine(Configuration.PrintingDirPath, "mydlpportui_xp_x86.dll");
-                }
-                else
-                {
-                    Logger.GetInstance().Error("Unknown incompatible windows version");
+                    Logger.GetInstance().Error("Error in install port monitor:" + e.Message);
                     return false;
                 }
-
-                destinationFile = System.IO.Path.Combine(system32Path, "mydlpportmon.dll");
-                destinationUIFile = System.IO.Path.Combine(system32Path, "mydlpportui.dll");
-
-                //Copy files
-                System.IO.File.Copy(sourceFile, destinationFile, true);
-                System.IO.File.Copy(sourceUIFile, destinationUIFile, true);
-
-                //Set registry for spooler service
-                RegistryKey monitorsKey = Registry.LocalMachine.OpenSubKey(@"System\CurrentControlSet\Control\Print\Monitors", true);
-                RegistryKey mydlpMonitorKey;
-                RegistryKey mydlpPortsKey;
-
-                if (HasSubKey(monitorsKey, "MyDLP Port Monitor"))
-                {
-                    mydlpMonitorKey = monitorsKey.OpenSubKey("MyDLP Port Monitor", true);
-                }
-                else
-                {
-                    mydlpMonitorKey = monitorsKey.CreateSubKey("MyDLP Port Monitor", RegistryKeyPermissionCheck.ReadWriteSubTree);
-                }
-
-                mydlpMonitorKey.SetValue("Driver", "mydlpportmon.dll", RegistryValueKind.String);
-
-
-                if (HasSubKey(mydlpMonitorKey, "Ports"))
-                {
-                    mydlpPortsKey = mydlpMonitorKey.OpenSubKey("Ports", true);
-                }
-                else
-                {
-                    mydlpPortsKey = mydlpMonitorKey.CreateSubKey("Ports", RegistryKeyPermissionCheck.ReadWriteSubTree);
-                }
-
-                mydlpPortsKey.SetValue("MyDLP", "", RegistryValueKind.String);
-
             }
-            catch (Exception e)
-            {
-                Logger.GetInstance().Error("Error in install port monitor:" + e.Message);
-                return false;
-            }
-
-            return true;
         }
 
         private bool CheckAndInstallXPSDriver()
@@ -400,6 +502,8 @@ namespace MyDLP.EndPoint.Service
         private PrinterController()
         {
             spooledNativePrinters = new ArrayList();
+            MyDLPEP.PrinterUtils.LocalPrinterRemoveHandler = new MyDLPEP.PrinterUtils.LocalPrinterRemoveHandlerDeleagate(LocalPrinterRemoveHandler);
+            MyDLPEP.PrinterUtils.LocalPrinterAddHandler = new MyDLPEP.PrinterUtils.LocalPrinterAddHandlerDeleagate(LocalPrinterAddHandler);
         }
     }
 }

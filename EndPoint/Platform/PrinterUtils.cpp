@@ -1,20 +1,20 @@
-//    Copyright (C) 2011 Huseyin Ozgur Batur <ozgur@medra.com.tr>
+// Copyright (C) 2011 Huseyin Ozgur Batur <ozgur@medra.com.tr>
 //
 //--------------------------------------------------------------------------
-//    This file is part of MyDLP.
+// This file is part of MyDLP.
 //
-//    MyDLP is free software: you can redistribute it and/or modify
-//    it under the terms of the GNU General Public License as published by
-//    the Free Software Foundation, either version 3 of the License, or
-//    (at your option) any later version.
+// MyDLP is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-//    MyDLP is distributed in the hope that it will be useful,
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//    GNU General Public License for more details.
+// MyDLP is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
 //
-//    You should have received a copy of the GNU General Public License
-//    along with MyDLP.  If not, see <http://www.gnu.org/licenses/>.
+// You should have received a copy of the GNU General Public License
+// along with MyDLP. If not, see <http://www.gnu.org/licenses/>.
 //--------------------------------------------------------------------------
 
 #include "stdafx.h"
@@ -54,18 +54,18 @@ namespace MyDLPEP
 			}
 
 			int error = GetNamedSecurityInfo(
-						(LPWSTR)cPtr.ToPointer(),
-						SE_PRINTER,
-						OWNER_SECURITY_INFORMATION|GROUP_SECURITY_INFORMATION|
-						DACL_SECURITY_INFORMATION|SACL_SECURITY_INFORMATION,
-						NULL,
-						NULL,
-						NULL,
-						NULL,
-						&psd); 
+				(LPWSTR)cPtr.ToPointer(),
+				SE_PRINTER,
+				OWNER_SECURITY_INFORMATION|GROUP_SECURITY_INFORMATION|
+				DACL_SECURITY_INFORMATION|SACL_SECURITY_INFORMATION,
+				NULL,
+				NULL,
+				NULL,
+				NULL,
+				&psd);
 			if (error != ERROR_SUCCESS)
 			{
-				throw gcnew Win32Exception(error); 
+				throw gcnew Win32Exception(error);
 			}
 
 			if (!SetPrivilege(hToken, SE_BACKUP_NAME, FALSE))
@@ -83,7 +83,7 @@ namespace MyDLPEP
 				throw gcnew Exception("ConvertSecurityDescriptorToString for OWNER_SECURITY_INFORMATION failed");
 			}
 
-			securityDescriptor +=  gcnew String(lpszSecDesc);
+			securityDescriptor += gcnew String(lpszSecDesc);
 			LocalFree(lpszSecDesc);
 			lpszSecDesc = NULL;
 
@@ -97,7 +97,7 @@ namespace MyDLPEP
 				throw gcnew Exception("ConvertSecurityDescriptorToString for GROUP_SECURITY_INFORMATION failed");
 			}
 
-			securityDescriptor +=  gcnew String(lpszSecDesc);
+			securityDescriptor += gcnew String(lpszSecDesc);
 			LocalFree(lpszSecDesc);
 			lpszSecDesc = NULL;
 
@@ -111,7 +111,7 @@ namespace MyDLPEP
 				throw gcnew Exception("ConvertSecurityDescriptorToString for DACL_SECURITY_INFORMATION failed");
 			}
 
-			securityDescriptor +=  gcnew String(lpszSecDesc);
+			securityDescriptor += gcnew String(lpszSecDesc);
 			LocalFree(lpszSecDesc);
 			lpszSecDesc = NULL;
 
@@ -125,7 +125,7 @@ namespace MyDLPEP
 				throw gcnew Exception("ConvertSecurityDescriptorToString for SACL_SECURITY_INFORMATION failed");
 			}
 
-			securityDescriptor +=  gcnew String(lpszSecDesc);
+			securityDescriptor += gcnew String(lpszSecDesc);
 		}
 		catch (Exception ^ex)
 		{
@@ -157,7 +157,7 @@ namespace MyDLPEP
 	bool PrinterUtils::SetPrinterSecurityDescriptor(String ^pName, String ^secDesc)
 	{
 		HANDLE pHandle = NULL;
-		DWORD pcbNeeded	= 0;
+		DWORD pcbNeeded = 0;
 		PRINTER_INFO_3* pPrinterInfo = NULL;
 		PSECURITY_DESCRIPTOR psd = NULL;
 		LPWSTR lpszSecDesc = NULL;
@@ -176,7 +176,7 @@ namespace MyDLPEP
 
 		bool errorFlag = false;
 
-		Logger::GetInstance()->Debug("SetPrinterSecurityDescriptor  pName:" + pName + " secDesc: " + secDesc);
+		Logger::GetInstance()->Debug("SetPrinterSecurityDescriptor pName:" + pName + " secDesc: " + secDesc);
 
 		try
 		{
@@ -225,22 +225,22 @@ namespace MyDLPEP
 
 			BOOL bDaclPresent;
 			BOOL bDaclDefaulted;
-			GetSecurityDescriptorDacl(psd,  &bDaclPresent, &pDacl, &bDaclDefaulted);
+			GetSecurityDescriptorDacl(psd, &bDaclPresent, &pDacl, &bDaclDefaulted);
 
 
 			int error = SetNamedSecurityInfo(
-						(LPWSTR)cPtr.ToPointer(),
-						SE_PRINTER,
-						OWNER_SECURITY_INFORMATION|GROUP_SECURITY_INFORMATION|
-						DACL_SECURITY_INFORMATION|SACL_SECURITY_INFORMATION,
-						psidOwner,
-						psidGroup,
-						pDacl,
-						pSacl);
+				(LPWSTR)cPtr.ToPointer(),
+				SE_PRINTER,
+				OWNER_SECURITY_INFORMATION|GROUP_SECURITY_INFORMATION|
+				DACL_SECURITY_INFORMATION|SACL_SECURITY_INFORMATION,
+				psidOwner,
+				psidGroup,
+				pDacl,
+				pSacl);
 
 			if (error != ERROR_SUCCESS)
 			{
-				throw gcnew Win32Exception(error); 
+				throw gcnew Win32Exception(error);
 			}
 		}
 		catch (Exception ^ex)
@@ -294,11 +294,49 @@ namespace MyDLPEP
 		ClosePrinter(pHandle);
 	}
 
+	HANDLE PrinterUtils::GetLocalPrintServerHandle()
+	{
+		PRINTER_DEFAULTS pdAiO;
+		pdAiO.pDevMode = NULL;
+		pdAiO.pDatatype = NULL;
+		pdAiO.DesiredAccess = SERVER_ALL_ACCESS;
+		DWORD returnLength = 0;
+
+		HANDLE hPrinter = NULL;
+		HANDLE hToken = NULL;
+
+		SetLastError(0);
+
+		if(OpenPrinter(NULL, &hPrinter, &pdAiO))
+		{
+			Logger::GetInstance()->Debug("Get handle success: Local print server hadle no: <" + gcnew INT32((int)hPrinter) + ">");
+		}
+		else
+		{
+			int error = (int)GetLastError();
+
+			if (error == ERROR_ACCESS_DENIED)
+			{
+				Logger::GetInstance()->Error("Get handle failed ACCESS_DENIED");
+				return NULL;
+			}
+			else
+			{
+				Logger::GetInstance()->Error("Get handle failed: Local print server " + (gcnew Win32Exception(error))->Message + "||");
+			}
+		}
+
+		if(!hToken)
+			CloseHandle(hToken);
+
+		return hPrinter;
+	}
+
 	HANDLE PrinterUtils::GetPrinterHandle(System::String ^pName)
 	{
-		PRINTER_DEFAULTS	pdAiO;
-		pdAiO.pDevMode		= NULL;
-		pdAiO.pDatatype		= NULL;
+		PRINTER_DEFAULTS pdAiO;
+		pdAiO.pDevMode = NULL;
+		pdAiO.pDatatype = NULL;
 		pdAiO.DesiredAccess = PRINTER_ALL_ACCESS;
 		LPVOID sidAndAttrBuffer = NULL;
 		DWORD returnLength = 0;
@@ -309,6 +347,7 @@ namespace MyDLPEP
 		IntPtr cPtr = Marshal::StringToHGlobalUni(pName);
 
 		SetLastError(0);
+
 
 		if(OpenPrinter((LPWSTR)cPtr.ToPointer(), &hPrinter, &pdAiO))
 		{
@@ -325,7 +364,7 @@ namespace MyDLPEP
 			}
 			else
 			{
-			Logger::GetInstance()->Error("Get handle failed: " + pName + " " + (gcnew Win32Exception(error))->Message + "||");
+				Logger::GetInstance()->Error("Get handle failed: " + pName + " " + (gcnew Win32Exception(error))->Message + "||");
 			}
 		}
 
@@ -355,7 +394,7 @@ namespace MyDLPEP
 				throw gcnew Exception("Unable to open proces token");
 			}
 
-			if (!SetPrivilege(hToken, SE_TAKE_OWNERSHIP_NAME, TRUE)) 
+			if (!SetPrivilege(hToken, SE_TAKE_OWNERSHIP_NAME, TRUE))
 			{
 				throw gcnew Exception("SetPriviledge SE_TAKE_OWNERSHIP_NAME failed");
 			}
@@ -381,21 +420,22 @@ namespace MyDLPEP
 			{
 				SID_IDENTIFIER_AUTHORITY SIDAuthNT = SECURITY_NT_AUTHORITY;
 				AllocateAndInitializeSid(&SIDAuthNT, 2,
-				 SECURITY_BUILTIN_DOMAIN_RID,
-				 DOMAIN_ALIAS_RID_ADMINS,
-				 0, 0, 0, 0, 0, 0,
-				 &pSID);
+					SECURITY_BUILTIN_DOMAIN_RID,
+					DOMAIN_ALIAS_RID_ADMINS,
+					0, 0, 0, 0, 0, 0,
+					&pSID);
 			}
 			else
 			{
 				SID_IDENTIFIER_AUTHORITY SIDAuthNT = SECURITY_NT_AUTHORITY;
 				AllocateAndInitializeSid(&SIDAuthNT, 1,
-				 SECURITY_LOCAL_SYSTEM_RID,
-				 0, 0, 0, 0, 0, 0, 0,
-				 &pSID);
+					SECURITY_LOCAL_SYSTEM_RID,
+					0, 0, 0, 0, 0, 0, 0,
+					&pSID);
 			}
 
-			int error = SetNamedSecurityInfo(
+
+			int error = error = SetNamedSecurityInfo(
 				(LPWSTR)cPtr.ToPointer(),
 				SE_PRINTER,
 				OWNER_SECURITY_INFORMATION,
@@ -406,7 +446,7 @@ namespace MyDLPEP
 
 			if (error != ERROR_SUCCESS)
 			{
-				throw gcnew Win32Exception(error); 
+				throw gcnew Win32Exception(error);
 			}
 
 			if (!SetPrivilege(hToken, SE_SECURITY_NAME, FALSE))
@@ -432,7 +472,7 @@ namespace MyDLPEP
 		}
 		catch(Exception ^ex)
 		{
-			Logger::GetInstance()->Error("GetPrinterHandle error: " +
+			Logger::GetInstance()->Error("Take ownership error: " +
 				ex->Message + " " +
 				ex->StackTrace);
 		}
@@ -515,7 +555,7 @@ namespace MyDLPEP
 				throw gcnew Exception("EnumPrinterDrivers failed");
 			}
 
-			for (i = 0; i < pcbReturned; i++)
+			for (i = 0; i < (int) pcbReturned; i++)
 			{
 				String^ dName = gcnew String(pDriverInfo[i].pName);
 				if (dName == driverName)
@@ -536,12 +576,119 @@ namespace MyDLPEP
 
 		return foundFlag;
 	}
+
+	bool PrinterUtils::CheckIfPrinterPortExists(String ^portName)
+	{
+		bool foundFlag = false;
+		int i = 0;
+
+		DWORD pcbNeeded = 0;
+		DWORD pcbReturned = 0;
+		PORT_INFO_1* pPortInfo = NULL;
+
+		try
+		{
+			EnumPorts(NULL, 1, (LPBYTE)pPortInfo, 0, &pcbNeeded, &pcbReturned);
+			pPortInfo = (PORT_INFO_1*) malloc(pcbNeeded);
+
+			if ( !EnumPorts(NULL, 1, (LPBYTE)pPortInfo, pcbNeeded, &pcbNeeded, &pcbReturned))
+			{
+				throw gcnew Exception("EnumPorts failed");
+			}
+
+			for (i = 0; i < (int) pcbReturned; i++)
+			{
+				String^ pName = gcnew String(pPortInfo[i].pName);
+				if (pName == portName)
+				{
+					foundFlag = true;
+					break;
+				}
+			}
+
+			if(pPortInfo)
+				free(pPortInfo);
+		}
+		catch(Exception ^ex)
+		{
+			if(pPortInfo)
+				free(pPortInfo);
+		}
+
+		return foundFlag;
+	}
+
+	void PrinterUtils::StartBlockingLocalChangeListener()
+	{
+		HANDLE hServer;
+		HANDLE hChange;
+		bool fcnreturn = false;
+		DWORD dwStatus;
+		listenChanges = true;
+
+		Logger::GetInstance()->Debug("StartBlockingLocalChangeListener");
+
+		hServer = GetLocalPrintServerHandle();
+
+		if (hServer == NULL)
+		{
+			return;
+		}
+
+		hChange = FindFirstPrinterChangeNotification(hServer, PRINTER_CHANGE_ADD_PRINTER | PRINTER_CHANGE_DELETE_PRINTER, NULL, NULL );
+
+		if (hChange != INVALID_HANDLE_VALUE) {
+			while (listenChanges)
+			{
+				DWORD dwChange;
+				WaitForSingleObject(hChange, 120000);
+
+				//Suppress C4800 in an ugly way
+				fcnreturn = FindNextPrinterChangeNotification(
+					hChange,
+					&dwChange,
+					NULL,
+					NULL
+					);
+
+				if (fcnreturn)
+				{
+					if (listenChanges)
+					{
+						if (dwChange & PRINTER_CHANGE_DELETE_PRINTER)
+						{
+							Logger::GetInstance()->Debug("Local Printer Delete");
+							LocalPrinterRemoveHandler();
+						}
+						else if (dwChange & PRINTER_CHANGE_ADD_PRINTER || dwChange & PRINTER_CHANGE_ALL)
+						{
+							Logger::GetInstance()->Debug("Local Printer Add");
+							LocalPrinterAddHandler();
+						}
+
+
+					}
+					else
+					{
+						break;
+					}
+				}
+			}
+
+			FindClosePrinterChangeNotification(hChange);
+		}
+		else
+		{
+			dwStatus = GetLastError();
+			return;
+		}
+	}
 }
 
 BOOL SetPrivilege(
-	HANDLE hToken,
-	LPCTSTR lpszPrivilege,
-	BOOL bEnablePrivilege)
+				  HANDLE hToken,
+				  LPCTSTR lpszPrivilege,
+				  BOOL bEnablePrivilege)
 {
 	TOKEN_PRIVILEGES tp;
 	LUID luid;
@@ -568,22 +715,22 @@ BOOL SetPrivilege(
 	}
 
 	if ( !AdjustTokenPrivileges(
-		   hToken,
-		   FALSE,
-		   &tp,
-		   sizeof(TOKEN_PRIVILEGES),
-		   (PTOKEN_PRIVILEGES) NULL,
-		   (PDWORD) NULL) )
+		hToken,
+		FALSE,
+		&tp,
+		sizeof(TOKEN_PRIVILEGES),
+		(PTOKEN_PRIVILEGES) NULL,
+		(PDWORD) NULL) )
 	{
-		  int error = (int) GetLastError();
-		  Logger::GetInstance()->Error("AdjustTokenPrivileges LastError: " + (gcnew Win32Exception(error))->Message);
-		  return FALSE;
+		int error = (int) GetLastError();
+		Logger::GetInstance()->Error("AdjustTokenPrivileges LastError: " + (gcnew Win32Exception(error))->Message);
+		return FALSE;
 	}
 
 	if (GetLastError() == ERROR_NOT_ALL_ASSIGNED)
 	{
-		  Logger::GetInstance()->Error("The token does not have the specified privilege.");
-		  return FALSE;
+		Logger::GetInstance()->Error("The token does not have the specified privilege.");
+		return FALSE;
 	}
 	return TRUE;
 }

@@ -34,16 +34,27 @@ using namespace MyDLP::EndPoint::Core;
 
 namespace MyDLPEP
 {
-	public ref class PrinterUtils{
+	public ref class PrinterUtils
+	{
 
 	public:
+		static bool listenChanges;
 		static HANDLE GetPrinterHandle(String ^printerName);	
+		static HANDLE GetLocalPrintServerHandle();
 		static void SetPrinterSpoolMode(String^ printerName, bool spool);	
 		static void RemovePrinter(String^ printerName);
 		static bool SetPrinterSecurityDescriptor(String ^pName, String ^secDesc);
 		static String^ GetPrinterSecurityDescriptor(String ^pName);
 		static bool CheckIfPrinterDriverExists(String ^driverName);
+		static bool CheckIfPrinterPortExists(String ^portName);
 		static void TakePrinterOwnership(String ^pName);
+		static void StartBlockingLocalChangeListener();
+
+		delegate void LocalPrinterRemoveHandlerDeleagate(void);
+        static LocalPrinterRemoveHandlerDeleagate^ LocalPrinterRemoveHandler; 
+
+		delegate void LocalPrinterAddHandlerDeleagate(void);
+        static LocalPrinterAddHandlerDeleagate^ LocalPrinterAddHandler; 
 	};
 
 }
