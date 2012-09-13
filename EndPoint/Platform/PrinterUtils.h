@@ -49,6 +49,8 @@ namespace MyDLPEP
 		static bool CheckIfPrinterPortExists(String ^portName);
 		static void TakePrinterOwnership(String ^pName);
 		static void StartBlockingLocalChangeListener();
+		static String^ GetDefaultSystemPrinter();
+		static bool SetDefaultSystemPrinter(String^);
 
 		delegate void LocalPrinterRemoveHandlerDeleagate(void);
         static LocalPrinterRemoveHandlerDeleagate^ LocalPrinterRemoveHandler; 

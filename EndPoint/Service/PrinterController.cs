@@ -262,6 +262,21 @@ namespace MyDLP.EndPoint.Service
                         }
                     }
                 }
+
+                //Change default printer to MyDLP counterpart
+                String defaultPrinterName = MyDLPEP.PrinterUtils.GetDefaultSystemPrinter();
+                Logger.GetInstance().Debug("Default printer :" +  defaultPrinterName);
+
+                String newDefaultPrinterName = GetSecurePrinterName(defaultPrinterName);
+                if (MyDLPEP.PrinterUtils.SetDefaultSystemPrinter(newDefaultPrinterName))
+                {
+                    Logger.GetInstance().Debug("Set default printer as:" + defaultPrinterName + "successfully");
+                }
+                else 
+                {
+                    Logger.GetInstance().Error("Failed to set default printer as:" + defaultPrinterName);
+                }
+
             }
             catch (Exception e)
             {
@@ -275,9 +290,13 @@ namespace MyDLP.EndPoint.Service
 
         private void RemoveSecurePrinters()
         {
+            bool defaultPrinterReverted = false;
             try
             {
                 Logger.GetInstance().Debug("RemoveSecurePrinters started");
+
+                String defaultPrinterName = MyDLPEP.PrinterUtils.GetDefaultSystemPrinter();
+                Logger.GetInstance().Debug("Default printer :" + defaultPrinterName);
 
                 LocalPrintServer pServer = new LocalPrintServer();
                 PrintQueueCollection queueCollection = pServer.GetPrintQueues();
@@ -316,6 +335,21 @@ namespace MyDLP.EndPoint.Service
                                             q.Name,
                                             BuiltinAdminsPrinterSecurityDescriptor + authUserPrint);
                                     }
+
+                                    if (queue.Name == defaultPrinterName)
+                                    {
+                                        //Revert default printer                                                                                                         
+                                        if (MyDLPEP.PrinterUtils.SetDefaultSystemPrinter(q.Name))
+                                        {
+                                            defaultPrinterReverted = true;
+                                            Logger.GetInstance().Debug("Set default printer as:" + q.Name + "successfully");
+                                        }
+                                        else
+                                        {
+                                            Logger.GetInstance().Error("Failed to set default printer as:" + q.Name);
+                                        }
+                                    }
+
                                 }
                             }
                         }
@@ -334,6 +368,13 @@ namespace MyDLP.EndPoint.Service
                         }
                     }
                 }
+
+                if(!defaultPrinterReverted)
+                {
+                    //Error occured set a valid default printer from available printers
+                    MyDLPEP.PrinterUtils.SetDefaultSystemPrinter("");
+                }
+            
             }
             catch (Exception e)
             {

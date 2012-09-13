@@ -28,6 +28,7 @@ using namespace System::ComponentModel;
 
 namespace MyDLPEP
 {
+
 	String^ PrinterUtils::GetPrinterSecurityDescriptor(String ^pName)
 	{
 		HANDLE pHandle = NULL;
@@ -154,6 +155,7 @@ namespace MyDLPEP
 		return securityDescriptor;
 	}
 
+
 	bool PrinterUtils::SetPrinterSecurityDescriptor(String ^pName, String ^secDesc)
 	{
 		HANDLE pHandle = NULL;
@@ -267,6 +269,7 @@ namespace MyDLPEP
 		return errorFlag;
 	}
 
+
 	void PrinterUtils::RemovePrinter(String^ pName)
 	{
 		SetLastError(0);
@@ -293,6 +296,7 @@ namespace MyDLPEP
 		}
 		ClosePrinter(pHandle);
 	}
+
 
 	HANDLE PrinterUtils::GetLocalPrintServerHandle()
 	{
@@ -331,6 +335,7 @@ namespace MyDLPEP
 
 		return hPrinter;
 	}
+
 
 	HANDLE PrinterUtils::GetPrinterHandle(System::String ^pName)
 	{
@@ -378,6 +383,7 @@ namespace MyDLPEP
 
 		return hPrinter;
 	}
+
 
 	void PrinterUtils::TakePrinterOwnership(System::String ^pName)
 	{
@@ -484,6 +490,7 @@ namespace MyDLPEP
 		return;
 	}
 
+
 	void PrinterUtils::SetPrinterSpoolMode(String^ pName, bool spool)
 	{
 		Logger::GetInstance()->Debug("Set pinter spooling mode " + pName + " " + spool);
@@ -536,6 +543,7 @@ namespace MyDLPEP
 		}
 	}
 
+
 	bool PrinterUtils::CheckIfPrinterDriverExists(String ^driverName)
 	{
 		bool foundFlag = false;
@@ -577,6 +585,7 @@ namespace MyDLPEP
 		return foundFlag;
 	}
 
+
 	bool PrinterUtils::CheckIfPrinterPortExists(String ^portName)
 	{
 		bool foundFlag = false;
@@ -617,6 +626,7 @@ namespace MyDLPEP
 
 		return foundFlag;
 	}
+
 
 	void PrinterUtils::StartBlockingLocalChangeListener()
 	{
@@ -683,7 +693,43 @@ namespace MyDLPEP
 			return;
 		}
 	}
+	
+
+	String^ PrinterUtils::GetDefaultSystemPrinter()
+	{
+		DWORD size = 0;
+		String^ pName;
+
+		GetDefaultPrinter(NULL, &size);
+		if(size)
+		{
+			TCHAR* buffer = new TCHAR[size];
+			
+			if(GetDefaultPrinter(buffer, &size))
+			{
+				pName = gcnew String(buffer);
+				delete buffer;						
+				return pName;
+			}				
+		}		
+
+		return "";
+	}
+
+	
+	bool PrinterUtils::SetDefaultSystemPrinter(String^ pName)
+	{
+		bool success;
+		IntPtr cPtr = Marshal::StringToHGlobalUni(pName);
+
+		success = SetDefaultPrinter((LPWSTR)cPtr.ToPointer());
+
+		Marshal::FreeHGlobal(cPtr);
+		
+		return success;		
+	}
 }
+
 
 BOOL SetPrivilege(
 				  HANDLE hToken,
