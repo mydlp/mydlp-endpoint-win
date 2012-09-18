@@ -19,7 +19,7 @@ namespace MyDLP.EndPoint.Tools.DeviceConsole
             InitializeComponent();
         }
 
-        private void button1_Click(object sender, EventArgs e)
+        private void getAttachedDevicesClick(object sender, EventArgs e)
         {
             try
             {
@@ -31,51 +31,68 @@ namespace MyDLP.EndPoint.Tools.DeviceConsole
                     String pid = "";
                     String vid = "";
                     String size = currentObject["Size"].ToString();
+                    String idHash = "";
+                    String uniqID = "";
 
                     if (id.StartsWith("USBSTOR"))
                     {
                         int start = id.LastIndexOf("\\") + 1;
                         int lentgh = id.LastIndexOf("&") - start;
-                        String uniqID = id.Substring(start, lentgh).ToUpper();
+                        uniqID = id.Substring(start, lentgh).ToUpper();
                         //MessageBox.Show("USB storage uniq id: " + uniqID);
-
-                        RegistryKey enumUSBKey = Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Services\USBSTOR\Enum");
-                        int count = (int)enumUSBKey.GetValue("Count");
-
-                        for (int i = 0; i < count; i++)
+                        /*
+                        try
                         {
-                            String usbDeviceString = enumUSBKey.GetValue(i.ToString()).ToString().ToUpperInvariant();
-                            if (usbDeviceString.Contains(uniqID))
-                            {
-                                int startVid = usbDeviceString.IndexOf("VID_") + 4;
-                                int endVid = usbDeviceString.IndexOf("&", startVid);
-                                vid = usbDeviceString.Substring(startVid, endVid - startVid);
-                                int endPid = usbDeviceString.IndexOf("\\", endVid + 1);
-                                pid = usbDeviceString.Substring(endVid + 5, endPid - endVid - 5);
+                            RegistryKey enumUSBKey = Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Services\USBSTOR\Enum");
+                            int count = (int)enumUSBKey.GetValue("Count");
 
-                            }
-                        }
-
-                        RegistryKey enumUSBDevKey = Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Enum\USB");
-                        String devNode = "";
-                        foreach (String devNodeKeyString in enumUSBDevKey.GetSubKeyNames())
-                        {
-                            foreach (String devNodeInstanceString in enumUSBDevKey.OpenSubKey(devNodeKeyString).GetSubKeyNames())
+                            for (int i = 0; i < count; i++)
                             {
-                                if (devNodeInstanceString == uniqID)
+                                String usbDeviceString = enumUSBKey.GetValue(i.ToString()).ToString().ToUpperInvariant();
+                                if (usbDeviceString.Contains(uniqID))
                                 {
-                                    devNode = devNodeKeyString;
-                                    break;
+                                    int startVid = usbDeviceString.IndexOf("VID_") + 4;
+                                    int endVid = usbDeviceString.IndexOf("&", startVid);
+                                    vid = usbDeviceString.Substring(startVid, endVid - startVid);
+                                    int endPid = usbDeviceString.IndexOf("\\", endVid + 1);
+                                    pid = usbDeviceString.Substring(endVid + 5, endPid - endVid - 5);
                                 }
                             }
                         }
+                        catch (Exception ex)
+                        {
+                            MessageBox.Show("Failed to get VID and PID:" + ex.Message + " " + ex.StackTrace);
+                        }
+                        */
+                        /*
+                        try
+                        {
+                            RegistryKey enumUSBDevKey = Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Enum\USB");
+                            String devNode = "";
+                            foreach (String devNodeKeyString in enumUSBDevKey.GetSubKeyNames())
+                            {
+                                foreach (String devNodeInstanceString in enumUSBDevKey.OpenSubKey(devNodeKeyString).GetSubKeyNames())
+                                {
+                                    if (devNodeInstanceString == uniqID)
+                                    {
+                                        devNode = devNodeKeyString;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            MessageBox.Show("Failed to get devNodeKeyString:" + ex.Message + " " + ex.StackTrace);
+                        }
+                        */
 
                         try
                         {
                             MD5 md5 = MD5.Create();
                             byte[] md5buf = md5.ComputeHash(ASCIIEncoding.ASCII.GetBytes(uniqID));
 
-                            String idHash = "";
+
 
                             foreach (byte b in md5buf)
                             {
@@ -86,11 +103,11 @@ namespace MyDLP.EndPoint.Tools.DeviceConsole
                             DataRow row = USBTable.NewRow();
                             row.SetField(Hash, idHash);
                             row.SetField(Id, uniqID);
-                            row.SetField(Pid, pid);
-                            row.SetField(Vid, vid);
+                            //row.SetField(Pid, pid);
+                            //row.SetField(Vid, vid);
                             row.SetField(Model, currentObject["Model"]);
                             row.SetField(Size, size);
-                            row.SetField(DevNode, devNode);
+                            //row.SetField(DevNode, devNode);
                             if (!USBTable.Rows.Contains(idHash))
                             {
                                 USBTable.Rows.Add(row);
@@ -99,57 +116,64 @@ namespace MyDLP.EndPoint.Tools.DeviceConsole
                         }
                         catch (Exception ex)
                         {
-
+                            MessageBox.Show("GetAttachedDevicesClick error:" + ex.Message + " " + ex.StackTrace);
                         }
                     }
                 }
             }
-            catch
-            { 
-            
+            catch (Exception ex)
+            {
+                MessageBox.Show("GetAttachedDevicesClick error:" + ex.Message + " " + ex.StackTrace);
             }
             Cursor.Current = Cursors.Arrow;
         }
 
-        private void button1_Click_1(object sender, EventArgs e)
+        private void removeAttachedDevicesClick(object sender, EventArgs e)
         {
-            ManagementObjectSearcher theSearcher = new ManagementObjectSearcher("SELECT * FROM Win32_DiskDrive WHERE InterfaceType='USB'");
-            foreach (ManagementObject currentObject in theSearcher.Get())
+            try
             {
-                String id = currentObject["PNPDeviceID"].ToString();
-                //MessageBox.Show("USB storage id: " + id + " " + currentObject["Size"] + " " + currentObject["Model"]);
-
-
-                if (id.StartsWith("USBSTOR"))
+                ManagementObjectSearcher theSearcher = new ManagementObjectSearcher("SELECT * FROM Win32_DiskDrive WHERE InterfaceType='USB'");
+                foreach (ManagementObject currentObject in theSearcher.Get())
                 {
-                    int start = id.LastIndexOf("\\") + 1;
-                    int lentgh = id.LastIndexOf("&") - start;
-                    String uniqID = id.Substring(start, lentgh);
-                    //MessageBox.Show("USB storage uniq id: " + uniqID);
-                    try
+                    String id = currentObject["PNPDeviceID"].ToString();
+                    //MessageBox.Show("USB storage id: " + id + " " + currentObject["Size"] + " " + currentObject["Model"]);
+
+
+                    if (id.StartsWith("USBSTOR"))
                     {
-                        MD5 md5 = MD5.Create();
-                        byte[] md5buf = md5.ComputeHash(ASCIIEncoding.ASCII.GetBytes(uniqID));
-
-                        String idHash = "";
-
-                        foreach (byte b in md5buf)
+                        int start = id.LastIndexOf("\\") + 1;
+                        int lentgh = id.LastIndexOf("&") - start;
+                        String uniqID = id.Substring(start, lentgh);
+                        //MessageBox.Show("USB storage uniq id: " + uniqID);
+                        try
                         {
-                            idHash += b.ToString("X2");
-                            //MessageBox.Show(idHash);
+                            MD5 md5 = MD5.Create();
+                            byte[] md5buf = md5.ComputeHash(ASCIIEncoding.ASCII.GetBytes(uniqID));
 
+                            String idHash = "";
+
+                            foreach (byte b in md5buf)
+                            {
+                                idHash += b.ToString("X2");
+                                //MessageBox.Show(idHash);
+
+                            }
+                            if (USBTable.Rows.Contains(idHash))
+                            {
+                                USBTable.Rows.Remove(USBTable.Rows.Find(idHash));
+                                USBTable.AcceptChanges();
+                            }
                         }
-                        if (USBTable.Rows.Contains(idHash))
+                        catch (Exception ex)
                         {
-                            USBTable.Rows.Remove(USBTable.Rows.Find(idHash));
-                            USBTable.AcceptChanges();
+                            MessageBox.Show("RemoveAttachedDevicesClick error:" + ex.Message + " " + ex.StackTrace);
                         }
-                    }
-                    catch (Exception ex)
-                    {
-
                     }
                 }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("RemoveAttachedDevicesClick error:" + ex.Message + " " + ex.StackTrace);
             }
         }
 
@@ -166,7 +190,7 @@ namespace MyDLP.EndPoint.Tools.DeviceConsole
             }
             catch (Exception ex)
             {
-
+                MessageBox.Show("SaveToolStripMenuItem_Click error:" + ex.Message + " " + ex.StackTrace);
             }
         }
 
@@ -185,7 +209,7 @@ namespace MyDLP.EndPoint.Tools.DeviceConsole
             }
             catch (Exception ex)
             {
-
+                MessageBox.Show("OpenToolStripMenuItem_Click error:" + ex.Message + " " + ex.StackTrace);
             }
         }
 
@@ -210,12 +234,13 @@ namespace MyDLP.EndPoint.Tools.DeviceConsole
             }
             catch (Exception ex)
             {
-
+                MessageBox.Show("ExportToolStripMenuItem_Click error:" + ex.Message + " " + ex.StackTrace);
             }
         }
 
-        private void button2_Click(object sender, EventArgs e)
+        private void sendToServerClick(object sender, EventArgs e)
         {
+            /*
             String managementServer = "";
             RegistryKey mydlpKey;
             try
@@ -268,10 +293,12 @@ namespace MyDLP.EndPoint.Tools.DeviceConsole
 
                 MessageBox.Show(ex.Message);
             }
+            */
         }
 
         private void DeviceConsoleForm_Load(object sender, EventArgs e)
         {
+            /*
             String managementServer;
             RegistryKey mydlpKey;
             try
@@ -299,6 +326,7 @@ namespace MyDLP.EndPoint.Tools.DeviceConsole
                 return;
             }
             managementServerTextBox.Text = managementServer;
+            */
         }
 
         private void dataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)
