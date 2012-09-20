@@ -45,6 +45,7 @@ namespace MyDLP.EndPoint.Service
         static extern void SetLastError(uint dwErrCode);
 
         static PrinterController instance = null;
+        static bool started = false;
 
         ArrayList spooledNativePrinters;
         Dictionary<string, string> printerPermissions;
@@ -66,6 +67,11 @@ namespace MyDLP.EndPoint.Service
 
         public void Start()
         {
+            if (started)
+            {
+                return;
+            }
+
             printerPermissions = new Dictionary<string, string>();
             spooledNativePrinters = new ArrayList();
 
@@ -79,6 +85,7 @@ namespace MyDLP.EndPoint.Service
                     TempSpooler.Start();
                     Thread changeListeningThread = new Thread(new ThreadStart(MyDLPEP.PrinterUtils.StartBlockingLocalChangeListener));
                     changeListeningThread.Start();
+                    started = true;
                 }
             }
             else
@@ -91,9 +98,15 @@ namespace MyDLP.EndPoint.Service
 
         public void Stop()
         {
+            if (!started)
+            {
+                return;
+            }
+
             //listen changes should be changed before removing secure printers
             MyDLPEP.PrinterUtils.listenChanges = false;
             RemoveSecurePrinters();
+            started = false;
         }
 
         public void LocalPrinterRemoveHandler()
