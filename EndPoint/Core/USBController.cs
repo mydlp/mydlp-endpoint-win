@@ -48,7 +48,7 @@ namespace MyDLP.EndPoint.Core
 
                         if (currentObject["PNPDeviceID"] != null)
                         {
-                            currentObject["PNPDeviceID"].ToString();
+                            id = currentObject["PNPDeviceID"].ToString();
                             Logger.GetInstance().Debug("USB storage id: " + id);
                         }
                         else
