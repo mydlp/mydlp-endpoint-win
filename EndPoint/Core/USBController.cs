@@ -44,8 +44,18 @@ namespace MyDLP.EndPoint.Core
                     ManagementObjectSearcher theSearcher = new ManagementObjectSearcher("SELECT * FROM Win32_DiskDrive WHERE InterfaceType='USB'");
                     foreach (ManagementObject currentObject in theSearcher.Get())
                     {
-                        String id = currentObject["PNPDeviceID"].ToString();
-                        Logger.GetInstance().Debug("USB storage id: " + id);
+                        String id = "";
+
+                        if (currentObject["PNPDeviceID"] != null)
+                        {
+                            currentObject["PNPDeviceID"].ToString();
+                            Logger.GetInstance().Debug("USB storage id: " + id);
+                        }
+                        else
+                        {
+                            Logger.GetInstance().Info("USB device does not provide PNPDeviceID");
+                            continue;
+                        }
 
                         if (id.StartsWith("USBSTOR"))
                         {
@@ -70,8 +80,12 @@ namespace MyDLP.EndPoint.Core
                                     Logger.GetInstance().Debug("USBSerialCache contains:" + idHash);
                                     if ((bool)USBSerialCache[idHash] == true)
                                     {
-                                        Logger.GetInstance().Debug("UsbLockFlag set true");
+                                        Logger.GetInstance().Debug("UsbLockFlag set true for:" + idHash);
                                         globalUsbLockFlag = true;
+                                    }
+                                    else
+                                    {
+                                        Logger.GetInstance().Debug("UsbLockFlag not set for:" + idHash);
                                     }
                                 }
                                 else
@@ -80,11 +94,13 @@ namespace MyDLP.EndPoint.Core
                                     {
                                         Logger.GetInstance().Debug("UsbLockFlag set true");
                                         globalUsbLockFlag = true;
+                                        Logger.GetInstance().Debug("UsbLockFlag set true for:" + idHash);
                                         USBSerialCache.Add(idHash, true);
                                     }
                                     else
                                     {
                                         USBSerialCache.Add(idHash, false);
+                                        Logger.GetInstance().Debug("UsbLockFlag not set for:" + idHash);
                                     }
                                 }
                             }
