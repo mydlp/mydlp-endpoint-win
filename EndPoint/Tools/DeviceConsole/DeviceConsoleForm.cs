@@ -27,12 +27,28 @@ namespace MyDLP.EndPoint.Tools.DeviceConsole
                 ManagementObjectSearcher theSearcher = new ManagementObjectSearcher("SELECT * FROM Win32_DiskDrive WHERE InterfaceType='USB'");
                 foreach (ManagementObject currentObject in theSearcher.Get())
                 {
-                    String id = currentObject["PNPDeviceID"].ToString();
+                    String id = "";
                     String pid = "";
                     String vid = "";
-                    String size = currentObject["Size"].ToString();
+                    String size = "N/A";
                     String idHash = "";
                     String uniqID = "";
+
+
+                    if (currentObject["PNPDeviceID"] != null)
+                    {
+                        id = currentObject["PNPDeviceID"].ToString();
+                    }
+                    else
+                    {
+                        MessageBox.Show("A USB device does not provide PNPDeviceID, skipping");
+                        continue;
+                    }
+
+                    if (currentObject["Size"] != null)
+                    {
+                        size = currentObject["Size"].ToString();
+                    }
 
                     if (id.StartsWith("USBSTOR"))
                     {
@@ -130,14 +146,22 @@ namespace MyDLP.EndPoint.Tools.DeviceConsole
 
         private void removeAttachedDevicesClick(object sender, EventArgs e)
         {
+            String id;
+
             try
             {
                 ManagementObjectSearcher theSearcher = new ManagementObjectSearcher("SELECT * FROM Win32_DiskDrive WHERE InterfaceType='USB'");
                 foreach (ManagementObject currentObject in theSearcher.Get())
                 {
-                    String id = currentObject["PNPDeviceID"].ToString();
-                    //MessageBox.Show("USB storage id: " + id + " " + currentObject["Size"] + " " + currentObject["Model"]);
-
+                    if (currentObject["PNPDeviceID"] != null)
+                    {
+                        id = currentObject["PNPDeviceID"].ToString();
+                    }
+                    else
+                    {
+                        MessageBox.Show("A USB device does not provide PNPDeviceID, skipping");
+                        continue;
+                    }
 
                     if (id.StartsWith("USBSTOR"))
                     {
