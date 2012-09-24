@@ -57,6 +57,7 @@ namespace MyDLP.EndPoint.Core
         //static Timer userNameTimer;
         static String printingDirPath;
         static String printSpoolPath;
+        static String version = "";
 
         //user conf
         static Logger.LogLevel logLevel = Logger.LogLevel.DEBUG;
@@ -502,10 +503,13 @@ namespace MyDLP.EndPoint.Core
             }
             catch (Exception e)
             {
-                Logger.GetInstance().Error("Unable to get registry value: " + key.ToString() + " " + valueName + " creating with default value:" + defaultValue);
                 try
                 {
-                    if (create) key.SetValue(valueName, defaultValue, kind);
+                    if (create)
+                    {
+                        Logger.GetInstance().Error("Unable to get registry value: " + key.ToString() + " " + valueName + " creating with default value:" + defaultValue);
+                        key.SetValue(valueName, defaultValue, kind);
+                    }
                 }
                 catch
                 {
@@ -516,11 +520,14 @@ namespace MyDLP.EndPoint.Core
 
             if (retVal == null)
             {
-                Logger.GetInstance().Error("Null registry value: " + key.ToString() + " " + valueName + " creating with default value:" + defaultValue);
                 retVal = defaultValue;
                 try
                 {
-                    if (create) key.SetValue(valueName, defaultValue, kind);
+                    if (create)
+                    {
+                        Logger.GetInstance().Error("Null registry value: " + key.ToString() + " " + valueName + " creating with default value:" + defaultValue);
+                        key.SetValue(valueName, defaultValue, kind);
+                    }
                 }
                 catch
                 {
@@ -563,7 +570,40 @@ namespace MyDLP.EndPoint.Core
 
             return OsVersion.Unknown;
         }
+        public static String GetMyDLPVersion()
+        {
+            if (version != "")
+                return version;
 
+            try
+            {
+                RegistryKey uninstallKey = Registry.LocalMachine.OpenSubKey("Software").OpenSubKey(@"Microsoft\Windows\CurrentVersion\Uninstall");
+
+                foreach (String keyName in uninstallKey.GetSubKeyNames())
+                {
+                    try
+                    {
+                        RegistryKey subKey = uninstallKey.OpenSubKey(keyName);
+
+                        if (((String)getRegistryConfSafe(subKey, "DisplayName", "", RegistryValueKind.String, false)) == "MyDLP")
+                        {
+
+                            version = (String)getRegistryConfSafe(subKey, "DisplayVersion", "", RegistryValueKind.String, false);
+                        }
+                    }
+                    catch
+                    {
+                        continue;
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                version = "N\\A";
+            }
+
+            return version;
+        }
 
         private delegate bool IsWow64ProcessDelegate([In] IntPtr handle, [Out] out bool isWow64Process);
 

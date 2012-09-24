@@ -441,7 +441,7 @@ namespace MyDLP.EndPoint.Core
                 String response;
                 String[] splitResp;
 
-                response = sClient.sendMessage("CONFUPDATE " + qpEncode(Configuration.GetLoggedOnUser()));
+                response = sClient.sendMessage("CONFUPDATE " + Configuration.GetMyDLPVersion() + " " + qpEncode(Configuration.GetLoggedOnUser()));
                 splitResp = response.Split(' ');
                 if (!splitResp[0].Equals("OK"))
                 {
