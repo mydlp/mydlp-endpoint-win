@@ -441,7 +441,9 @@ namespace MyDLP.EndPoint.Core
                 String response;
                 String[] splitResp;
 
-                response = sClient.sendMessage("CONFUPDATE " + Configuration.GetMyDLPVersion() + " " + qpEncode(Configuration.GetLoggedOnUser()));
+                response = sClient.sendMessage("CONFUPDATE " 
+                    + "version=" + qpEncode(Configuration.GetMyDLPVersion()) + " " 
+                    + "user=" + qpEncode(Configuration.GetLoggedOnUser()));
                 splitResp = response.Split(' ');
                 if (!splitResp[0].Equals("OK"))
                 {
@@ -778,9 +780,11 @@ namespace MyDLP.EndPoint.Core
                 byte curr = utfBytes[i];
                 if (curr == 61)
                     ret += "=3D";
-                else if (curr == 9 || //tab
-                            curr == 32 || //space
-                            (33 <= curr && curr <= 126))
+                else if (curr == 9)
+                    ret += "=09";
+                else if (curr == 32)
+                    ret += "=20";
+                else if (33 <= curr && curr <= 126)
                     ret += ((char)curr).ToString();
                 else
                     ret += ("=" + BitConverter.ToString(new byte[1] { curr }));
