@@ -21,6 +21,8 @@
 #include "Ntsecapi.h"
 #include "Sddl.h"
 #include "stdio.h"
+#include "Wtsapi32.h"
+
 #define STATUS_SUCCESS 0
 
 using namespace System;
@@ -69,5 +71,7 @@ namespace MyDLPEP
 		static InteractiveSession^ GetSessionData(PLUID);
 		//static int GetActiveSessionId();
 		static InteractiveSession^ GetActiveSession();
+		static bool ImpersonateActiveUser();
+		static bool StopImpersonation();
 	};
 }

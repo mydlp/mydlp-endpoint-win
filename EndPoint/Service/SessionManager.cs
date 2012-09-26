@@ -10,17 +10,28 @@ namespace MyDLP.EndPoint.Service
 {
     public class SessionManager
     {
+
+        private static SessionManager sessionManager;
+        private ArrayList sessions;
+
         public static void Start()
         {
             sessionManager = new SessionManager();
             //sessionManager.StartLogonListener();
             //sessionManager.EnumerateSessions();
+
+
+            //This is to resolve circular dependency
             Configuration.GetLoggedOnUser = new Configuration.GetLoggedOnUserDeleagate(GetCurrentUser);
         }
 
         public static String GetCurrentUser()
         {
             MyDLPEP.InteractiveSession session = MyDLPEP.SessionUtils.GetActiveSession();
+
+            //Update secure printers for shared printers
+            if (Configuration.PrinterMonitor)
+                PrinterController.getInstance().ListenPrinterConnections(session.sid);
 
             if (session != null)
             {
@@ -38,12 +49,15 @@ namespace MyDLP.EndPoint.Service
             sessionManager = null;
         }
 
-        private static SessionManager sessionManager;
-        //private ArrayList sessions;
+        /*public void EnumerateSessions()
+        {
+            sessions = MyDLPEP.SessionUtils.EnumerateLogonSessions();
+        }
+         */
 
         private SessionManager()
         {
-            //sessions = new ArrayList();
+            sessions = new ArrayList();
 
         }
 
@@ -55,7 +69,7 @@ namespace MyDLP.EndPoint.Service
                 ManagementEventWatcher w = null;
                 WqlEventQuery q = new WqlEventQuery();
                 q.EventClassName = "__InstanceCreationEvent";
-                q.WithinInterval = new TimeSpan(0, 0, 15); // query interval
+                q.WithinInterval = new TimeSpan(0, 0, 30); // query interval
                 q.Condition = @"TargetInstance ISA 'Win32_LogonSession'";
                 w = new ManagementEventWatcher(q);
                 w.EventArrived += new EventArrivedEventHandler(LogonEventArrived);
@@ -68,33 +82,12 @@ namespace MyDLP.EndPoint.Service
             }
         }*/
 
-        /*
-        private static void LogonEventArrived(object sender, EventArrivedEventArgs e)
+
+        /*private static void LogonEventArrived(object sender, EventArrivedEventArgs e)
         {
-            Logger.GetInstance().Debug("LOGOON/LOGOF OCCURED");
-            //sessionManager.EnumerateSessions();
+            Logger.GetInstance().Debug("LOGON OCCURED");
+            sessionManager.EnumerateSessions();
         }*/
 
-        /*
-        private static String FindActiveUser() 
-        {
-            ArrayList a = MyDLPEP.SessionUtils.EnumerateLogonSessions();
-            foreach ( MyDLPEP.InteractiveSession s in a )
-            {
-                if (s.sessionId == sessionId) 
-                {
-                    return s.name + "@" + s.domain;                
-                }
-                //Console.WriteLine("SessionId:" + s.sessionId + " Name:" + s.name + " Domain:" + s.domain + " upn:" + s.upn + " sid:" + s.sid + " logontime:" + s.logonTime);
-            }
-            return "NOOWNER";
-
-            MyDLPEP.InteractiveSession session = MyDLPEP.SessionUtils.GetActiveSession();
-            if (session != null) 
-            {
-                return session.name + "@" + session.domain;
-            } 
-            return "NO OWNER";
-        }*/
     }
 }
