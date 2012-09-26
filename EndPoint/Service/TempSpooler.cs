@@ -65,19 +65,28 @@ namespace MyDLP.EndPoint.Service
                 Logger.GetInstance().Error(e.Message);
             }
 
-            spoolWatcher.Path = Configuration.PrintSpoolPath;
-            spoolWatcher.IncludeSubdirectories = true;
-            spoolWatcher.Filter = "*.meta";
-            spoolWatcher.NotifyFilter = NotifyFilters.LastAccess | NotifyFilters.LastWrite
-           | NotifyFilters.FileName | NotifyFilters.DirectoryName;
-            //spoolWatcher.Created += new FileSystemEventHandler(OnCreate);
-            spoolWatcher.Changed += new FileSystemEventHandler(OnCreate);
-            spoolWatcher.EnableRaisingEvents = true;
+            try
+            {
+                spoolWatcher.Path = Configuration.PrintSpoolPath;
+                spoolWatcher.IncludeSubdirectories = true;
+                spoolWatcher.Filter = "*.meta";
+                spoolWatcher.NotifyFilter = NotifyFilters.LastAccess | NotifyFilters.LastWrite
+               | NotifyFilters.FileName | NotifyFilters.DirectoryName;
+                //spoolWatcher.Created += new FileSystemEventHandler(OnCreate);
+                spoolWatcher.Changed += new FileSystemEventHandler(OnCreate);
+                spoolWatcher.EnableRaisingEvents = true;
+                spoolWatcher.Error += new ErrorEventHandler(SpoolWatcherError);
 
-            //todo check this
-            Logger.GetInstance().Debug("TempSpooler watch started on path:" + spoolWatcher.Path);
-            started = true;
-            return true;
+                Logger.GetInstance().Debug("TempSpooler watch started on path:" + spoolWatcher.Path);
+                started = true;
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger.GetInstance().Error("Unable to start TempSpooler:" + ex.Message + " " + ex.StackTrace);
+                started = false;
+                return false;
+            }
         }
 
         public static bool Stop()
@@ -194,6 +203,20 @@ namespace MyDLP.EndPoint.Service
                 {
                     Logger.GetInstance().Error(e.InnerException.Message + e.InnerException.StackTrace);
                 }
+            }
+        }
+
+        private static void SpoolWatcherError(Object sender, ErrorEventArgs e)
+        {
+            try
+            {
+                Logger.GetInstance().Error("Filewatcher error: " + e.GetException().Message + " restartting TempSpooler");
+                Stop();
+                Start();
+            }
+            catch (Exception ex)
+            {
+                Logger.GetInstance().Error("SpoolWatcherError Error:" + ex.Message + ex.StackTrace);
             }
         }
     }
