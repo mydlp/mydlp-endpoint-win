@@ -24,33 +24,54 @@ using System.Text;
 using System.Printing;
 using Microsoft.Win32;
 using System.Threading;
-using System.Diagnostics;
-using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
-using System.IO;
 using System.Runtime.InteropServices;
-using MyDLP.EndPoint.Core;
 using System.ComponentModel;
+using MyDLP.EndPoint.Core;
+using System.Management;
+
 namespace MyDLP.EndPoint.Service
 {
     public class PrinterController
     {
+        //Imports for native functions
         [DllImport("Advapi32.dll")]
         static extern bool GetUserName(StringBuilder lpBuffer, ref int nSize);
-
         [DllImport("printui.dll", SetLastError = true, CharSet = CharSet.Unicode)]
         private static extern void PrintUIEntryW(IntPtr hwnd,
             IntPtr hinst, string lpszCmdLine, int nCmdShow);
         [DllImport("kernel32.dll")]
         static extern void SetLastError(uint dwErrCode);
 
+        //Singleton instance
         static PrinterController instance = null;
+
+        //SID of current user to get/listen shared printer connections        
+        static String currentSid;
+
+        //Status of PrintController isntance 
         static bool started = false;
 
-        ArrayList spooledNativePrinters;
+        //Windows OS permissions <queue.Name, permissionACLstring>
         Dictionary<string, string> printerPermissions;
 
+        //Shared Printer Connections items: "name,server"
+        ArrayList printerConnections;
+
+        //Spooled printers list to be reverted back(only for Windows XP)
+        static ArrayList spooledNativePrinters;
+
+        bool handlingConnectionChange = false;
+        bool changingLocalPrinters = false;
+
+        //Resgistry watcher for shared printers
+        ManagementEventWatcher watcher;
+
+        //Prefix for secure printers
+        //TODO: make this configurable
         const String PrinterPrefix = "(MyDLP)";
+
+        //MyDLP driver name - fixed 
         const String MyDLPDriver = "MyDLP XPS Printer Driver";
 
         const String SystemPrinterSecurityDescriptor =
@@ -64,6 +85,13 @@ namespace MyDLP.EndPoint.Service
         const String admEntry1 = "(A;OIIO;RPWPSDRCWDWO;;;BA)";
         const String admEntry2 = "(A;;LCSWSDRCWDWO;;;BA)";*/
         const String authUserPrint = "(A;OI;SWRC;;;AU)";
+
+        public static PrinterController getInstance()
+        {
+            if (instance == null)
+                instance = new PrinterController();
+            return instance;
+        }
 
         public void Start()
         {
@@ -80,19 +108,27 @@ namespace MyDLP.EndPoint.Service
                 if (CheckAndInstallXPSDriver())
                 {
                     //Correct incase of an improper shutdown
-                    RemoveSecurePrinters();
-                    InstallSecurePrinters();
-                    TempSpooler.Start();
-                    Thread changeListeningThread = new Thread(new ThreadStart(MyDLPEP.PrinterUtils.StartBlockingLocalChangeListener));
-                    changeListeningThread.Start();
-                    started = true;
+                    RemoveLocalSecurePrinters();
+                    if (TempSpooler.Start())
+                    {
+                        Thread changeListeningThread = new Thread(new ThreadStart(MyDLPEP.PrinterUtils.StartBlockingLocalChangeListener));
+                        changeListeningThread.Start();
+                        started = true;
+                        Configuration.GetLoggedOnUser();
+                        HandlePrinterConnectionChange();
+                        InstallLocalSecurePrinters();
+                    }
+                    else
+                    {
+                        MyDLPEP.PrinterUtils.listenChanges = false;
+                        RemoveLocalSecurePrinters();
+                    }
                 }
             }
-            else
+
+            if (!started)
             {
-                MyDLPEP.PrinterUtils.listenChanges = false;
                 SvcController.StartService("Spooler", 5000);
-                TempSpooler.Stop();
             }
         }
 
@@ -105,7 +141,7 @@ namespace MyDLP.EndPoint.Service
 
             //listen changes should be changed before removing secure printers
             MyDLPEP.PrinterUtils.listenChanges = false;
-            RemoveSecurePrinters();
+            RemoveLocalSecurePrinters();
             started = false;
         }
 
@@ -115,12 +151,27 @@ namespace MyDLP.EndPoint.Service
             LocalPrintServer pServer = new LocalPrintServer();
             PrintQueueCollection queueCollection = pServer.GetPrintQueues();
 
+            String fallbackDefaultSecurePrinterName = "";
+
             foreach (PrintQueue mQueue in queueCollection)
             {
                 if (mQueue.QueueDriver.Name == MyDLPDriver ||
                     mQueue.QueuePort.Name == "MyDLP")
                 {
                     bool exists = false;
+
+                    //Check if it is a shared printer
+                    foreach (PrinterConnection connection in printerConnections)
+                    {
+                        if (connection.secureName == mQueue.Name)
+                        {
+                            //found a secure printer for non-local printer skipping;
+                            exists = true;
+                            fallbackDefaultSecurePrinterName = mQueue.Name;
+                        }
+                    }
+
+                    //Check if there is a non-secure printer for for this printer
                     foreach (PrintQueue queue in queueCollection)
                     {
                         if (queue.QueueDriver.Name != MyDLPDriver ||
@@ -129,12 +180,32 @@ namespace MyDLP.EndPoint.Service
                             if (mQueue.Name == GetSecurePrinterName(queue.Name))
                             {
                                 exists = true;
+                                fallbackDefaultSecurePrinterName = mQueue.Name;
                             }
                         }
                     }
                     if (!exists)
                     {
                         MyDLPEP.PrinterUtils.RemovePrinter(mQueue.Name);
+
+                        MyDLPEP.SessionUtils.ImpersonateActiveUser();
+                        String defaultPrinterName = MyDLPEP.PrinterUtils.GetDefaultSystemPrinter();
+                        MyDLPEP.SessionUtils.StopImpersonation();
+                        if (mQueue.Name == defaultPrinterName)
+                        {
+                            //Real default printer removed do something
+                            if (fallbackDefaultSecurePrinterName != "")
+                            {
+                                MyDLPEP.SessionUtils.ImpersonateActiveUser();
+                                MyDLPEP.PrinterUtils.SetDefaultSystemPrinter(fallbackDefaultSecurePrinterName);
+                                MyDLPEP.SessionUtils.StopImpersonation();
+                            }
+                            else
+                            {
+                                //there is no fall back printer
+                                MyDLPEP.PrinterUtils.SetDefaultSystemPrinter("");
+                            }
+                        }
                     }
                 }
             }
@@ -143,14 +214,7 @@ namespace MyDLP.EndPoint.Service
         public void LocalPrinterAddHandler()
         {
             Logger.GetInstance().Debug("LocalPrinterAddHandler started");
-            InstallSecurePrinters();
-        }
-
-        public static PrinterController getInstance()
-        {
-            if (instance == null)
-                instance = new PrinterController();
-            return instance;
+            InstallLocalSecurePrinters();
         }
 
         public static String GetSecurePrinterName(String qName)
@@ -169,9 +233,181 @@ namespace MyDLP.EndPoint.Service
             return qName;
         }
 
-
-        private void InstallSecurePrinters()
+        public void ListenPrinterConnections(String sid)
         {
+            if (!started || currentSid == sid)
+            {
+                return;
+            }
+            currentSid = sid;
+            printerConnections.Clear();
+            HandlePrinterConnectionChange();
+
+            try
+            {
+                if (watcher != null)
+                {
+                    watcher.Stop();
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.GetInstance().Error("Unable to stop shared printer connections registry watcher:" + ex.Message + ex.StackTrace);
+            }
+
+            try
+            {
+                WqlEventQuery query = new WqlEventQuery(
+                         "SELECT * FROM RegistryKeyChangeEvent WHERE " +
+                         "Hive = 'HKEY_USERS'" +
+                         @" AND KeyPath = '" + sid + @"\\Printers\\Connections'");
+                watcher = new ManagementEventWatcher(query);
+                watcher.EventArrived += new EventArrivedEventHandler(HandleEvent);
+                watcher.Start();
+            }
+            catch (Exception ex)
+            {
+                Logger.GetInstance().Error("Unable to start shared printer connections registry watcher:" + ex.Message + ex.StackTrace);
+            }
+        }
+
+        public void HandlePrinterConnectionChange()
+        {
+            bool change = false;
+            lock (this)
+            {
+                if (handlingConnectionChange)
+                {
+                    return;
+                }
+                else handlingConnectionChange = true;
+            }
+            try
+            {
+                Logger.GetInstance().Debug("HandlePrinterConnectionChange started");
+                RegistryKey connectionsKey = Registry.Users.OpenSubKey(currentSid + "\\Printers\\Connections");
+                ArrayList newConnectionList = new ArrayList();
+
+                foreach (String connection in connectionsKey.GetSubKeyNames())
+                {
+                    try
+                    {
+                        string[] list = connection.Split(',');
+                        PrinterConnection newConnection = new PrinterConnection(list[3], list[2]);
+
+                        //Keep track of recent connections
+                        newConnectionList.Add(newConnection);
+                        //Add only if there is not already such secure printer
+                        if (!printerConnections.Contains(newConnection))
+                        {
+                            AddSecurePrinterForConnection(newConnection);
+                            change = true;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.GetInstance().Error("ListenPrinterConnections:" + ex.Message + " " + ex.StackTrace);
+                        continue;
+                    }
+                }
+
+                //Remove old outdated connections
+                for (int i = 0; i < printerConnections.Count; i++)
+                {
+                    PrinterConnection connection = (PrinterConnection)printerConnections[i];
+                    if (!newConnectionList.Contains(connection))
+                    {
+                        Logger.GetInstance().Debug("Removing old connection" + connection);
+                        RemoveSecurePrinterForConnection(connection);
+                        printerConnections.Remove(connection);
+                        i--;
+                        change = true;
+                    }
+                }
+                Logger.GetInstance().Debug("HandlePrinterConnectionChange ended");
+
+                if (change)
+                {
+                    //Give windows time to update default printer
+                    Thread.Sleep(2000);
+
+                    UpdateDefaultPrinter();
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.GetInstance().Error("ListenPrinterConnections:" + ex.Message + " " + ex.StackTrace);
+            }
+
+            lock (this)
+            {
+                handlingConnectionChange = false;
+            }
+        }
+
+        private void HandleEvent(object sender, EventArrivedEventArgs e)
+        {
+            HandlePrinterConnectionChange();
+        }
+
+        private void AddSecurePrinterForConnection(PrinterConnection connection)
+        {
+            try
+            {
+                LocalPrintServer pServer = new LocalPrintServer();
+
+                bool exists = false;
+
+                foreach (PrintQueue queue in pServer.GetPrintQueues())
+                {
+                    if (queue.Name == connection.secureName)
+                    {
+                        exists = true;
+                    }
+                }
+
+                if (!exists)
+                {
+                    pServer.InstallPrintQueue(connection.secureName,
+                    MyDLPDriver,
+                    new String[] { "MyDLP" },
+                   "winprint",
+                    PrintQueueAttributes.Direct);
+                }
+
+                printerConnections.Add(connection);
+            }
+            catch (Exception ex)
+            {
+                Logger.GetInstance().Error("AddSecurePrinterForConnection: " + connection + " " + ex.Message + " " + ex.StackTrace);
+            }
+
+        }
+
+        private void RemoveSecurePrinterForConnection(PrinterConnection connection)
+        {
+            try
+            {
+                LocalPrintServer pServer = new LocalPrintServer();
+                MyDLPEP.PrinterUtils.RemovePrinter(connection.secureName);
+            }
+            catch (Exception ex)
+            {
+                Logger.GetInstance().Error("RemoveSecurePrinterForConnection: " + connection + " " + ex.Message + " " + ex.StackTrace);
+            }
+        }
+
+        private void InstallLocalSecurePrinters()
+        {
+            bool change = false;
+            lock (this)
+            {
+                if (changingLocalPrinters)
+                {
+                    return;
+                }
+                else changingLocalPrinters = true;
+            }
             try
             {
                 Logger.GetInstance().Debug("InstallSecurePrinters started");
@@ -183,8 +419,8 @@ namespace MyDLP.EndPoint.Service
 
                 foreach (PrintQueue queue in queueCollection)
                 {
-                    Logger.GetInstance().Debug("Process printer queue: " + queue.Name
-                        + " driver: " + queue.QueueDriver.Name + " port: " + queue.QueuePort.Name);
+                    //Logger.GetInstance().Debug("Process printer queue: " + queue.Name
+                    //    + " driver: " + queue.QueueDriver.Name + " port: " + queue.QueuePort.Name);
 
 
                     if (queue.QueueDriver.Name != MyDLPDriver ||
@@ -223,30 +459,15 @@ namespace MyDLP.EndPoint.Service
                                     new String[] { "MyDLP" },
                                     "winprint",
                                     PrintQueueAttributes.Direct);
+                                change = true;
                                 MyDLPEP.PrinterUtils.TakePrinterOwnership(queue.Name);
                                 securityDesc = MyDLPEP.PrinterUtils.GetPrinterSecurityDescriptor(queue.Name);
 
                                 //save original permissions
-                                printerPermissions.Add(mydlpQueue.Name, securityDesc);
-
-                                /*add necessary permissions to mydlp printer
-                                if (securityDesc != "")
+                                if (!printerPermissions.ContainsKey(mydlpQueue.Name))
                                 {
-                                    if (Environment.UserInteractive)
-                                    {
-                                        if (!securityDesc.Contains(admEntry1))
-                                            securityDesc += admEntry1;
-                                        if (!securityDesc.Contains(admEntry2))
-                                            securityDesc += admEntry2;
-                                    }
-
-                                    if (!securityDesc.Contains(sysEntry1))
-                                        securityDesc += sysEntry1;
-                                    if (!securityDesc.Contains(sysEntry2))
-                                        securityDesc += sysEntry2;
-
-                                    //MyDLPEP.PrinterUtils.SetPrinterSecurityDescriptor(mydlpQueueName, securityDesc);                                   
-                                }*/
+                                    printerPermissions.Add(mydlpQueue.Name, securityDesc);
+                                }
 
                                 if (Environment.UserInteractive)
                                 {
@@ -276,20 +497,13 @@ namespace MyDLP.EndPoint.Service
                     }
                 }
 
-                //Change default printer to MyDLP counterpart
-                String defaultPrinterName = MyDLPEP.PrinterUtils.GetDefaultSystemPrinter();
-                Logger.GetInstance().Debug("Default printer :" +  defaultPrinterName);
-
-                String newDefaultPrinterName = GetSecurePrinterName(defaultPrinterName);
-                if (MyDLPEP.PrinterUtils.SetDefaultSystemPrinter(newDefaultPrinterName))
+                //On any change set default printer to MyDLP counterpart
+                if (change)
                 {
-                    Logger.GetInstance().Debug("Set default printer as:" + defaultPrinterName + "successfully");
+                    //Give windows time to update default printer
+                    Thread.Sleep(2000);
+                    UpdateDefaultPrinter();
                 }
-                else 
-                {
-                    Logger.GetInstance().Error("Failed to set default printer as:" + defaultPrinterName);
-                }
-
             }
             catch (Exception e)
             {
@@ -298,25 +512,40 @@ namespace MyDLP.EndPoint.Service
             finally
             {
                 Logger.GetInstance().Debug("InstallSecurePrinters ended");
+                lock (this)
+                {
+                    changingLocalPrinters = false;
+                }
             }
         }
 
-        private void RemoveSecurePrinters()
+        private void RemoveLocalSecurePrinters()
         {
+            lock (this)
+            {
+                if (changingLocalPrinters)
+                {
+                    return;
+                }
+                else changingLocalPrinters = true;
+            }
             bool defaultPrinterReverted = false;
             try
             {
                 Logger.GetInstance().Debug("RemoveSecurePrinters started");
 
+                MyDLPEP.SessionUtils.ImpersonateActiveUser();
                 String defaultPrinterName = MyDLPEP.PrinterUtils.GetDefaultSystemPrinter();
-                Logger.GetInstance().Debug("Default printer :" + defaultPrinterName);
+                MyDLPEP.SessionUtils.StopImpersonation();
+
+                Logger.GetInstance().Info("Default printer :" + defaultPrinterName);
 
                 LocalPrintServer pServer = new LocalPrintServer();
                 PrintQueueCollection queueCollection = pServer.GetPrintQueues();
                 foreach (PrintQueue queue in queueCollection)
                 {
-                    Logger.GetInstance().Debug("Process printer queue: " + queue.Name
-                       + " driver: " + queue.QueueDriver.Name + " port: " + queue.QueuePort.Name);
+                    //Logger.GetInstance().Debug("Process printer queue: " + queue.Name
+                    //   + " driver: " + queue.QueueDriver.Name + " port: " + queue.QueuePort.Name);
 
                     if (queue.QueueDriver.Name == MyDLPDriver ||
                         queue.QueuePort.Name == "MyDLP")
@@ -325,10 +554,6 @@ namespace MyDLP.EndPoint.Service
 
                         if (queue.Name.StartsWith(PrinterPrefix))
                         {
-                            //String securityDesc = MyDLPEP.PrinterUtils.GetPrinterSecurityDescriptor(queue.Name);
-                            //if (securityDesc != "")
-                            //{        
-
                             PrintQueueCollection qCollection = pServer.GetPrintQueues();
                             foreach (PrintQueue q in qCollection)
                             {
@@ -351,14 +576,17 @@ namespace MyDLP.EndPoint.Service
 
                                     if (queue.Name == defaultPrinterName)
                                     {
-                                        //Revert default printer                                                                                                         
+                                        //Revert default printer                    
+                                        MyDLPEP.SessionUtils.ImpersonateActiveUser();
                                         if (MyDLPEP.PrinterUtils.SetDefaultSystemPrinter(q.Name))
                                         {
                                             defaultPrinterReverted = true;
+                                            MyDLPEP.SessionUtils.StopImpersonation();
                                             Logger.GetInstance().Debug("Set default printer as:" + q.Name + "successfully");
                                         }
                                         else
                                         {
+                                            MyDLPEP.SessionUtils.StopImpersonation();
                                             Logger.GetInstance().Error("Failed to set default printer as:" + q.Name);
                                         }
                                     }
@@ -371,7 +599,7 @@ namespace MyDLP.EndPoint.Service
                     }
                     else
                     {
-                        Logger.GetInstance().Debug("A non-secure printer found " + queue.Name);
+                        //Logger.GetInstance().Debug("A non-secure printer found " + queue.Name);
 
                         if (spooledNativePrinters.Contains(queue.Name))
                         {
@@ -382,12 +610,15 @@ namespace MyDLP.EndPoint.Service
                     }
                 }
 
-                if(!defaultPrinterReverted)
+                if (!defaultPrinterReverted)
                 {
                     //Error occured set a valid default printer from available printers
+                    MyDLPEP.SessionUtils.ImpersonateActiveUser();
+
                     MyDLPEP.PrinterUtils.SetDefaultSystemPrinter("");
+                    MyDLPEP.SessionUtils.StopImpersonation();
                 }
-            
+
             }
             catch (Exception e)
             {
@@ -396,6 +627,10 @@ namespace MyDLP.EndPoint.Service
             finally
             {
                 Logger.GetInstance().Debug("RemoveSecurePrinters ended");
+                lock (this)
+                {
+                    changingLocalPrinters = false;
+                }
             }
         }
 
@@ -552,12 +787,76 @@ namespace MyDLP.EndPoint.Service
             return hasKey;
         }
 
+        private void UpdateDefaultPrinter()
+        {
+            MyDLPEP.SessionUtils.ImpersonateActiveUser();
+            String defaultPrinterName = MyDLPEP.PrinterUtils.GetDefaultSystemPrinter();
+
+            if (!defaultPrinterName.StartsWith(PrinterPrefix))
+            {
+                String newDefaultPrinterName = GetSecurePrinterName(defaultPrinterName);
+
+                if (MyDLPEP.PrinterUtils.SetDefaultSystemPrinter(newDefaultPrinterName))
+                {
+                    MyDLPEP.SessionUtils.StopImpersonation();
+                    Logger.GetInstance().Debug("Change default printer from:" + defaultPrinterName + " to:" + newDefaultPrinterName + "successfully");
+                }
+                else
+                {
+                    MyDLPEP.SessionUtils.StopImpersonation();
+                    Logger.GetInstance().Error("Failed to change default printer from:" + defaultPrinterName + " to:" + newDefaultPrinterName);
+                }
+            }
+            else
+            {
+                MyDLPEP.SessionUtils.StopImpersonation();
+                Logger.GetInstance().Debug("Default printer is already a secure printer:" + defaultPrinterName);
+            }
+
+            MyDLPEP.SessionUtils.ImpersonateActiveUser();
+        }
 
         private PrinterController()
         {
             spooledNativePrinters = new ArrayList();
+            printerConnections = new ArrayList();
+            watcher = null;
             MyDLPEP.PrinterUtils.LocalPrinterRemoveHandler = new MyDLPEP.PrinterUtils.LocalPrinterRemoveHandlerDeleagate(LocalPrinterRemoveHandler);
             MyDLPEP.PrinterUtils.LocalPrinterAddHandler = new MyDLPEP.PrinterUtils.LocalPrinterAddHandlerDeleagate(LocalPrinterAddHandler);
+        }
+
+        class PrinterConnection
+        {
+
+            public PrinterConnection(String name, String server)
+            {
+                this.name = name;
+                this.server = server;
+                this.secureName = GetSecurePrinterName(name + "_on_" + server);
+            }
+
+            public override bool Equals(object obj)
+            {
+                if (!(obj is PrinterConnection)) return false;
+
+                PrinterConnection pObj = (PrinterConnection)obj;
+
+                return (this.name == pObj.name) && (this.server == pObj.server);
+            }
+
+            public override int GetHashCode()
+            {
+                return (this.name + this.server).GetHashCode();
+            }
+
+            public override string ToString()
+            {
+                return this.name + this.server;
+            }
+
+            public String name;
+            public String server;
+            public String secureName;
         }
     }
 }

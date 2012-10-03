@@ -19,8 +19,11 @@
 #include "stdafx.h"
 #include "SessionUtils.h"
 
+using namespace System::ComponentModel;
+
 namespace MyDLPEP
 {
+
 	/*int SessionUtils::GetActiveSessionId()
 	{
 	DWORD sessionId;
@@ -73,57 +76,60 @@ namespace MyDLPEP
 		return session;
 	}
 
+
 	/*ArrayList^ SessionUtils::EnumerateLogonSessions()
 	{
-	ULONG sessionCount;
-	PLUID sessionList;
-	NTSTATUS retval;
-	int i, j, listCount;
-	ArrayList^ list = gcnew ArrayList();
+		ULONG sessionCount;
+		PLUID sessionList;
+		NTSTATUS retval;
+		int i, j, listCount;
+		ArrayList^ list = gcnew ArrayList();
 
-	Logger::GetInstance()->Debug("EnumerateSessionData");
+		Logger::GetInstance()->Debug("EnumerateSessionData");
 
-	retval = LsaEnumerateLogonSessions( &sessionCount, &sessionList);
-	if (retval != STATUS_SUCCESS)
-	{
-	Logger::GetInstance()->Error("LsaEnumerateLogonSessions failed :" + LsaNtStatusToWinError(retval));
-	return list;
+		retval = LsaEnumerateLogonSessions( &sessionCount, &sessionList);
+		if (retval != STATUS_SUCCESS)
+		{
+			Logger::GetInstance()->Error("LsaEnumerateLogonSessions failed :" + LsaNtStatusToWinError(retval));
+			return list;
+		}
+
+		for (i = 0;i < (int) sessionCount; i++) {
+
+			InteractiveSession^ newSession;
+			newSession = GetSessionData (&sessionList[i]);
+			if (newSession == nullptr) continue;
+
+			listCount = list->Count;
+
+			bool sessionCollision = false;
+
+			for (j = 0; j < listCount; j++)
+			{
+				InteractiveSession ^ session = (InteractiveSession ^) list[j];
+				if (newSession->sessionId == session->sessionId)
+				{
+					sessionCollision = true;
+					if(newSession->logonTime > session->logonTime)
+					{
+						list->RemoveAt(j);
+						j--;
+						list->Add(newSession);
+					}
+				}
+			}
+
+			if (!sessionCollision)
+			{
+				list->Add(newSession);
+			}
+		}
+
+		LsaFreeReturnBuffer(sessionList);
+		return list;
 	}
+	*/
 
-	for (i = 0;i < (int) sessionCount; i++) {
-
-	InteractiveSession^ newSession;
-	newSession = GetSessionData (&sessionList[i]);
-	if (newSession == nullptr) continue;
-
-	listCount = list->Count;
-
-	bool sessionCollision = false;
-
-	for (j = 0; j < listCount; j++)
-	{
-	InteractiveSession ^ session = (InteractiveSession ^) list[j];
-	if (newSession->sessionId == session->sessionId)
-	{
-	sessionCollision = true;
-	if(newSession->logonTime > session->logonTime)
-	{
-	list->RemoveAt(j);
-	j--;
-	list->Add(newSession);
-	}
-	}
-	}
-
-	if (!sessionCollision)
-	{
-	list->Add(newSession);
-	}
-	}
-
-	LsaFreeReturnBuffer(sessionList);
-	return list;
-	}*/
 
 	InteractiveSession^ SessionUtils::GetSessionData(PLUID session)
 	{
@@ -134,13 +140,15 @@ namespace MyDLPEP
 		int usLength;
 		InteractiveSession^ iSession = gcnew InteractiveSession();
 
-		if (!session ) {
+		if (!session )
+		{
 			Logger::GetInstance()->Error("Error - Invalid logon session identifier");
 			return nullptr;
 		}
 
 		retval = LsaGetLogonSessionData (session, &sessionData);
-		if (retval != STATUS_SUCCESS) {
+		if (retval != STATUS_SUCCESS) 
+		{
 			Logger::GetInstance()->Error("LsaGetLogonSessionData failed" + LsaNtStatusToWinError(retval));
 			if (sessionData) {
 				LsaFreeReturnBuffer(sessionData);
@@ -154,7 +162,8 @@ namespace MyDLPEP
 			return nullptr;
 		}
 
-		if ((SECURITY_LOGON_TYPE) sessionData->LogonType != Interactive) {
+		if ((SECURITY_LOGON_TYPE) sessionData->LogonType != Interactive)
+		{
 			return nullptr;
 		}
 
@@ -176,7 +185,9 @@ namespace MyDLPEP
 				return nullptr;
 			}
 
-		} else {
+		} 
+		else
+		{
 			Logger::GetInstance()->Debug("Missing upn");
 			LsaFreeReturnBuffer(sessionData);
 			return nullptr;
@@ -200,14 +211,16 @@ namespace MyDLPEP
 				return nullptr;
 			}
 
-		} else {
+		} else
+		{
 			Logger::GetInstance()->Debug("Missing name");
 			LsaFreeReturnBuffer(sessionData);
 			return nullptr;
 		}
 
 
-		if (sessionData->LogonDomain.Buffer != NULL) {
+		if (sessionData->LogonDomain.Buffer != NULL) 
+		{
 
 			usBuffer = (sessionData->LogonDomain).Buffer;
 			usLength = (sessionData->LogonDomain).Length;
@@ -225,7 +238,9 @@ namespace MyDLPEP
 				return nullptr;
 			}
 
-		} else {
+		} 
+		else
+		{
 			Logger::GetInstance()->Debug("Missing domain");
 			LsaFreeReturnBuffer(sessionData);
 			return nullptr;
@@ -248,7 +263,9 @@ namespace MyDLPEP
 				exit(1);
 			}
 			wprintf(L"using %s ",buffer);
-		} else {
+		} 
+		else
+		{
 			wprintf (L"\nMissing authentication package.");
 			LsaFreeReturnBuffer(sessionData);
 			return nullptr;
@@ -271,5 +288,32 @@ namespace MyDLPEP
 
 		LsaFreeReturnBuffer(sessionData);
 		return iSession;
+	}
+
+	bool SessionUtils::ImpersonateActiveUser()
+	{
+		DWORD dwSessionId = WTSGetActiveConsoleSessionId();
+
+		HANDLE hTokenNew = NULL, hTokenDup = NULL;
+
+		if (!WTSQueryUserToken(dwSessionId, &hTokenNew))
+		{
+			Logger::GetInstance()->Error("WTSQueryUserToken failed" + (gcnew Win32Exception(GetLastError()))->Message );
+			return false;
+		}
+
+		DuplicateTokenEx(hTokenNew,MAXIMUM_ALLOWED,NULL,SecurityIdentification,TokenPrimary,&hTokenDup);
+		if (!ImpersonateLoggedOnUser (hTokenDup))
+		{
+			Logger::GetInstance()->Error("ImpersonateLoggedOnUser failed" + (gcnew Win32Exception(GetLastError()))->Message );
+			return false;
+		}
+
+		return true;
+	}
+
+	bool SessionUtils::StopImpersonation()
+	{
+		return RevertToSelf();
 	}
 }
