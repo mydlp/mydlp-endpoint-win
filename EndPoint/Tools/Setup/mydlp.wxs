@@ -36,6 +36,7 @@
       <ComponentGroupRef Id="engine_erl" />
       <ComponentGroupRef Id="jre7" />
       <ComponentGroupRef Id="printing" />
+      <ComponentGroupRef Id="internal" />
     </Feature>
 
     <Upgrade Id="9BA3E701-8F64-46B1-9D2A-8A29B22C0F65">

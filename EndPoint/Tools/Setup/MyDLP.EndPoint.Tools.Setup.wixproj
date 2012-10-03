@@ -34,6 +34,7 @@
 -dengine_javaPath=$(SolutionDir)..\..\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\backend
 -djre7Path=$(SolutionDir)..\..\mydlp-deployment-env\jre7
 -dcygwinPath=$(SolutionDir)..\..\mydlp-deployment-env\cygwin</CompilerAdditionalOptions>
+-dinternalPath=$(SolutionDir)..\..\mydlp-deployment-env\internal</CompilerAdditionalOptions>
     <SuppressIces>ICE20</SuppressIces>
   </PropertyGroup>
   <ItemGroup>
@@ -42,6 +43,7 @@
     <Compile Include="harvested\erl5.8.5.wxs" />
     <Compile Include="harvested\jre7.wxs" />
     <Compile Include="harvested\printing.wxs" />
+    <Compile Include="harvested\internal.wxs" />
     <Compile Include="mydlp.wxs" />
   </ItemGroup>
   <ItemGroup>
