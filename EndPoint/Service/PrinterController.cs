@@ -138,10 +138,10 @@ namespace MyDLP.EndPoint.Service
             {
                 return;
             }
-
+            TempSpooler.Stop();
             //listen changes should be changed before removing secure printers
             MyDLPEP.PrinterUtils.listenChanges = false;
-            RemoveLocalSecurePrinters();
+            RemoveLocalSecurePrinters();            
             started = false;
         }
 
@@ -215,6 +215,28 @@ namespace MyDLP.EndPoint.Service
         {
             Logger.GetInstance().Debug("LocalPrinterAddHandler started");
             InstallLocalSecurePrinters();
+        }
+
+        public bool IsPrinterConnection(string secureName)
+        {
+            foreach (PrinterConnection conneciton in printerConnections) 
+            {
+                if (conneciton.secureName == secureName)
+                    return true;
+            }
+
+            return false;        
+        }
+
+        public PrinterConnection GetPrinterConnection(string secureName) 
+        {
+            foreach (PrinterConnection conneciton in printerConnections)
+            {
+                if (conneciton.secureName == secureName)
+                    return conneciton;
+            }
+
+            return null;           
         }
 
         public static String GetSecurePrinterName(String qName)
@@ -825,7 +847,7 @@ namespace MyDLP.EndPoint.Service
             MyDLPEP.PrinterUtils.LocalPrinterAddHandler = new MyDLPEP.PrinterUtils.LocalPrinterAddHandlerDeleagate(LocalPrinterAddHandler);
         }
 
-        class PrinterConnection
+        public class PrinterConnection
         {
 
             public PrinterConnection(String name, String server)

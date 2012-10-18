@@ -64,5 +64,8 @@ namespace MyDLP.EndPoint.Core
             StopService(serviceName, timeoutMilliseconds /2);
             StartService(serviceName, timeoutMilliseconds /2);
         }
+
+        public delegate void StopMyDLPDelegate();
+        public static StopMyDLPDelegate StopMyDLP;
     }
 }

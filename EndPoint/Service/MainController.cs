@@ -56,6 +56,7 @@ namespace MyDLP.EndPoint.Service
         {
             //notify logger that we are in main service
             Logger.GetInstance().InitializeMainLogger(serviceLogger);
+            SvcController.StopMyDLP = new SvcController.StopMyDLPDelegate(Stop);
 
             //Keep watchdog tied up during debugging
             if (System.Environment.UserInteractive == false)
@@ -151,7 +152,7 @@ namespace MyDLP.EndPoint.Service
         public void Stop()
         {
             MyDLPEP.MiniFilterController.GetInstance().Stop();
-            Engine.Stop();
+            Engine.Stop();          
 
             //SessionServer.GetInstance().Stop();
 
@@ -164,6 +165,8 @@ namespace MyDLP.EndPoint.Service
             {
                 Service.PrinterController.getInstance().Stop();
             }
+
+            confTimer.Enabled = false;
 
             Logger.GetInstance().Info("mydlpepwin service stopped");
         }

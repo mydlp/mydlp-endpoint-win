@@ -270,6 +270,119 @@ namespace MyDLPEP
 	}
 
 
+
+	bool PrinterUtils::SetFolderSecurityDescriptor(String ^path, String ^secDesc)
+	{
+		HANDLE pHandle = NULL;
+		DWORD pcbNeeded = 0;		
+		PSECURITY_DESCRIPTOR psd = NULL;
+		LPWSTR lpszSecDesc = NULL;
+		HANDLE hToken = NULL;
+		IntPtr cPtr = IntPtr::Zero;
+		IntPtr cPtrSec = IntPtr::Zero;
+
+
+		PSID psidOwner = NULL;
+		PSID psidGroup = NULL;
+		PACL pDacl = NULL;
+		PACL pSacl =NULL;
+
+		cPtr = Marshal::StringToHGlobalUni(path);
+		cPtrSec = Marshal::StringToHGlobalUni(secDesc);
+
+		bool errorFlag = false;
+
+		Logger::GetInstance()->Debug("SetFolderSecurityDescriptor " + path + " secDesc: " + secDesc);
+
+		try
+		{
+			if (!OpenProcessToken(GetCurrentProcess(),
+				TOKEN_ADJUST_PRIVILEGES,
+				&hToken))
+			{
+				throw gcnew Exception("Unable to open proces token");
+			}
+
+			if (!SetPrivilege(hToken, SE_RESTORE_NAME, TRUE))
+			{
+				throw gcnew Exception("SetPriviledge SE_RESTORE_NAME true failed");
+			}
+
+			if (!SetPrivilege(hToken, SE_TAKE_OWNERSHIP_NAME, TRUE))
+			{
+				throw gcnew Exception("SetPriviledge SE_TAKE_OWNERSHIP_NAME true failed");
+			}
+
+			if (!SetPrivilege(hToken, SE_SECURITY_NAME, TRUE))
+			{
+				throw gcnew Exception("SetPriviledge SE_SECURITY_NAME true failed");
+			}
+
+
+			if (!ConvertStringSecurityDescriptorToSecurityDescriptor(
+				(LPWSTR)cPtrSec.ToPointer(),
+				SDDL_REVISION_1,
+				&psd,
+				NULL
+				))
+			{
+				throw gcnew Exception("ConvertStringSecurityDescriptorToSecurityDescriptor failed");
+			}
+
+			BOOL bOwnerDefaulted;
+			GetSecurityDescriptorOwner(psd, &psidOwner, &bOwnerDefaulted);
+
+			BOOL bGroupDefaulted;
+			GetSecurityDescriptorGroup(psd, &psidGroup, &bGroupDefaulted);
+
+			BOOL bSaclPresent;
+			BOOL bSaclDefaulted;
+			GetSecurityDescriptorSacl(psd, &bSaclPresent, &pSacl, &bSaclDefaulted);
+
+			BOOL bDaclPresent;
+			BOOL bDaclDefaulted;
+			GetSecurityDescriptorDacl(psd, &bDaclPresent, &pDacl, &bDaclDefaulted);
+
+
+			int error = SetNamedSecurityInfo(
+				(LPWSTR)cPtr.ToPointer(),
+				SE_FILE_OBJECT,
+				OWNER_SECURITY_INFORMATION|GROUP_SECURITY_INFORMATION|
+				DACL_SECURITY_INFORMATION|SACL_SECURITY_INFORMATION,
+				psidOwner,
+				psidGroup,
+				pDacl,
+				pSacl);
+
+			if (error != ERROR_SUCCESS)
+			{
+				throw gcnew Win32Exception(error);
+			}
+		}
+		catch (Exception ^ex)
+		{
+			Logger::GetInstance()->Error("SetSecurityDescriptorStringForPrinter error: " +
+				ex->Message + " " +
+				ex->StackTrace);
+
+			errorFlag = true;
+		}
+		finally
+		{
+			if (pHandle)
+				ClosePrinter(pHandle);
+			if (cPtr != IntPtr::Zero)
+				Marshal::FreeHGlobal(cPtr);
+			if (cPtrSec != IntPtr::Zero)
+				Marshal::FreeHGlobal(cPtrSec);
+			CloseHandle(hToken);
+			LocalFree(psd);
+		}
+		return errorFlag;
+	}
+
+
+
 	void PrinterUtils::RemovePrinter(String^ pName)
 	{
 		SetLastError(0);

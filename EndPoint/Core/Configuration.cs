@@ -57,6 +57,7 @@ namespace MyDLP.EndPoint.Core
         //static Timer userNameTimer;
         static String printingDirPath;
         static String printSpoolPath;
+        static String sharedSpoolPath;
         static String version = "";
 
         //user conf
@@ -275,6 +276,7 @@ namespace MyDLP.EndPoint.Core
                 seapPort = 9099;
                 mydlpConfPath = Configuration.ErlangPath + "mydlp-ep.conf";
                 printSpoolPath = @"C:\windows\temp\mydlp\spool";
+                sharedSpoolPath = @"C:\windows\temp\mydlp\sharedspool";
 
             }
             else
@@ -306,6 +308,7 @@ namespace MyDLP.EndPoint.Core
                         javaBinPaths = appPath + "jre7\\bin\\";
                         mydlpConfPath = Configuration.AppPath + @"\mydlp.conf";
                         printSpoolPath = Path.GetTempPath() + "\\mydlp\\spool";
+                        sharedSpoolPath = Path.GetTempPath() + "\\mydlp\\sharedspool";
                     }
                     catch (Exception e)
                     {
@@ -845,6 +848,15 @@ namespace MyDLP.EndPoint.Core
                 return printSpoolPath;
             }
         }
+
+        public static String SharedSpoolPath
+        {
+            get
+            {
+                return sharedSpoolPath;
+            }
+        }
+
 
     }
 }

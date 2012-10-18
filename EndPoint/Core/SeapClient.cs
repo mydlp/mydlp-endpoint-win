@@ -716,7 +716,9 @@ namespace MyDLP.EndPoint.Core
 
                 if (tryCount >= tryLimit)
                 {
-                    throw lastException;
+                    Logger.GetInstance().Error("SeapClient connection error, engine unreachable:" + lastException.Message + " " + lastException.StackTrace );
+                    SvcController.StopMyDLP();
+                    return ""; 
                 }
             }
 
@@ -745,7 +747,9 @@ namespace MyDLP.EndPoint.Core
             try
             {
                 //consume &discard error message if any
-                if (stream.DataAvailable)
+               
+               
+                if (stream!= null && stream.DataAvailable)
                 {
                     reader.ReadToEnd();
                 }
