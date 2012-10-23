@@ -40,43 +40,17 @@ namespace MyDLP.EndPoint.Core
 
         static String javaStartCmd = @"cd " + Configuration.JavaBackendPath + " && Run.bat";
         static String erlStartCmd = @"cd " + Configuration.ErlangPath + " && Run.bat";
+        static String erlInstallCmd = @"cd " + Configuration.ErlangPath + " && RegisterService.bat";
         static String erlStartInteractiveCmd = @"cd " + Configuration.ErlangPath + " && InteractiveRun.bat";
 
         public static void Start()
         {
-            //clear pid files befire startup
+            //clear pid files before startup
             String path = Configuration.AppPath + @"\run\mydlp.pid";
             File.Delete(path);
 
             path = Configuration.AppPath + @"\run\backend.pid";
             File.Delete(path);
-
-            if (!System.Environment.UserInteractive)
-            {
-                SvcController.StopService("mydlpengine", 5000);
-                ProcessControl.ExecuteCommandSync(new ExecuteParameters("sc delete mydlpengine", "SC", new EnvVar[]{}));
-
-                try
-                {
-                    using (RegistryKey key = Registry.LocalMachine.OpenSubKey("Software\\Ericsson\\Erlang", true))
-                    {
-                        key.DeleteSubKeyTree("ErlSrv");
-                    }
-                }
-                catch
-                {
-                    Logger.GetInstance().Info("Unable to delete uneccessary keys or keys do not exists");
-                }
-            }
-
-            Logger.GetInstance().Info("Starting Java Backend");           
-            EnvVar[] javaEnv = new EnvVar[] {
-                new EnvVar("JRE_BIN_DIR", GetShortPath(Configuration.JavaBinPaths)), 
-                new EnvVar("BACKEND_DIR",GetShortPath(Configuration.JavaPath)), 
-                new EnvVar("MYDLP_APPDIR",GetShortPath(Configuration.AppPath))
-            };
-
-            ProcessControl.ExecuteCommandAsync(javaStartCmd, "JAVA:", javaEnv);
 
             EnvVar[] erlEnv = new EnvVar[] {
                 new EnvVar("MYDLP_CONF", GetShortPath(Configuration.MydlpConfPath).Replace(@"\", @"/")), 
@@ -84,6 +58,40 @@ namespace MyDLP.EndPoint.Core
                 new EnvVar("MYDLP_APPDIR",GetShortPath(Configuration.AppPath)),
                 new EnvVar("path", @";" + Configuration.ErlangBinPaths)
             };
+
+
+           if (!System.Environment.UserInteractive && SvcController.IsServiceInstalled("mydlpengine"))
+            {
+                if (SvcController.IsServiceRunning("mydlpengine"))
+                {
+                    SvcController.StopService("mydlpengine", 5000);
+                }
+
+                ProcessControl.ExecuteCommandSync(new ExecuteParameters("sc delete mydlpengine", "SC", erlEnv));               
+
+            }
+
+
+            try
+            {
+                using (RegistryKey key = Registry.LocalMachine.OpenSubKey("Software\\Ericsson\\Erlang", true))
+                {
+                    key.DeleteSubKeyTree("ErlSrv");
+                }
+            }
+            catch
+            {
+                Logger.GetInstance().Info("Unable to delete uneccessary keys or keys do not exists");
+            }
+
+            Logger.GetInstance().Info("Starting Java Backend");
+            EnvVar[] javaEnv = new EnvVar[] {
+                new EnvVar("JRE_BIN_DIR", GetShortPath(Configuration.JavaBinPaths)), 
+                new EnvVar("BACKEND_DIR",GetShortPath(Configuration.JavaPath)), 
+                new EnvVar("MYDLP_APPDIR",GetShortPath(Configuration.AppPath))
+            };
+
+            ProcessControl.ExecuteCommandAsync(javaStartCmd, "JAVA:", javaEnv);
 
             Configuration.SetErlConf();
 
@@ -142,6 +150,36 @@ namespace MyDLP.EndPoint.Core
             {
                 KillProcByName("erl");
                 KillProcByName("werl");
+            }
+
+            if (!System.Environment.UserInteractive && SvcController.IsServiceInstalled("mydlpengine"))
+            {
+                if (SvcController.IsServiceRunning("mydlpengine"))
+                {
+                    SvcController.StopService("mydlpengine", 5000);
+                }
+
+                
+                EnvVar[] erlEnv = new EnvVar[] {
+                new EnvVar("MYDLP_CONF", GetShortPath(Configuration.MydlpConfPath).Replace(@"\", @"/")), 
+                new EnvVar("MYDLPBEAMDIR",GetShortPath(Configuration.ErlangPath)), 
+                new EnvVar("MYDLP_APPDIR",GetShortPath(Configuration.AppPath)),
+                new EnvVar("path", @";" + Configuration.ErlangBinPaths)
+                };
+
+                ProcessControl.ExecuteCommandSync(new ExecuteParameters("sc delete mydlpengine", "SC", erlEnv));                                          
+            }
+
+            try
+            {
+                using (RegistryKey key = Registry.LocalMachine.OpenSubKey("Software\\Ericsson\\Erlang", true))
+                {
+                    key.DeleteSubKeyTree("ErlSrv");
+                }
+            }
+            catch
+            {
+                Logger.GetInstance().Info("Unable to delete uneccessary keys or keys do not exists");
             }
         }
 

@@ -60,8 +60,8 @@ namespace MyDLP.EndPoint.Service
                 serviceLogger.WriteEntry("Unable to get mydlp registry configuration, mydlpepwatchdog service stopped", EventLogEntryType.Error);
                 Logger.GetInstance().Error("Unable to get mydlp registry configuration, mydlpepwatchdog service stopped");
                 Environment.Exit(1);
-            }         
-            
+            }
+
             Configuration.GetUserConf();
 
             watchdogTimer = new Timer(watchdogTimerPeriod);
@@ -74,7 +74,9 @@ namespace MyDLP.EndPoint.Service
         private void OnTimedWatchdogEvent(object source, ElapsedEventArgs e)
         {
             Logger.GetInstance().CheckLogLimit();
-            
+
+            Logger.GetInstance().Debug("OnTimedWatchdogEvent");
+
             //Check upto date pids in file
             Configuration.SetPids();
 
@@ -134,7 +136,7 @@ namespace MyDLP.EndPoint.Service
                     service.WaitForStatus(ServiceControllerStatus.Running);
                     //Wait for proper initialisation of java and erlang
                     System.Threading.Thread.Sleep(20000);
-                    Configuration.SetPids();   
+                    Configuration.SetPids();
                 }
             }
             catch (Exception ex)
