@@ -440,10 +440,15 @@ namespace MyDLP.EndPoint.Core
                 SeapClient sClient = SeapClient.GetInstance();
                 String response;
                 String[] splitResp;
+                
+                String loggedOnUser = Configuration.GetLoggedOnUser();
+                String version = Configuration.GetMyDLPVersion();
+                if (version == null || version.Length == 0)
+                    version = "No version";
 
                 response = sClient.sendMessage("CONFUPDATE " 
-                    + "version=" + qpEncode(Configuration.GetMyDLPVersion()) + " " 
-                    + "user=" + qpEncode(Configuration.GetLoggedOnUser()));
+                    + "version=" + qpEncode(version) + " " 
+                    + "user=" + qpEncode(loggedOnUser));
                 splitResp = response.Split(' ');
                 if (!splitResp[0].Equals("OK"))
                 {
