@@ -125,6 +125,11 @@ namespace MyDLP.EndPoint.Service
                     Stop();
                 }
 
+                if (Configuration.BlockScreenShot)
+                {
+                    ScreenShotContoller.Start();
+                }
+
                 //SessionServer.GetInstance();
 
                 if (Configuration.PrinterMonitor)
@@ -152,8 +157,14 @@ namespace MyDLP.EndPoint.Service
 
         public void Stop()
         {
+            if (Configuration.BlockScreenShot)
+            {
+                ScreenShotContoller.Stop();
+            }
+
             MyDLPEP.MiniFilterController.GetInstance().Stop();
-            Engine.Stop();          
+
+            Engine.Stop();
 
             //SessionServer.GetInstance().Stop();
 
@@ -196,11 +207,7 @@ namespace MyDLP.EndPoint.Service
             bool oldUSBSerialAC = Configuration.UsbSerialAccessControl;
             bool oldPrinterMonitor = Configuration.PrinterMonitor;
             bool oldArchiveInbound = Configuration.ArchiveInbound;
-
-            /*if (Configuration.GetLoggedOnUser() == "NO OWNER")
-            {
-                Configuration.ResetLoggedOnUser();            
-            }*/
+            bool oldBlockScreenShot = Configuration.BlockScreenShot;
 
             if (SeapClient.HasNewConfiguration())
             {
@@ -240,6 +247,16 @@ namespace MyDLP.EndPoint.Service
                     MyDLPEP.MiniFilterController.GetInstance().Stop();
                     MyDLPEP.MiniFilterController.GetInstance().Start();
                     MyDLPEP.FilterListener.getInstance().StartListener();
+                }
+
+                if (oldBlockScreenShot)
+                {
+                    ScreenShotContoller.Stop();
+                }
+
+                if (Configuration.BlockScreenShot)
+                {
+                    ScreenShotContoller.Start();
                 }
             }
         }

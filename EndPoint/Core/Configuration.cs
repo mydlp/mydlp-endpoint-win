@@ -44,6 +44,7 @@ namespace MyDLP.EndPoint.Core
         static String seapServer;
         static int seapPort;
         static String minifilterPath;
+        static String kbfilterPath;
         static String javaBackendPath;
         static String erlangPath;
         static String javaBinPaths;
@@ -69,6 +70,8 @@ namespace MyDLP.EndPoint.Core
         static bool usbSerialAccessControl;
         static bool printerMonitor;
         static bool newFilterConfiguration;
+        static string screentShotProcesses = "";
+        static bool blockScreenShot;
 
         public static void setNewFilterConfiguration(bool newConf)
         {
@@ -140,20 +143,6 @@ namespace MyDLP.EndPoint.Core
                 logLevel = Logger.LogLevel.DEBUG;
             }
         }
-
-        // No need for seperate cache\ handled in MainController
-        /* public static void InitUserNameCacheTimer()
-        {
-            userNameTimer = new Timer(20000);
-            userNameTimer.Elapsed += new ElapsedEventHandler(OnTimeUserNameCacheEvent);
-            userNameTimer.Enabled = true;
-
-        }
-
-        private static void OnTimeUserNameCacheEvent(object source, ElapsedEventArgs e)
-        {
-            userName = "";
-        }*/
 
         public static int GetErlPid()
         {
@@ -258,11 +247,13 @@ namespace MyDLP.EndPoint.Core
                 {
                     Logger.GetInstance().Info("64 bit platform, using MyDLPMF_64.sys");
                     minifilterPath = "C:\\workspace\\mydlp-endpoint-win\\EndPoint\\MiniFilter\\src\\objchk_win7_amd64\\amd64\\MyDLPMF.sys";
+                    kbfilterPath = "C:\\workspace\\mydlp-endpoint-win\\EndPoint\\KbFilter\\src\\objchk_win7_amd64\\amd64\\MyDLPKBF.sys";
                 }
                 else
                 {
                     Logger.GetInstance().Info("32 bit platform, using MyDLPMF.sys");
                     minifilterPath = "C:\\workspace\\mydlp-endpoint-win\\EndPoint\\MiniFilter\\src\\objchk_wxp_x86\\i386\\MyDLPMF.sys";
+                    kbfilterPath = "C:\\workspace\\mydlp-endpoint-win\\EndPoint\\KbFilter\\src\\objchk_wxp_x86\\i386\\MyDLPKBF.sys";
                 }
 
                 printingDirPath = "C:\\workspace\\mydlp-endpoint-win\\EndPoint\\Service\\printing\\";
@@ -292,13 +283,15 @@ namespace MyDLP.EndPoint.Core
                         appPath = mydlpKey.GetValue("AppPath").ToString();
                         if (IsOS64Bit())
                         {
-                            Logger.GetInstance().Info("64 bit platform, using MyDLPMF_64.sys");
+                            Logger.GetInstance().Info("64 bit platform, using MyDLPMF_64.sys and MyDLPKBF_64.sys");
                             minifilterPath = appPath + "MyDLPMF_64.sys";
+                            kbfilterPath = appPath + "MyDLPKBF_64.sys";
                         }
                         else
                         {
-                            Logger.GetInstance().Info("32 bit platform, using MyDLPMF.sys");
+                            Logger.GetInstance().Info("32 bit platform, using MyDLPMF.sys and MyDLPKBF.sys");
                             minifilterPath = appPath + "MyDLPMF.sys";
+                            kbfilterPath = appPath + "MyDLPKBF.sys";
                         }
                         printingDirPath = appPath + "printing\\";
                         javaBackendPath = appPath + "engine\\java\\";
@@ -352,6 +345,17 @@ namespace MyDLP.EndPoint.Core
             {
                 RegistryKey mydlpKey = Registry.LocalMachine.OpenSubKey("Software", true).CreateSubKey("MyDLP");
 
+                //Get screenShotConfiguration
+                if ((int)(getRegistryConfSafe(mydlpKey, "prtscr_block", 0, RegistryValueKind.DWord)) == 0)
+                {
+                    blockScreenShot = false;
+                }
+                else
+                {
+                    blockScreenShot = true;
+                    screentShotProcesses = (String)getRegistryConfSafe(mydlpKey, "prtscr_processes", 0, RegistryValueKind.String);
+                }
+
                 //Get archiveInbound
                 if ((int)(getRegistryConfSafe(mydlpKey, "archive_inbound", 0, RegistryValueKind.DWord)) == 0)
                 {
@@ -362,7 +366,7 @@ namespace MyDLP.EndPoint.Core
                     archiveInbound = true;
                 }
 
-                //Get archiveInbound
+                //Get usbSerialAccessControl
                 if ((int)(getRegistryConfSafe(mydlpKey, "usb_serial_access_control", 0, RegistryValueKind.DWord)) == 0)
                 {
                     usbSerialAccessControl = false;
@@ -745,6 +749,14 @@ namespace MyDLP.EndPoint.Core
             }
         }
 
+        public static String KbFilterPath
+        {
+            get
+            {
+                return kbfilterPath;
+            }
+        }
+
         public static String JavaBackendPath
         {
             get
@@ -854,6 +866,22 @@ namespace MyDLP.EndPoint.Core
             get
             {
                 return sharedSpoolPath;
+            }
+        }
+
+        public static bool BlockScreenShot
+        {
+            get
+            {
+                return blockScreenShot;
+            }
+        }
+
+        public static String ScreentShotProcesses
+        {
+            get
+            {
+                return screentShotProcesses;
             }
         }
 

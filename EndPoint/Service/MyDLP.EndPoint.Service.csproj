@@ -66,6 +66,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ScreenShotContoller.cs" />
     <Compile Include="SessionManager.cs" />
     <Compile Include="MainController.cs" />
     <Compile Include="MyDLPService.cs">
