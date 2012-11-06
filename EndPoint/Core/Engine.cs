@@ -82,7 +82,7 @@ namespace MyDLP.EndPoint.Core
                 new EnvVar("MYDLP_CONF", GetShortPath(Configuration.MydlpConfPath).Replace(@"\", @"/")), 
                 new EnvVar("MYDLPBEAMDIR",GetShortPath(Configuration.ErlangPath)), 
                 new EnvVar("MYDLP_APPDIR",GetShortPath(Configuration.AppPath)),
-                new EnvVar("path", @";" + Configuration.ErlangBinPaths)
+                new EnvVar("ERLANG_HOME", GetShortPath(Configuration.ErlangHome))
             };
 
             Configuration.SetErlConf();

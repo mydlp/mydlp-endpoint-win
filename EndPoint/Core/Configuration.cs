@@ -47,7 +47,7 @@ namespace MyDLP.EndPoint.Core
         static String javaBackendPath;
         static String erlangPath;
         static String javaBinPaths;
-        static String erlangBinPaths;
+        static String erlangHome;
         static String javaPath;
         static String mydlpConfPath;
         static int erlPid = 0;
@@ -269,7 +269,7 @@ namespace MyDLP.EndPoint.Core
                 javaBackendPath = @"C:\workspace\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\backend\";
                 javaPath = @"C:\workspace\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\backend\target\";
                 erlangPath = @"C:\workspace\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\mydlp\";
-                erlangBinPaths = @"C:\workspace\mydlp-deployment-env\erl5.8.5\bin;C:\workspace\mydlp-deployment-env\erl5.8.5\erts-5.8.5\bin";
+                erlangHome = @"C:\workspace\mydlp-deployment-env\erl5.8.5";
                 javaBinPaths = @"C:\workspace\mydlp-deployment-env\jre7\bin";
                 appPath = @"C:\workspace\mydlp-development-env";
                 seapServer = "127.0.0.1";
@@ -303,7 +303,7 @@ namespace MyDLP.EndPoint.Core
                         printingDirPath = appPath + "printing\\";
                         javaBackendPath = appPath + "engine\\java\\";
                         erlangPath = appPath + "engine\\erl\\";
-                        erlangBinPaths = appPath + @"erl5.8.5\bin;" + appPath + @"erl5.8.5\erts-5.8.5\bin";
+                        erlangHome = appPath + @"erl5.8.5\bin";
                         javaPath = appPath + "engine\\java\\";
                         javaBinPaths = appPath + "jre7\\bin\\";
                         mydlpConfPath = Configuration.AppPath + @"\mydlp.conf";
@@ -761,11 +761,11 @@ namespace MyDLP.EndPoint.Core
             }
         }
 
-        public static String ErlangBinPaths
+        public static String ErlangHome
         {
             get
             {
-                return erlangBinPaths;
+                return erlangHome;
             }
         }
 
