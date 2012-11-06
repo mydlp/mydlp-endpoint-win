@@ -303,7 +303,7 @@ namespace MyDLP.EndPoint.Core
                         printingDirPath = appPath + "printing\\";
                         javaBackendPath = appPath + "engine\\java\\";
                         erlangPath = appPath + "engine\\erl\\";
-                        erlangHome = appPath + @"erl5.8.5\bin";
+                        erlangHome = appPath + @"erl5.8.5";
                         javaPath = appPath + "engine\\java\\";
                         javaBinPaths = appPath + "jre7\\bin\\";
                         mydlpConfPath = Configuration.AppPath + @"\mydlp.conf";
