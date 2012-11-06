@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="MyDLP.EndPoint.MiniFilter"
-	ProjectGUID="{DD6E8D33-6BF2-438F-884E-FDB92B71D1A4}"
-	RootNamespace="MyDLPEM"
+	Name="MyDLP.EndPoint.KbFilter"
+	ProjectGUID="{C566388B-9259-427D-BD19-97A49D3CDCA0}"
+	RootNamespace="KbFilter"
 	TargetFrameworkVersion="196613"
 	>
 	<Platforms>
@@ -21,16 +21,12 @@
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="1"
 			CharacterSet="2"
-			ExcludeBuckets="5;6;7;8;9;10;12;13;14;15;16;18;21"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
-				CommandLine="ddk_filter_build.bat&#x0D;&#x0A;"
-				AdditionalDependencies=""
-				Outputs="src\objchk_wxp_x86\i386\scanner.sys"
 			/>
 			<Tool
 				Name="VCXMLDataGeneratorTool"
@@ -100,8 +96,9 @@
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
-				CommandLine="ddk_filter_build.bat&#x0D;&#x0A;"
-				Outputs="src\objchk_wxp_x86\i386\MyDLPMF.sys;src\objchk_wxp_x86\i386\vc90.pdb;src\objchk_wxp_x86\i386\MyDLPMF.pdb"
+				Description="Building MyDLPKBF driver"
+				CommandLine="ddk_kbfilter_build.bat&#x0D;&#x0A;"
+				Outputs="src\objchk_wxp_x86\i386\MyDLPKBF.sys;src\objchk_wxp_x86\i386\MyDLPKBF_64.sys;src\objchk_wxp_x86\i386\vc90.pdb;src\objchk_wxp_x86\i386\MyDLPKBF.pdb"
 			/>
 			<Tool
 				Name="VCXMLDataGeneratorTool"
@@ -164,23 +161,19 @@
 	</References>
 	<Files>
 		<File
-			RelativePath=".\ddk_filter_build.bat"
+			RelativePath=".\ddk_kbfilter_build.bat"
 			>
 		</File>
 		<File
-			RelativePath=".\inc\mydlp_common.h"
+			RelativePath=".\src\mydlp_kbfilter.c"
 			>
 		</File>
 		<File
-			RelativePath=".\src\mydlp_minifilter.c"
+			RelativePath=".\inc\mydlp_kbfilter.h"
 			>
 		</File>
 		<File
-			RelativePath=".\src\mydlp_minifilter.h"
-			>
-		</File>
-		<File
-			RelativePath=".\src\sources"
+			RelativePath=".\src\Sources"
 			>
 		</File>
 	</Files>

@@ -200,6 +200,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\KbFilterController.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\MiniFilterController.cpp"
 				>
 			</File>
@@ -243,6 +247,10 @@
 			</File>
 			<File
 				RelativePath=".\FilterListener.h"
+				>
+			</File>
+			<File
+				RelativePath=".\KbFilterController.h"
 				>
 			</File>
 			<File
