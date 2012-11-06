@@ -40,7 +40,6 @@ namespace MyDLP.EndPoint.Service
             MainController.SetServiceLogger(myDLPEventLog);
             MainController controller =
                 MainController.GetInstance();
-
             controller.Start();
 
             myDLPEventLog.WriteEntry("MyDLP-EP-Win service started");

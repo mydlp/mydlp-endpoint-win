@@ -103,8 +103,8 @@ namespace MyDLP.EndPoint.Core
                 System.Diagnostics.Process proc = new System.Diagnostics.Process();
                 proc.StartInfo = procStartInfo;
                 Logger.GetInstance().Debug(param.Prefix + " starting process: \"" + param.Command + "\"");
-                proc.OutputDataReceived += (sender, args) => Logger.GetInstance().Debug(param.Prefix + " " + args.Data);
-                proc.ErrorDataReceived += (sender, args) => Logger.GetInstance().Error(param.Prefix + " " + args.Data);
+                proc.OutputDataReceived += (sender, args) => SuppressUnnecessaryDebug(param.Prefix, args.Data);
+                proc.ErrorDataReceived += (sender, args) => SuppressUnnecessaryError(param.Prefix, args.Data);
                 proc.EnableRaisingEvents = true;
                 proc.Start();
                 proc.BeginOutputReadLine();
@@ -118,6 +118,24 @@ namespace MyDLP.EndPoint.Core
             {
                 Logger.GetInstance().Error(param.Prefix + " " + e.Message + " " + e.StackTrace);
             }
+        }
+
+        private static void SuppressUnnecessaryError(String prefix, String data)
+        {
+
+            if (data != null && data.Trim().Length != 0)
+            {
+                if (data.Contains("SLF4J")) return;
+                Logger.GetInstance().Error(prefix + " " + data);
+            }
+
+        }
+
+
+        private static void SuppressUnnecessaryDebug(String prefix, String data)
+        {
+            if (data != null && data.Trim().Length != 0)
+                Logger.GetInstance().Debug(prefix + " " + data);
         }
     }
 }

@@ -40,7 +40,7 @@ namespace MyDLP.EndPoint.Service
             }
             else
             {
-                return "NO OWNER";
+                return "No Session";
             }
         }
 

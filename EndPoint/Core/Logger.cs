@@ -116,9 +116,9 @@ namespace MyDLP.EndPoint.Core
             String logEntry = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + " INFO  " + entry;
             if (Configuration.LogLevel == LogLevel.DEBUG || Configuration.LogLevel == LogLevel.INFO)
             {
-                lock (logPath)
+                if (useFileLogger)
                 {
-                    if (useFileLogger)
+                    lock (logPath)
                     {
                         using (System.IO.StreamWriter file = new System.IO.StreamWriter(logPath, true, System.Text.Encoding.UTF8))
                         {

@@ -189,7 +189,7 @@ DWORD ListenerWorker(__in PMYDLPMF_THREAD_CONTEXT Context)
 			if (!result) {
 				hr = HRESULT_FROM_WIN32( GetLastError() );
 				if (hr == HRESULT_FROM_WIN32( ERROR_INVALID_HANDLE )) {
-						MyDLP::EndPoint::Core::Logger::GetInstance()->Error("ERROR_INVALID_HANDLE");
+						MyDLP::EndPoint::Core::Logger::GetInstance()->Info("INVALID_HANDLE");
 				}
 				break;
 			}
@@ -338,7 +338,7 @@ DWORD ListenerWorker(__in PMYDLPMF_THREAD_CONTEXT Context)
 		if (!SUCCEEDED(hr))	{
 			if (hr == HRESULT_FROM_WIN32( ERROR_INVALID_HANDLE))
 			{
-				MyDLP::EndPoint::Core::Logger::GetInstance()->Error("MyDLPMF: Port is disconnected, probably due to scanner filter unloading.\n");
+				MyDLP::EndPoint::Core::Logger::GetInstance()->Info("MyDLPMF: Port is disconnected, probably due to normal scanner filter unloading.");
 			} else {
 				MyDLP::EndPoint::Core::Logger::GetInstance()->Error("MyDLPMF: Unknown error occured. Error:" + gcnew Int64(hr));
 			}

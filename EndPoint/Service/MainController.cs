@@ -68,7 +68,8 @@ namespace MyDLP.EndPoint.Service
                     if (!service.Status.Equals(ServiceControllerStatus.Running) && !service.Status.Equals(ServiceControllerStatus.StartPending))
                     {
                         Logger.GetInstance().Info("Starting mydlpepwatchdog at start up");
-                        service.Start();
+                        SvcController.StartServiceNonBlocking("mydlpepwatchdog", 10000);
+                        Logger.GetInstance().Info("Starting mydlpepwatchdog at start up finished");
                     }
                 }
                 catch (Exception e)
