@@ -40,7 +40,7 @@ NTSTATUS DriverEntry(IN PDRIVER_OBJECT DriverObject,
 	PDEVICE_OBJECT DeviceObject;
 	NTSTATUS status = STATUS_SUCCESS;
 
-	KdPrint(("MyDLPKBF: DriverEntry.\n"));
+	DbgPrint(("MyDLPKBF: DriverEntry.\n"));
 
 	for(i = 0; i <= IRP_MJ_MAXIMUM_FUNCTION; i++)
 	{
@@ -237,7 +237,7 @@ MyDLPKBF_CreateClose(IN PDEVICE_OBJECT DeviceObject,
 							pKbdDeviceObject->DriverObject->MajorFunction[IRP_MJ_READ] = oldFunction;
 							oldFunction = NULL;
 						}
-						KdPrint(("MyDLPKBF: Detach Device. \n"));
+						DbgPrint(("MyDLPKBF: Detach Device. \n"));
 						IoDetachDevice(topOfStack);
 						topOfStack = NULL;
 					}
@@ -310,7 +310,7 @@ NTSTATUS MyDLPKBF_DispatchRead(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 	*nextIrpStack = *currentIrpStack;
 	IoSetCompletionRoutine(Irp, MyDLPKBF_ReadComplete, DeviceObject, TRUE, TRUE, TRUE);
 	status = IoCallDriver(topOfStack, Irp);
-	KdPrint(("MyDLPKBF: DispatchRead End\n"));
+	DbgPrint(("MyDLPKBF: DispatchRead End\n"));
 	return status;
 }
 
@@ -357,7 +357,7 @@ NTSTATUS MyDLPKBF_ReadComplete(IN PDEVICE_OBJECT DeviceObject,
 	{
 
 		Irp->IoStatus.Information = 0;
-		KdPrint("MyDLPKBF: block printscreen");
+		DbgPrint("MyDLPKBF: block printscreen");
 		return STATUS_ACCESS_DENIED;
 	}
 	else
@@ -390,7 +390,7 @@ VOID MyDLPKBF_Unload( __in PDRIVER_OBJECT DriverObject)
 
 	PAGED_CODE();
 
-	KdPrint(("MyDLPKBF: Unload\n"));
+	DbgPrint(("MyDLPKBF: Unload\n"));
 
 	timeout.QuadPart = 1000000;
 	KeInitializeTimer(&kTimer);
@@ -409,5 +409,5 @@ VOID MyDLPKBF_Unload( __in PDRIVER_OBJECT DriverObject)
 
 	//Delete device to compleely remove driver instance
 	IoDeleteDevice(deviceObject);
-	KdPrint(("MyDLPKBF: Deleted Device\n"));
+	DbgPrint(("MyDLPKBF: Deleted Device\n"));
 }

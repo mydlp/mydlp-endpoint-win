@@ -67,6 +67,12 @@ namespace MyDLP.EndPoint.Service
                 if (sensitiveProcessesList.Count == 0)
                     return;
 
+                //remove device for improper shutdown
+                if (Core.SvcController.IsServiceInstalled("MyDLPKBF"))
+                {
+                    MyDLPEP.KbFilterController.GetInstance().DeactivateDevice();
+                    MyDLPEP.KbFilterController.GetInstance().Stop();
+                }
                 Logger.GetInstance().Debug("mydlpepwin tries to install mydlpkbf");
                 MyDLPEP.KbFilterController.GetInstance().Start();
                                            

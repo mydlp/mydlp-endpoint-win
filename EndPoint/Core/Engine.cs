@@ -89,7 +89,7 @@ namespace MyDLP.EndPoint.Core
             }
             catch
             {
-                Logger.GetInstance().Info("Unable to delete uneccessary keys or keys do not exists");
+                //Logger.GetInstance().Info("Unable to delete uneccessary keys or keys do not exists");
             }
 
             Logger.GetInstance().Info("Starting Java Backend");
@@ -183,7 +183,7 @@ namespace MyDLP.EndPoint.Core
             }
             catch
             {
-                Logger.GetInstance().Info("Unable to delete uneccessary keys or keys do not exists");
+                //Logger.GetInstance().Info("Unable to delete uneccessary keys or keys do not exists");
             }
         }
 
