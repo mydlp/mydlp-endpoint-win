@@ -52,6 +52,10 @@ namespace MyDLP.EndPoint.Core
             path = Configuration.AppPath + @"\run\backend.pid";
             File.Delete(path);
 
+            KillProcByName("erl");
+            KillProcByName("werl");
+            KillProcByName("java");
+            
             EnvVar[] erlEnv = new EnvVar[] {
                 new EnvVar("MYDLP_CONF", GetShortPath(Configuration.MydlpConfPath).Replace(@"\", @"/")), 
                 new EnvVar("MYDLPBEAMDIR",GetShortPath(Configuration.ErlangPath)), 
@@ -199,7 +203,10 @@ namespace MyDLP.EndPoint.Core
                 foreach (System.Diagnostics.Process p in process)
                 {
                     Logger.GetInstance().Debug("Killing pid:" + p.Id + " name: " + p.ProcessName);
-                    p.Kill();
+                    String a = GetShortPath(Configuration.AppPath).ToLower();
+                    String b = GetShortPath(p.Modules[0].FileName).ToLower();
+                    if (b.StartsWith(a))
+                        p.Kill();
                 }
             }
             catch (Exception e)

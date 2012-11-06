@@ -260,8 +260,8 @@ namespace MyDLP.EndPoint.Core
                 javaBackendPath = @"C:\workspace\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\backend\";
                 javaPath = @"C:\workspace\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\backend\target\";
                 erlangPath = @"C:\workspace\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\mydlp\";
-                erlangHome = @"C:\workspace\mydlp-deployment-env\erl5.8.5";
-                javaBinPaths = @"C:\workspace\mydlp-deployment-env\jre7\bin";
+                erlangHome = @"C:\workspace\mydlp-development-env\erl5.8.5";
+                javaBinPaths = @"C:\workspace\mydlp-development-env\jre7\bin";
                 appPath = @"C:\workspace\mydlp-development-env";
                 seapServer = "127.0.0.1";
                 seapPort = 9099;
