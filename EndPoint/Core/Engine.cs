@@ -56,7 +56,13 @@ namespace MyDLP.EndPoint.Core
                 new EnvVar("MYDLP_CONF", GetShortPath(Configuration.MydlpConfPath).Replace(@"\", @"/")), 
                 new EnvVar("MYDLPBEAMDIR",GetShortPath(Configuration.ErlangPath)), 
                 new EnvVar("MYDLP_APPDIR",GetShortPath(Configuration.AppPath)),
-                new EnvVar("path", @";" + Configuration.ErlangBinPaths)
+                new EnvVar("ERLANG_HOME", GetShortPath(Configuration.ErlangHome))
+            };
+
+            EnvVar[] javaEnv = new EnvVar[] {
+                new EnvVar("JRE_BIN_DIR", GetShortPath(Configuration.JavaBinPaths)), 
+                new EnvVar("BACKEND_DIR",GetShortPath(Configuration.JavaPath)), 
+                new EnvVar("MYDLP_APPDIR",GetShortPath(Configuration.AppPath))
             };
 
 
@@ -68,9 +74,7 @@ namespace MyDLP.EndPoint.Core
                 }
 
                 ProcessControl.ExecuteCommandSync(new ExecuteParameters("sc delete mydlpengine", "SC", erlEnv));               
-
             }
-
 
             try
             {
@@ -85,11 +89,7 @@ namespace MyDLP.EndPoint.Core
             }
 
             Logger.GetInstance().Info("Starting Java Backend");
-            EnvVar[] javaEnv = new EnvVar[] {
-                new EnvVar("JRE_BIN_DIR", GetShortPath(Configuration.JavaBinPaths)), 
-                new EnvVar("BACKEND_DIR",GetShortPath(Configuration.JavaPath)), 
-                new EnvVar("MYDLP_APPDIR",GetShortPath(Configuration.AppPath))
-            };
+           
 
             ProcessControl.ExecuteCommandAsync(javaStartCmd, "JAVA:", javaEnv);
 
@@ -164,7 +164,7 @@ namespace MyDLP.EndPoint.Core
                 new EnvVar("MYDLP_CONF", GetShortPath(Configuration.MydlpConfPath).Replace(@"\", @"/")), 
                 new EnvVar("MYDLPBEAMDIR",GetShortPath(Configuration.ErlangPath)), 
                 new EnvVar("MYDLP_APPDIR",GetShortPath(Configuration.AppPath)),
-                new EnvVar("path", @";" + Configuration.ErlangBinPaths)
+                new EnvVar("ERLANG_HOME", GetShortPath(Configuration.ErlangHome))
                 };
 
                 ProcessControl.ExecuteCommandSync(new ExecuteParameters("sc delete mydlpengine", "SC", erlEnv));                                          
