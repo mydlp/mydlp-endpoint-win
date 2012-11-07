@@ -116,7 +116,7 @@ namespace MyDLP.EndPoint.Service
                     if (testSuccess)
                         break;
                     Logger.GetInstance().Debug("Seap connection test attempt:" + i);
-                    System.Threading.Thread.Sleep(1000);
+                    System.Threading.Thread.Sleep(3000);
                 }
 
                 if (!testSuccess)
