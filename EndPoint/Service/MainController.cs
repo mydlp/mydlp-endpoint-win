@@ -25,14 +25,15 @@ using System.Diagnostics;
 using System.Timers;
 using System.ServiceProcess;
 using Microsoft.Win32;
+using System.Threading;
 
 namespace MyDLP.EndPoint.Service
 {
     public class MainController
     {
         Engine engine;
-        Timer watchdogTimer;
-        Timer confTimer;
+        System.Timers.Timer watchdogTimer;
+        System.Timers.Timer confTimer;
         public static EventLog serviceLogger;
 
         int watchdogTimerPeriod = 120000;
@@ -53,6 +54,14 @@ namespace MyDLP.EndPoint.Service
         }
 
         public void Start()
+        {
+            var thread = new Thread(StartBackground);
+            Logger.GetInstance().Info("Starting mydlpepwin service");
+            thread.Start();
+
+        }
+
+        public void StartBackground()
         {
             //notify logger that we are in main service
             Logger.GetInstance().InitializeMainLogger(serviceLogger);
@@ -79,12 +88,12 @@ namespace MyDLP.EndPoint.Service
                 //enable watchdog check
 
                 Logger.GetInstance().Info("Watchdog check enabled");
-                watchdogTimer = new Timer(watchdogTimerPeriod);
+                watchdogTimer = new System.Timers.Timer(watchdogTimerPeriod);
                 watchdogTimer.Elapsed += new ElapsedEventHandler(OnTimedWatchdogEvent);
                 watchdogTimer.Enabled = true;
             }
 
-            Logger.GetInstance().Info("Starting mydlpepwin service");
+
 
             if (Configuration.GetAppConf() == false)
             {
@@ -146,13 +155,11 @@ namespace MyDLP.EndPoint.Service
 
             //initialize configuration timer
             Logger.GetInstance().Info("Configuration check enabled");
-            confTimer = new Timer(confCheckTimerPeriod);
+            confTimer = new System.Timers.Timer(confCheckTimerPeriod);
             confTimer.Elapsed += new ElapsedEventHandler(OnTimedConfCheckEvent);
             confTimer.Enabled = true;
 
-            //GetLoggedOnUser
-            //This is not working hidden form required
-            //SystemEvents.SessionSwitch += new SessionSwitchEventHandler(Configuration.LoggedOnUserChangeHandler);
+            Logger.GetInstance().Info("mydlpepwin service started");
         }
 
         public void Stop()
@@ -165,7 +172,7 @@ namespace MyDLP.EndPoint.Service
             }
 
             MyDLPEP.MiniFilterController.GetInstance().Stop();
-            
+
             Engine.Stop();
 
             //SessionServer.GetInstance().Stop();
@@ -178,7 +185,7 @@ namespace MyDLP.EndPoint.Service
             if (Configuration.PrinterMonitor)
             {
                 Service.PrinterController.getInstance().Stop();
-            }                     
+            }
 
             Logger.GetInstance().Info("mydlpepwin service stopped");
         }
