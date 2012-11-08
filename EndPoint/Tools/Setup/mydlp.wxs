@@ -72,7 +72,7 @@
           <ServiceDependency Id="winmgmt"/>
           <ServiceDependency Id="netlogon"/>
         </ServiceInstall>
-                       
+
         <CreateFolder Directory="LOGSDIR" />
         <CreateFolder Directory="RUNDIR" />
         <CreateFolder Directory="SPOOLDIR" />
@@ -151,7 +151,7 @@
       <Component Id="mydlpcpl.exe" Directory="INSTALLLOCATION" Guid="*">
         <File Id="mydlpcpl.exe" Name="mydlpcpl.exe" KeyPath="yes" Vital="yes" DiskId="1" Source="..\..\Tools\ControlPanel\bin\Release\MyDLP.EndPoint.Tools.ControlPanel.exe" />
       </Component>
-      
+
       <Component Id="ControlPanelCLSIDEntries" Directory="INSTALLLOCATION" Guid="*" >
         <RegistryKey Root="HKCR" Key="CLSID\{2CA4E47D-F0DA-4726-9E5C-BE52DF347249}"  Action="createAndRemoveOnUninstall">
           <RegistryValue Type="string" Name="LocalizedString" Value="MyDLP Settings"/>
@@ -166,9 +166,9 @@
         <RegistryKey Root="HKCR" Key="CLSID\{2CA4E47D-F0DA-4726-9E5C-BE52DF347249}\Shell\Open\Command" Action="createAndRemoveOnUninstall">
           <RegistryValue Type="string" Value="[INSTALLLOCATION]mydlpcpl.exe"/>
         </RegistryKey>
-        <RegistryKey Root="HKLM" Key="Software\Microsoft\Windows\CurrentVersion\Explorer\ControlPanel\NameSpace\{2CA4E47D-F0DA-4726-9E5C-BE52DF347249}" Action="createAndRemoveOnUninstall"/>        
+        <RegistryKey Root="HKLM" Key="Software\Microsoft\Windows\CurrentVersion\Explorer\ControlPanel\NameSpace\{2CA4E47D-F0DA-4726-9E5C-BE52DF347249}" Action="createAndRemoveOnUninstall"/>
       </Component>
-      
+
     </ComponentGroup>
 
     <UI>
