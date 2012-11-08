@@ -107,7 +107,7 @@
       </Component>
 
       <Component Id="MyDLPKBF.sys" Directory="INSTALLLOCATION" Guid="*">
-        <File Id="MyDLPKBF.sys" Name="MyDLPKBF.sys" KeyPath="yes" Vital="yes" DiskId="1" Source="..\..\KbFilter\src\objchk_wxp_x86\i386\MyDLPMF.sys" />
+        <File Id="MyDLPKBF.sys" Name="MyDLPKBF.sys" KeyPath="yes" Vital="yes" DiskId="1" Source="..\..\KbFilter\src\objchk_wxp_x86\i386\MyDLPKBF.sys" />
       </Component>
 
       <Component Id="MyDLPKBF_64.sys" Directory="INSTALLLOCATION" Guid="*">
