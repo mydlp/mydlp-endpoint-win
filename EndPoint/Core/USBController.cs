@@ -11,7 +11,6 @@ namespace MyDLP.EndPoint.Core
 {
     public class USBController
     {
-        static ManagementEventWatcher w = null;
         //USBSerialCache: key=idHash, value=isBlocked
         static Hashtable USBSerialCache = null;
         static bool active = false;

@@ -141,7 +141,7 @@ namespace MyDLP.EndPoint.Service
             TempSpooler.Stop();
             //listen changes should be changed before removing secure printers
             MyDLPEP.PrinterUtils.listenChanges = false;
-            RemoveLocalSecurePrinters();            
+            RemoveLocalSecurePrinters();
             started = false;
         }
 
@@ -219,16 +219,16 @@ namespace MyDLP.EndPoint.Service
 
         public bool IsPrinterConnection(string secureName)
         {
-            foreach (PrinterConnection conneciton in printerConnections) 
+            foreach (PrinterConnection conneciton in printerConnections)
             {
                 if (conneciton.secureName == secureName)
                     return true;
             }
 
-            return false;        
+            return false;
         }
 
-        public PrinterConnection GetPrinterConnection(string secureName) 
+        public PrinterConnection GetPrinterConnection(string secureName)
         {
             foreach (PrinterConnection conneciton in printerConnections)
             {
@@ -236,7 +236,7 @@ namespace MyDLP.EndPoint.Service
                     return conneciton;
             }
 
-            return null;           
+            return null;
         }
 
         public static String GetSecurePrinterName(String qName)
@@ -279,11 +279,12 @@ namespace MyDLP.EndPoint.Service
 
             try
             {
+                Logger.GetInstance().Debug(sid + @"\\Printers\\Connections");
                 WqlEventQuery query = new WqlEventQuery(
-                         "SELECT * FROM RegistryKeyChangeEvent WHERE " +
-                         "Hive = 'HKEY_USERS'" +
-                         @" AND KeyPath = '" + sid + @"\\Printers\\Connections'");
-                watcher = new ManagementEventWatcher(query);
+                           "SELECT * FROM RegistryKeyChangeEvent WHERE " +
+                           "Hive = 'HKEY_USERS'" +
+                           @" AND KeyPath = '" + sid + @"\\Printers\\Connections'");
+                watcher = new ManagementEventWatcher(new ManagementScope("\\\\localhost\\root\\default"), query);
                 watcher.EventArrived += new EventArrivedEventHandler(HandleEvent);
                 watcher.Start();
             }

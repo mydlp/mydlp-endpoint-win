@@ -25,16 +25,16 @@ namespace MyDLP.EndPoint.Test
 {
     class Program
     {
+        static MyDLP.EndPoint.Service.MainController controller;
+
         static void Main(string[] args)
         {
-
-            MyDLP.EndPoint.Service.MainController controller =
-                MyDLP.EndPoint.Service.MainController.GetInstance();
+            controller = MyDLP.EndPoint.Service.MainController.GetInstance();
 
             controller.Start();
 
             //block until input event to mimic service            
-            string c="";
+            string c = "";
             while (c != "e")
             {
                 c = Console.ReadLine();

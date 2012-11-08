@@ -173,12 +173,18 @@ namespace MyDLPEP
 			return nullptr;
 		}
 
-		/*if ((SECURITY_LOGON_TYPE) sessionData->LogonType != Interactive)
+		if ((SECURITY_LOGON_TYPE) sessionData->LogonType != Interactive &&
+			(SECURITY_LOGON_TYPE) sessionData->LogonType != CachedInteractive &&
+			(SECURITY_LOGON_TYPE) sessionData->LogonType != RemoteInteractive &&
+			(SECURITY_LOGON_TYPE) sessionData->LogonType != CachedRemoteInteractive &&
+			(SECURITY_LOGON_TYPE) sessionData->LogonType != Unlock &&
+			(SECURITY_LOGON_TYPE) sessionData->LogonType != CachedUnlock
+			)
 		{
-		Logger::GetInstance()->Debug("Logon type non interactive");
+			//Logger::GetInstance()->Debug("Logon type non interactive:" + sessionData->LogonType);
 		LsaFreeReturnBuffer(sessionData);
 		return nullptr;
-		}*/
+		}
 
 		if (sessionData->Upn.Buffer != NULL) {
 
@@ -294,11 +300,11 @@ namespace MyDLPEP
 		else
 		{
 			//Logger::GetInstance()->Error("SID error");
-			LocalFree(stringSid);
+			//LocalFree(stringSid);
 			return nullptr;
 		}
 
-		LocalFree(stringSid);
+		//LocalFree(stringSid);
 
 		iSession->sessionId = sessionData->Session;
 		//Logger::GetInstance()->Debug("Session ID:" + iSession->sessionId);
@@ -312,6 +318,10 @@ namespace MyDLPEP
 
 	bool SessionUtils::ImpersonateActiveUser()
 	{
+	
+		if (System::Environment::UserInteractive)
+			return true;
+
 		DWORD dwSessionId = WTSGetActiveConsoleSessionId();
 
 		HANDLE hTokenNew = NULL, hTokenDup = NULL;
@@ -334,6 +344,9 @@ namespace MyDLPEP
 
 	bool SessionUtils::StopImpersonation()
 	{
+		if (System::Environment::UserInteractive)
+			return true;
+
 		return RevertToSelf();
 	}
 }

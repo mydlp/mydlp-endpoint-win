@@ -157,13 +157,15 @@ namespace MyDLP.EndPoint.Service
 
         public void Stop()
         {
+            confTimer.Enabled = false;
+
             if (Configuration.BlockScreenShot)
             {
                 ScreenShotContoller.Stop();
             }
 
             MyDLPEP.MiniFilterController.GetInstance().Stop();
-
+            
             Engine.Stop();
 
             //SessionServer.GetInstance().Stop();
@@ -176,9 +178,7 @@ namespace MyDLP.EndPoint.Service
             if (Configuration.PrinterMonitor)
             {
                 Service.PrinterController.getInstance().Stop();
-            }
-
-            confTimer.Enabled = false;
+            }                     
 
             Logger.GetInstance().Info("mydlpepwin service stopped");
         }

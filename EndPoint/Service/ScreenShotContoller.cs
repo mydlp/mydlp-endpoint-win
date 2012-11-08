@@ -75,16 +75,16 @@ namespace MyDLP.EndPoint.Service
                 }
                 Logger.GetInstance().Debug("mydlpepwin tries to install mydlpkbf");
                 MyDLPEP.KbFilterController.GetInstance().Start();
-                                           
 
-                startWatch = new ManagementEventWatcher(
+
+                startWatch = new ManagementEventWatcher(new ManagementScope("\\\\localhost\\root\\CIMV2"),
                     new WqlEventQuery(WMI_START_QUERY));
                 startWatch.EventArrived
                     += new EventArrivedEventHandler(startWatch_EventArrived);
                 startWatch.Start();
 
 
-                stopWatch = new ManagementEventWatcher(
+                stopWatch = new ManagementEventWatcher(new ManagementScope("\\\\localhost\\root\\CIMV2"),
                     new WqlEventQuery(WMI_STOP_QUERY));
                 stopWatch.EventArrived
                     += new EventArrivedEventHandler(stopWatch_EventArrived);
@@ -142,7 +142,6 @@ namespace MyDLP.EndPoint.Service
 
                 Block();
             }
-
         }
 
         static void stopWatch_EventArrived(object sender, EventArrivedEventArgs e)

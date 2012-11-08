@@ -106,22 +106,13 @@ namespace MyDLPEP
 			}
 			else
 			{
-				Logger::GetInstance()->Error("MyDLPKBF service already running");
+				Logger::GetInstance()->Info("MyDLPKBF service already running");
 			}
 		}
 		else 
 		{
 			Logger::GetInstance()->Info("mydlpkbf service started");
 		}
-
-		//Activate device
-		/*drvDevice = CreateFileA( "\\\\.\\MyDLPKBF", GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
-
-        if ( drvDevice == INVALID_HANDLE_VALUE )
-		{
-			Logger::GetInstance()->Error ("CreateFile Failed " + GetLastError());
-          
-        }*/
 
 		CloseServiceHandle(hService);
 		CloseServiceHandle(hSCManager);
@@ -130,9 +121,6 @@ namespace MyDLPEP
 
 	void KbFilterController::Stop()
 	{
-
-		//Deactivate Device
-		//CloseHandle(drvDevice);
 
 		const LPCTSTR DRV_NAME = _T("MyDLPKBF");
 		SC_HANDLE hSCManager = OpenSCManager( NULL, NULL, SC_MANAGER_ALL_ACCESS );

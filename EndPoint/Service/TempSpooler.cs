@@ -48,7 +48,7 @@ namespace MyDLP.EndPoint.Service
 
         static String shareSpoolPerm = "O:BAG:DUD:PAI(A;OICI;0x100116;;;AU)(A;OICI;FA;;;SY)";
         static String shareSpoolPermInteractive = "O:BAG:DUD:PAI(A;OICI;FA;;;BA)(A;OICI;0x100116;;;AU)(A;OICI;FA;;;SY)";
-        
+
 
         public static bool Start()
         {
@@ -126,7 +126,7 @@ namespace MyDLP.EndPoint.Service
         private static void StartShareEventListener()
         {
             Logger.GetInstance().Debug("StartShareEventListener");
-            
+
             CheckForSharedPrinters();
             WqlEventQuery q = new WqlEventQuery();
             q.EventClassName = "__InstanceOperationEvent";
@@ -158,13 +158,13 @@ namespace MyDLP.EndPoint.Service
 
                 Directory.CreateDirectory(Configuration.SharedSpoolPath);
                 ShareDirectory(Configuration.SharedSpoolPath, "SpoolShare", "None");
-                
+
                 //Set NTFS permissions for share spool
                 if (System.Environment.UserInteractive)
                 {
                     MyDLPEP.PrinterUtils.SetFolderSecurityDescriptor(Configuration.SharedSpoolPath, shareSpoolPerm);
                 }
-                else 
+                else
                 {
                     MyDLPEP.PrinterUtils.SetFolderSecurityDescriptor(Configuration.SharedSpoolPath, shareSpoolPermInteractive);
                 }
@@ -208,12 +208,14 @@ namespace MyDLP.EndPoint.Service
                     Directory.Delete(Configuration.SharedSpoolPath);
                 }
 
-                shareSpoolWatcher.EnableRaisingEvents = false;
+                if (shareSpoolWatcher != null)
+                    shareSpoolWatcher.EnableRaisingEvents = false;
+
                 return true;
             }
             catch (Exception ex)
             {
-                Logger.GetInstance().Error("Unable to stop shared spool listener");
+                Logger.GetInstance().Error("Unable to stop shared spool listener" + ex.Message + " " + ex.StackTrace);
                 return false;
             }
 
@@ -373,7 +375,7 @@ namespace MyDLP.EndPoint.Service
                 }
             }
         }
-        
+
         private static void WorkerMethodLocal(object state)
         {
             Logger.GetInstance().Debug("Started Printing for MyDLP printer: " + printerName);
@@ -445,7 +447,7 @@ namespace MyDLP.EndPoint.Service
             try
             {
                 Logger.GetInstance().Error("Filewatcher error: " + e.GetException().Message + " restartting TempSpooler");
-                
+
                 Stop();
                 Start();
             }
@@ -472,20 +474,20 @@ namespace MyDLP.EndPoint.Service
         private static bool ShareDirectory(String path, String shareName, String description)
         {
             Logger.GetInstance().Debug("Sharing directory: " + path);
-            
+
             try
             {
                 ManagementClass managementClass = new ManagementClass("Win32_Share");
                 ManagementBaseObject inParams = managementClass.GetMethodParameters("Create");
                 ManagementBaseObject outParams;
-                
+
                 //Authenticated Users Trusteee
                 SecurityIdentifier sid = new SecurityIdentifier("S-1-5-11");
                 ManagementObject Trustee = new ManagementClass(new ManagementPath("Win32_Trustee"), null);
                 byte[] sidArray = new byte[sid.BinaryLength];
                 sid.GetBinaryForm(sidArray, 0);
                 Trustee["SID"] = sidArray;
-                
+
                 ManagementObject UserACE = new ManagementClass(new
                     ManagementPath("Win32_Ace"), null);
                 //todo make constants http://msdn.microsoft.com/en-us/library/windows/desktop/aa822867(v=vs.85).aspx
@@ -499,8 +501,8 @@ namespace MyDLP.EndPoint.Service
 
                 ManagementObject secDescriptor = new ManagementClass(new ManagementPath("Win32_SecurityDescriptor"), null);
                 secDescriptor["ControlFlags"] = 4;
-                secDescriptor["DACL"] = new object[] { UserACE};
-                
+                secDescriptor["DACL"] = new object[] { UserACE };
+
                 inParams["Description"] = description;
                 inParams["Name"] = shareName;
                 inParams["Path"] = path;

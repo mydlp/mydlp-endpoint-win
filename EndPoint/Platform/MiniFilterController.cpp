@@ -140,6 +140,7 @@ namespace MyDLPEP
 
 	void MiniFilterController::Stop()
 	{
+		Logger::GetInstance()->Info("Stopping mydlpmf service");
 		const LPCTSTR DRV_NAME = _T("MyDLPMF");
 		SC_HANDLE hSCManager = OpenSCManager( NULL, NULL, SC_MANAGER_ALL_ACCESS );
 		SC_HANDLE hService = OpenService( hSCManager , DRV_NAME, SERVICE_ALL_ACCESS );

@@ -29,13 +29,14 @@ namespace MyDLP.EndPoint.Service
         {
             MyDLPEP.InteractiveSession session = MyDLPEP.SessionUtils.GetActiveSession();
 
-            //Update secure printers for shared printers
-            if (Configuration.PrinterMonitor)
-                PrinterController.getInstance().ListenPrinterConnections(session.sid);
+            
 
             if (session != null)
             {
                 Logger.GetInstance().Debug("Sid:" + session.sid);
+                //Update secure printers for shared printers
+                if (Configuration.PrinterMonitor)
+                    PrinterController.getInstance().ListenPrinterConnections(session.sid);
                 return session.name + "@" + session.domain;
             }
             else
