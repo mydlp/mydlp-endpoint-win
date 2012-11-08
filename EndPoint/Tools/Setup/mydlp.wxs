@@ -68,10 +68,7 @@
       <Component Id="MyDLP.EndPoint.Service.exe" Directory="INSTALLLOCATION" Guid="*">
         <File Id="MyDLP.EndPoint.Service.exe" Name="MyDLP.EndPoint.Service.exe" KeyPath="yes" Vital="yes" DiskId="1" Source="..\..\Service\bin\Release\MyDLP.EndPoint.Service.exe" />
         <ServiceControl Id="MyDLP.EndPoint.Service.exe" Name="mydlpepwin" Start="install" Stop="uninstall" Remove="uninstall" Wait="no" />
-        <ServiceInstall Id="MyDLP.EndPoint.Service.exe" Name="mydlpepwin" DisplayName="MyDLP EP Win" Type="ownProcess" Start="auto" ErrorControl="normal" Description="MyDLP Windows Endpoint">
-          <ServiceDependency Id="winmgmt"/>
-          <ServiceDependency Id="netlogon"/>
-        </ServiceInstall>
+        <ServiceInstall Id="MyDLP.EndPoint.Service.exe" Name="mydlpepwin" DisplayName="MyDLP EP Win" Type="ownProcess" Start="auto" ErrorControl="normal" Description="MyDLP Windows Endpoint"/>
 
         <CreateFolder Directory="LOGSDIR" />
         <CreateFolder Directory="RUNDIR" />
