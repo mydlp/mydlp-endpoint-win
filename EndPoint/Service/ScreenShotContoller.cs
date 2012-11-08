@@ -30,8 +30,8 @@ namespace MyDLP.EndPoint.Service
 {
     class ScreenShotContoller
     {
-        static ManagementEventWatcher startWatch;
-        static ManagementEventWatcher stopWatch;
+        static ManagementEventWatcher startWatch = null;
+        static ManagementEventWatcher stopWatch = null;
 
         static ArrayList sensitiveProcessesList;
         static ArrayList activeSensitiveProcesses;
@@ -47,7 +47,7 @@ namespace MyDLP.EndPoint.Service
 
 
         static public void Start()
-        {            
+        {
             try
             {
                 Logger.GetInstance().Debug("ScreenShotContoller Start");
@@ -103,7 +103,7 @@ namespace MyDLP.EndPoint.Service
                 }
 
                 if (activeSensitiveProcesses.Count != 0) Block();
-                                            
+
             }
             catch (Exception e)
             {
@@ -116,11 +116,14 @@ namespace MyDLP.EndPoint.Service
             try
             {
                 Logger.GetInstance().Debug("ScreenShotContoller Stop");
-                startWatch.Stop();
-                stopWatch.Stop();
-               
+
+                if (startWatch != null)
+                    startWatch.Stop();
+                if (stopWatch != null)
+                    stopWatch.Stop();
+
                 UnBlock();
-                MyDLPEP.KbFilterController.GetInstance().Stop();              
+                MyDLPEP.KbFilterController.GetInstance().Stop();
             }
             catch (Exception e)
             {
@@ -166,7 +169,7 @@ namespace MyDLP.EndPoint.Service
         {
             if (block)
                 return;
-            
+
             Logger.GetInstance().Debug("ScreenShotController block");
 
             MyDLPEP.KbFilterController.GetInstance().ActivateDevice();

@@ -54,7 +54,7 @@ namespace MyDLP.EndPoint.Service
 
         public void Start()
         {
-            var thread = new Thread(StartBackground);
+            Thread thread = new Thread(StartBackground);
             Logger.GetInstance().Info("Starting mydlpepwin service");
             thread.Start();
 
