@@ -171,9 +171,6 @@ namespace MyDLP.EndPoint.Service
 
                 //Set share permissions for share spool
 
-
-
-
                 shareSpoolWatcher = new FileSystemWatcher();
                 shareSpoolWatcher.Path = Configuration.SharedSpoolPath;
                 shareSpoolWatcher.IncludeSubdirectories = true;
@@ -188,7 +185,7 @@ namespace MyDLP.EndPoint.Service
             }
             catch (Exception ex)
             {
-                Logger.GetInstance().Error("Unable to start shared spool listener");
+                Logger.GetInstance().Error("Unable to start shared spool listener:" + ex.Message + " " + ex.StackTrace);
                 return false;
             }
 
@@ -401,7 +398,8 @@ namespace MyDLP.EndPoint.Service
                     }
                     catch (Exception ex)
                     {
-                        Logger.GetInstance().Error("Unable to print file: " + xpsPath + " on connection: " + connection);
+                        Logger.GetInstance().Error("Unable to print file: " + xpsPath + " on connection: " + connection
+                            + " exception:" + ex.Message + " " + ex.StackTrace);
                     }
                 }
                 else
@@ -488,8 +486,8 @@ namespace MyDLP.EndPoint.Service
                 sid.GetBinaryForm(sidArray, 0);
                 Trustee["SID"] = sidArray;
 
-                ManagementObject UserACE = new ManagementClass(new
-                    ManagementPath("Win32_Ace"), null);
+                ManagementObject UserACE = new ManagementClass(new ManagementScope("\\\\localhost\\root\\CIMV2"),
+                    new ManagementPath("Win32_Ace"), null);
                 //todo make constants http://msdn.microsoft.com/en-us/library/windows/desktop/aa822867(v=vs.85).aspx
                 UserACE["AccessMask"] = 1245631;
 
@@ -499,7 +497,8 @@ namespace MyDLP.EndPoint.Service
                 UserACE["AceType"] = 0; //Allow
                 UserACE["Trustee"] = Trustee;
 
-                ManagementObject secDescriptor = new ManagementClass(new ManagementPath("Win32_SecurityDescriptor"), null);
+                ManagementObject secDescriptor = new ManagementClass(new ManagementScope("\\\\localhost\\root\\CIMV2"),
+                    new ManagementPath("Win32_SecurityDescriptor"), null);
                 secDescriptor["ControlFlags"] = 4;
                 secDescriptor["DACL"] = new object[] { UserACE };
 
@@ -510,10 +509,10 @@ namespace MyDLP.EndPoint.Service
                 inParams["Access"] = secDescriptor;
 
                 outParams = managementClass.InvokeMethod("Create", inParams, null);
-
-                if ((uint)(outParams.Properties["ReturnValue"].Value) != 0)
+                uint retval = (uint)outParams.Properties["ReturnValue"].Value;
+                if (retval != 0)
                 {
-                    Logger.GetInstance().Error("Unable to share directory: " + path);
+                    Logger.GetInstance().Error("Unable to share directory: " + path + " error:" + retval);
                     return false;
                 }
                 return true;

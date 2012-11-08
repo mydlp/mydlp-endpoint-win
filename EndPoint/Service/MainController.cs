@@ -31,7 +31,6 @@ namespace MyDLP.EndPoint.Service
 {
     public class MainController
     {
-        Engine engine;
         System.Timers.Timer watchdogTimer;
         System.Timers.Timer confTimer;
         public static EventLog serviceLogger;
