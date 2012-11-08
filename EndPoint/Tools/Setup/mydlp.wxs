@@ -106,6 +106,18 @@
         <File Id="MyDLPMF_64.sys" Name="MyDLPMF_64.sys" KeyPath="yes" Vital="yes" DiskId="1" Source="..\..\MiniFilter\src\objchk_win7_amd64\amd64\MyDLPMF.sys" />
       </Component>
 
+      <Component Id="MyDLPKBF.sys" Directory="INSTALLLOCATION" Guid="*">
+        <File Id="MyDLPKBF.sys" Name="MyDLPKBF.sys" KeyPath="yes" Vital="yes" DiskId="1" Source="..\..\KbFilter\src\objchk_wxp_x86\i386\MyDLPMF.sys" />
+      </Component>
+
+      <Component Id="MyDLPKBF_64.sys" Directory="INSTALLLOCATION" Guid="*">
+        <File Id="MyDLPKBF_64.sys" Name="MyDLPKBF_64.sys" KeyPath="yes" Vital="yes" DiskId="1" Source="..\..\KbFilter\src\objchk_win7_amd64\amd64\MyDLPMF.sys" />
+      </Component>
+
+      <Component Id="MyDLPKBF.pdb" Directory="INSTALLLOCATION" Guid="*">
+        <File Id="MyDLPKBF.pdb" Name="MyDLPKBF.pdb" Vital="no" DiskId="1" Source="..\..\KbFilter\src\objchk_wxp_x86\i386\MyDLPKBF.pdb" />
+      </Component>
+
       <Component Id="mydlp.conf" Directory="INSTALLLOCATION" Guid="*">
         <File Id="mydlp.conf" Name="mydlp.conf" Vital="yes" KeyPath="yes" DiskId="1" Source="..\..\Engine\mydlp\src\mydlp\mydlp-ep.conf" />
       </Component>
