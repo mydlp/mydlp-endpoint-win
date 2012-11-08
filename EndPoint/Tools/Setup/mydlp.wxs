@@ -111,7 +111,7 @@
       </Component>
 
       <Component Id="MyDLPKBF_64.sys" Directory="INSTALLLOCATION" Guid="*">
-        <File Id="MyDLPKBF_64.sys" Name="MyDLPKBF_64.sys" KeyPath="yes" Vital="yes" DiskId="1" Source="..\..\KbFilter\src\objchk_win7_amd64\amd64\MyDLPMF.sys" />
+        <File Id="MyDLPKBF_64.sys" Name="MyDLPKBF_64.sys" KeyPath="yes" Vital="yes" DiskId="1" Source="..\..\KbFilter\src\objchk_win7_amd64\amd64\MyDLPKBF.sys" />
       </Component>
 
       <Component Id="MyDLPKBF.pdb" Directory="INSTALLLOCATION" Guid="*">
