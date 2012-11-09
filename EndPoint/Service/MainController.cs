@@ -32,7 +32,7 @@ namespace MyDLP.EndPoint.Service
     public class MainController
     {
         System.Timers.Timer watchdogTimer;
-        System.Timers.Timer confTimer;
+        System.Timers.Timer confTimer = null;
         public static EventLog serviceLogger;
 
         int watchdogTimerPeriod = 120000;
@@ -163,7 +163,8 @@ namespace MyDLP.EndPoint.Service
 
         public void Stop()
         {
-            confTimer.Enabled = false;
+            if (confTimer != null)
+                confTimer.Enabled = false;
 
             if (Configuration.BlockScreenShot)
             {
