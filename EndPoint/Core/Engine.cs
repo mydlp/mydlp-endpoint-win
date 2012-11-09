@@ -55,7 +55,7 @@ namespace MyDLP.EndPoint.Core
             KillProcByName("erl");
             KillProcByName("werl");
             KillProcByName("java");
-            
+
             EnvVar[] erlEnv = new EnvVar[] {
                 new EnvVar("MYDLP_CONF", GetShortPath(Configuration.MydlpConfPath).Replace(@"\", @"/")), 
                 new EnvVar("MYDLPBEAMDIR",GetShortPath(Configuration.ErlangPath)), 
@@ -70,14 +70,14 @@ namespace MyDLP.EndPoint.Core
             };
 
 
-           if (!System.Environment.UserInteractive && SvcController.IsServiceInstalled("mydlpengine"))
+            if (!System.Environment.UserInteractive && SvcController.IsServiceInstalled("mydlpengine"))
             {
                 if (SvcController.IsServiceRunning("mydlpengine"))
                 {
                     SvcController.StopService("mydlpengine", 5000);
                 }
 
-                ProcessControl.ExecuteCommandSync(new ExecuteParameters("sc delete mydlpengine", "SC", erlEnv));               
+                ProcessControl.ExecuteCommandSync(new ExecuteParameters("sc delete mydlpengine", "SC", erlEnv));
             }
 
             try
@@ -93,7 +93,7 @@ namespace MyDLP.EndPoint.Core
             }
 
             Logger.GetInstance().Info("Starting Java Backend");
-           
+
 
             ProcessControl.ExecuteCommandAsync(javaStartCmd, "JAVA:", javaEnv);
 
@@ -112,28 +112,6 @@ namespace MyDLP.EndPoint.Core
 
         public static void Stop()
         {
-            Logger.GetInstance().Info("Stopping Java Backend");
-            Logger.GetInstance().Debug("Kill java by pid:" + Configuration.JavaPid);
-            if (Configuration.JavaPid != 0)
-            {
-                try
-                {
-                    Process p = Process.GetProcessById(Configuration.JavaPid);
-                    p.Kill();
-                }
-                catch
-                {
-                    Logger.GetInstance().Debug("Kill java by pid failed:" + Configuration.JavaPid);
-                    KillProcByName("java");
-                }
-            }
-            else
-            {
-                KillProcByName("java");
-            }
-
-            KillProcByName("epmd");
-
             Logger.GetInstance().Info("Stopping Erlang Backend");
             Logger.GetInstance().Debug("Kill erlang by pid:" + Configuration.ErlPid);
             if (Configuration.ErlPid != 0)
@@ -146,15 +124,30 @@ namespace MyDLP.EndPoint.Core
                 catch
                 {
                     Logger.GetInstance().Debug("Kill erlang by pid failed:" + Configuration.ErlPid);
-                    KillProcByName("erl");
-                    KillProcByName("werl");
                 }
             }
-            else
+
+            KillProcByName("erl");
+            KillProcByName("werl");
+            KillProcByName("epmd");
+
+            Logger.GetInstance().Info("Stopping Java Backend");
+            Logger.GetInstance().Debug("Kill java by pid:" + Configuration.JavaPid);
+            if (Configuration.JavaPid != 0)
             {
-                KillProcByName("erl");
-                KillProcByName("werl");
+                try
+                {
+                    Process p = Process.GetProcessById(Configuration.JavaPid);
+                    p.Kill();
+                }
+                catch
+                {
+                    Logger.GetInstance().Debug("Kill java by pid failed:" + Configuration.JavaPid);
+                }
             }
+
+            KillProcByName("java");
+
 
             if (!System.Environment.UserInteractive && SvcController.IsServiceInstalled("mydlpengine"))
             {
@@ -163,7 +156,7 @@ namespace MyDLP.EndPoint.Core
                     SvcController.StopService("mydlpengine", 5000);
                 }
 
-                
+
                 EnvVar[] erlEnv = new EnvVar[] {
                 new EnvVar("MYDLP_CONF", GetShortPath(Configuration.MydlpConfPath).Replace(@"\", @"/")), 
                 new EnvVar("MYDLPBEAMDIR",GetShortPath(Configuration.ErlangPath)), 
@@ -171,7 +164,7 @@ namespace MyDLP.EndPoint.Core
                 new EnvVar("ERLANG_HOME", GetShortPath(Configuration.ErlangHome))
                 };
 
-                ProcessControl.ExecuteCommandSync(new ExecuteParameters("sc delete mydlpengine", "SC", erlEnv));                                          
+                ProcessControl.ExecuteCommandSync(new ExecuteParameters("sc delete mydlpengine", "SC", erlEnv));
             }
 
             try
