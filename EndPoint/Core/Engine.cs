@@ -46,12 +46,7 @@ namespace MyDLP.EndPoint.Core
 
         public static void Start()
         {
-            //clear pid files before startup
-            String path = Configuration.AppPath + @"\run\mydlp.pid";
-            File.Delete(path);
-
-            path = Configuration.AppPath + @"\run\backend.pid";
-            File.Delete(path);
+            DelPids();
 
             KillProcByName("erl");
             KillProcByName("werl");
@@ -109,6 +104,16 @@ namespace MyDLP.EndPoint.Core
             {
                 ProcessControl.ExecuteCommandAsync(erlStartCmd, "ERL", erlEnv);
             }
+        }
+
+        private static void DelPids()
+        {
+            //clear pid files before startup
+            String path = Configuration.AppPath + @"\run\mydlp.pid";
+            File.Delete(path);
+
+            path = Configuration.AppPath + @"\run\backend.pid";
+            File.Delete(path);
         }
 
         public static void Stop()
@@ -175,6 +180,8 @@ namespace MyDLP.EndPoint.Core
 
                 ProcessControl.ExecuteCommandSync(new ExecuteParameters("sc delete mydlpengine", "SC", erlEnv));
             }
+
+            DelPids();
 
             try
             {

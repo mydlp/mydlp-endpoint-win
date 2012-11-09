@@ -199,11 +199,12 @@ namespace MyDLP.EndPoint.Core
             String path = appPath + @"\run\mydlp.pid";
             try
             {
-                DateTime dt = File.GetLastWriteTime(path);
-                while (dt <= Configuration.StartTime && tryCount < tryLimit)
+                //DateTime dt = File.GetLastWriteTime(path);
+                //while (dt <= Configuration.StartTime && tryCount < tryLimit)
+                while (!File.Exists(path) && tryCount < tryLimit)
                 {
                     System.Threading.Thread.Sleep(3000);
-                    dt = File.GetLastWriteTime(path);
+                   // dt = File.GetLastWriteTime(path);                    
                     tryCount++;
                 }
                 string text = System.IO.File.ReadAllText(path);
@@ -218,11 +219,12 @@ namespace MyDLP.EndPoint.Core
             path = appPath + @"\run\backend.pid";
             try
             {
-                DateTime dt = File.GetLastWriteTime(path);
-                while (dt <= Configuration.StartTime && tryCount < tryLimit)
+                //DateTime dt = File.GetLastWriteTime(path);
+                //while (dt <= Configuration.StartTime && tryCount < tryLimit)
+                while (!File.Exists(path) && tryCount < tryLimit)
                 {
                     System.Threading.Thread.Sleep(3000);
-                    dt = File.GetLastWriteTime(path);
+                    tryCount++;
                 }
                 string text = System.IO.File.ReadAllText(path);
                 javaPid = Int32.Parse(text.Trim());
