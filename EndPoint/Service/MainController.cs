@@ -62,132 +62,139 @@ namespace MyDLP.EndPoint.Service
 
         public void StartBackground()
         {
-            //notify logger that we are in main service
-            Logger.GetInstance().InitializeMainLogger(serviceLogger);
-            SvcController.StopMyDLP = new SvcController.StopMyDLPDelegate(Stop);
 
-            //Keep watchdog tied up during debugging
-            if (System.Environment.UserInteractive == false)
+            lock (MainController.GetInstance())
             {
+                //notify logger that we are in main service
+                Logger.GetInstance().InitializeMainLogger(serviceLogger);
+                SvcController.StopMyDLP = new SvcController.StopMyDLPDelegate(Stop);
 
-                ServiceController service = new ServiceController("mydlpepwatchdog");
-                try
+                //Keep watchdog tied up during debugging
+                if (System.Environment.UserInteractive == false)
                 {
-                    if (!service.Status.Equals(ServiceControllerStatus.Running) && !service.Status.Equals(ServiceControllerStatus.StartPending))
+
+                    ServiceController service = new ServiceController("mydlpepwatchdog");
+                    try
                     {
-                        Logger.GetInstance().Info("Starting mydlpepwatchdog at start up");
-                        SvcController.StartServiceNonBlocking("mydlpepwatchdog", 10000);
-                        Logger.GetInstance().Info("Starting mydlpepwatchdog at start up finished");
+                        if (!service.Status.Equals(ServiceControllerStatus.Running) && !service.Status.Equals(ServiceControllerStatus.StartPending))
+                        {
+                            Logger.GetInstance().Info("Starting mydlpepwatchdog at start up");
+                            SvcController.StartServiceNonBlocking("mydlpepwatchdog", 10000);
+                            Logger.GetInstance().Info("Starting mydlpepwatchdog at start up finished");
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.GetInstance().Error("Unable to start watchdog" + e.Message);
+                    }
+                    //enable watchdog check
+
+                    Logger.GetInstance().Info("Watchdog check enabled");
+                    watchdogTimer = new System.Timers.Timer(watchdogTimerPeriod);
+                    watchdogTimer.Elapsed += new ElapsedEventHandler(OnTimedWatchdogEvent);
+                    watchdogTimer.Enabled = true;
+                }
+
+
+
+                if (Configuration.GetAppConf() == false)
+                {
+                    Logger.GetInstance().Error("Unable to get configuration exiting!");
+                    //Environment.Exit(1);
+                }
+                else
+                {
+                    //start backend engine
+
+                    Configuration.GetUserConf();
+                    Configuration.StartTime = DateTime.Now;
+
+                    SessionManager.Start();
+
+                    Engine.Start();
+                    Configuration.SetPids();
+
+                    Logger.GetInstance().Debug("mydlpepwin tries to install mydlpmf");
+                    MyDLPEP.MiniFilterController.GetInstance().Start();
+
+                    MyDLPEP.FilterListener.getInstance().StartListener();
+                    Logger.GetInstance().Info("mydlpepwin service started");
+
+                    bool testSuccess = false;
+                    for (int i = 0; i < 10; i++)
+                    {
+                        testSuccess = SeapClient.SeapConnectionTest();
+                        if (testSuccess)
+                            break;
+                        Logger.GetInstance().Debug("Seap connection test attempt:" + i);
+                        System.Threading.Thread.Sleep(3000);
+                    }
+
+                    if (!testSuccess)
+                    {
+                        Logger.GetInstance().Error("Seap connection test failed");
+                        Stop();
+                    }
+
+                    if (Configuration.BlockScreenShot)
+                    {
+                        ScreenShotContoller.Start();
+                    }
+
+                    //SessionServer.GetInstance();
+
+                    if (Configuration.PrinterMonitor)
+                    {
+                        Service.PrinterController.getInstance().Start();
+                    }
+
+                    if (Configuration.UsbSerialAccessControl)
+                    {
+                        Core.USBController.Activate();
+                        Core.USBController.GetUSBStorages();
                     }
                 }
-                catch (Exception e)
-                {
-                    Logger.GetInstance().Error("Unable to start watchdog" + e.Message);
-                }
-                //enable watchdog check
 
-                Logger.GetInstance().Info("Watchdog check enabled");
-                watchdogTimer = new System.Timers.Timer(watchdogTimerPeriod);
-                watchdogTimer.Elapsed += new ElapsedEventHandler(OnTimedWatchdogEvent);
-                watchdogTimer.Enabled = true;
-            }
+                //initialize configuration timer
+                Logger.GetInstance().Info("Configuration check enabled");
+                confTimer = new System.Timers.Timer(confCheckTimerPeriod);
+                confTimer.Elapsed += new ElapsedEventHandler(OnTimedConfCheckEvent);
+                confTimer.Enabled = true;
 
-
-
-            if (Configuration.GetAppConf() == false)
-            {
-                Logger.GetInstance().Error("Unable to get configuration exiting!");
-                //Environment.Exit(1);
-            }
-            else
-            {
-                //start backend engine
-
-                Configuration.GetUserConf();
-                Configuration.StartTime = DateTime.Now;
-
-                SessionManager.Start();
-
-                Engine.Start();
-                Configuration.SetPids();
-
-                Logger.GetInstance().Debug("mydlpepwin tries to install mydlpmf");
-                MyDLPEP.MiniFilterController.GetInstance().Start();
-
-                MyDLPEP.FilterListener.getInstance().StartListener();
                 Logger.GetInstance().Info("mydlpepwin service started");
-
-                bool testSuccess = false;
-                for (int i = 0; i < 10; i++)
-                {
-                    testSuccess = SeapClient.SeapConnectionTest();
-                    if (testSuccess)
-                        break;
-                    Logger.GetInstance().Debug("Seap connection test attempt:" + i);
-                    System.Threading.Thread.Sleep(3000);
-                }
-
-                if (!testSuccess)
-                {
-                    Logger.GetInstance().Error("Seap connection test failed");
-                    Stop();
-                }
-
-                if (Configuration.BlockScreenShot)
-                {
-                    ScreenShotContoller.Start();
-                }
-
-                //SessionServer.GetInstance();
-
-                if (Configuration.PrinterMonitor)
-                {
-                    Service.PrinterController.getInstance().Start();
-                }
-
-                if (Configuration.UsbSerialAccessControl)
-                {
-                    Core.USBController.Activate();
-                    Core.USBController.GetUSBStorages();
-                }
             }
-
-            //initialize configuration timer
-            Logger.GetInstance().Info("Configuration check enabled");
-            confTimer = new System.Timers.Timer(confCheckTimerPeriod);
-            confTimer.Elapsed += new ElapsedEventHandler(OnTimedConfCheckEvent);
-            confTimer.Enabled = true;
-
-            Logger.GetInstance().Info("mydlpepwin service started");
         }
 
         public void Stop()
         {
-            if (confTimer != null)
-                confTimer.Enabled = false;
-
-            if (Configuration.BlockScreenShot)
+            lock (MainController.GetInstance())
             {
-                ScreenShotContoller.Stop();
+                if (confTimer != null)
+                    confTimer.Enabled = false;
+
+                if (Configuration.BlockScreenShot)
+                {
+                    ScreenShotContoller.Stop();
+                }
+
+                MyDLPEP.MiniFilterController.GetInstance().Stop();
+
+                Engine.Stop();
+
+                //SessionServer.GetInstance().Stop();
+
+                if (Configuration.UsbSerialAccessControl)
+                {
+                    Core.USBController.Deactive();
+                }
+
+                if (Configuration.PrinterMonitor)
+                {
+                    Service.PrinterController.getInstance().Stop();
+                }
+
+                Logger.GetInstance().Info("mydlpepwin service stopped");
             }
-
-            MyDLPEP.MiniFilterController.GetInstance().Stop();
-
-            Engine.Stop();
-
-            //SessionServer.GetInstance().Stop();
-
-            if (Configuration.UsbSerialAccessControl)
-            {
-                Core.USBController.Deactive();
-            }
-
-            if (Configuration.PrinterMonitor)
-            {
-                Service.PrinterController.getInstance().Stop();
-            }
-
-            Logger.GetInstance().Info("mydlpepwin service stopped");
         }
 
         private void OnTimedWatchdogEvent(object source, ElapsedEventArgs e)
