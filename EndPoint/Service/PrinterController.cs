@@ -835,8 +835,6 @@ namespace MyDLP.EndPoint.Service
                 MyDLPEP.SessionUtils.StopImpersonation();
                 Logger.GetInstance().Debug("Default printer is already a secure printer:" + defaultPrinterName);
             }
-
-            MyDLPEP.SessionUtils.ImpersonateActiveUser();
         }
 
         private PrinterController()

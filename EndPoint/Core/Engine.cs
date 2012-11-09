@@ -25,6 +25,7 @@ using System.Runtime.InteropServices;
 using System.IO;
 using Microsoft.Win32;
 using System.Diagnostics;
+using System.ComponentModel;
 
 namespace MyDLP.EndPoint.Core
 {
@@ -202,9 +203,16 @@ namespace MyDLP.EndPoint.Core
                         p.Kill();
                 }
             }
+            catch (Win32Exception e)
+            {
+                //If not access denied
+                if (e.NativeErrorCode != 5)
+                    Logger.GetInstance().Error(e.ToString() + " " + e.Message + " " + e.StackTrace);
+
+            }
             catch (Exception e)
             {
-                Logger.GetInstance().Error(e.Message + " " + e.StackTrace);
+                Logger.GetInstance().Error(e.ToString() + " " + e.Message + " " + e.StackTrace);
             }
         }
     }
