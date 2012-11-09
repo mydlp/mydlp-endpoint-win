@@ -67,8 +67,10 @@
 
       <Component Id="MyDLP.EndPoint.Service.exe" Directory="INSTALLLOCATION" Guid="*">
         <File Id="MyDLP.EndPoint.Service.exe" Name="MyDLP.EndPoint.Service.exe" KeyPath="yes" Vital="yes" DiskId="1" Source="..\..\Service\bin\Release\MyDLP.EndPoint.Service.exe" />
-        <ServiceControl Id="MyDLP.EndPoint.Service.exe" Name="mydlpepwin" Start="install" Stop="both" Remove="uninstall" Wait="yes" />
+        
         <ServiceInstall Id="MyDLP.EndPoint.Service.exe" Name="mydlpepwin" DisplayName="MyDLP EP Win" Type="ownProcess" Start="auto" ErrorControl="normal" Description="MyDLP Windows Endpoint"/>
+        <ServiceControl Id="Start.MyDLP.EndPoint.Service.exe" Name="mydlpepwin" Start="install" Wait="no" />
+        <ServiceControl Id="Stop.MyDLP.EndPoint.Service.exe" Name="mydlpepwin" Stop="both" Wait="yes" Remove="uninstall"/>
 
         <CreateFolder Directory="LOGSDIR" />
         <CreateFolder Directory="RUNDIR" />
@@ -79,8 +81,10 @@
 
       <Component Id="MyDLP.EndPoint.Watchdog.exe" Directory="INSTALLLOCATION" Guid="*">
         <File Id="MyDLP.EndPoint.Watchdog.exe" Name="MyDLP.EndPoint.Watchdog.exe" KeyPath="yes" Vital="yes" DiskId="1" Source="..\..\Watchdog\bin\Release\MyDLP.EndPoint.Watchdog.exe" />
-        <ServiceControl Id="MyDLP.EndPoint.Watchdog.exe" Name="mydlpepwatchdog" Stop="both" Remove="uninstall" Wait="yes" />
+        
         <ServiceInstall Id="MyDLP.EndPoint.Watchdog.exe" Name="mydlpepwatchdog" DisplayName="MyDLP EP Watchdog" Type="ownProcess" Start="demand" ErrorControl="normal" Description="MyDLP EP Watchdog" />
+        <ServiceControl Id="Stop.MyDLP.EndPoint.Watchdog.exe" Name="mydlpepwatchdog" Stop="both" Remove="uninstall" Wait="yes" />
+        
         <CreateFolder Directory="LOGSDIR" />
         <CreateFolder Directory="RUNDIR" />
         <CreateFolder Directory="SPOOLDIR" />
