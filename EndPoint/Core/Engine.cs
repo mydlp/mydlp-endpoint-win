@@ -114,6 +114,7 @@ namespace MyDLP.EndPoint.Core
         public static void Stop()
         {
             Logger.GetInstance().Info("Stopping Erlang Backend");
+            /*
             Logger.GetInstance().Debug("Kill erlang by pid:" + Configuration.ErlPid);
             if (Configuration.ErlPid != 0)
             {
@@ -126,13 +127,20 @@ namespace MyDLP.EndPoint.Core
                 {
                     Logger.GetInstance().Debug("Kill erlang by pid failed:" + Configuration.ErlPid);
                 }
-            }
+            }*/
 
-            KillProcByName("erl");
-            KillProcByName("werl");
+            if (System.Environment.UserInteractive)
+            {
+                KillProcByName("werl");
+            }
+            else
+            {
+                KillProcByName("erl");
+            }
             KillProcByName("epmd");
 
             Logger.GetInstance().Info("Stopping Java Backend");
+            /*
             Logger.GetInstance().Debug("Kill java by pid:" + Configuration.JavaPid);
             if (Configuration.JavaPid != 0)
             {
@@ -145,7 +153,7 @@ namespace MyDLP.EndPoint.Core
                 {
                     Logger.GetInstance().Debug("Kill java by pid failed:" + Configuration.JavaPid);
                 }
-            }
+            }*/
 
             KillProcByName("java");
 
