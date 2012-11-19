@@ -529,7 +529,7 @@ namespace MyDLP.EndPoint.Core
                     return FileOperation.Action.ALLOW;
                 }
 
-                response = sClient.sendMessage("SETPROP " + id + " printerName=" + printerName);
+                response = sClient.sendMessage("SETPROP " + id + " printerName=" + qpEncode(printerName));
                 splitResp = response.Split(' ');
                 if (!splitResp[0].Equals("OK"))
                 {
