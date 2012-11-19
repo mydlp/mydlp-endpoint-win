@@ -21,12 +21,16 @@
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="1"
 			CharacterSet="2"
+			ExcludeBuckets="5;6;7;8;9;10;12;13;14;15;16;18;21"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
+				Description="Building MyDLPKBF driver"
+				CommandLine="ddk_kbfilter_build.bat"
+				Outputs="src\objchk_wxp_x86\i386\MyDLPKBF.sys;src\objchk_wxp_x86\i386\MyDLPKBF_64.sys;src\objchk_wxp_x86\i386\vc90.pdb;src\objchk_wxp_x86\i386\MyDLPKBF.pdb"
 			/>
 			<Tool
 				Name="VCXMLDataGeneratorTool"

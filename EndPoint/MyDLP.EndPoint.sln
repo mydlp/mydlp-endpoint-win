@@ -44,6 +44,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyDLP.Endpoint.SessionAgent
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MyDLP.EndPoint.KbFilter", "KbFilter\KbFilter.vcproj", "{C566388B-9259-427D-BD19-97A49D3CDCA0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyDLP.EndPoint.Tools.WinEPManager", "Tools\WinEPManager\MyDLP.EndPoint.Tools.WinEPManager.csproj", "{85D60824-B875-432C-A567-E973515EEAE7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -218,6 +220,18 @@ Global
 		{C566388B-9259-427D-BD19-97A49D3CDCA0}.Release|Win32.ActiveCfg = Release|Win32
 		{C566388B-9259-427D-BD19-97A49D3CDCA0}.Release|Win32.Build.0 = Release|Win32
 		{C566388B-9259-427D-BD19-97A49D3CDCA0}.Release|x86.ActiveCfg = Release|Win32
+		{85D60824-B875-432C-A567-E973515EEAE7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{85D60824-B875-432C-A567-E973515EEAE7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{85D60824-B875-432C-A567-E973515EEAE7}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{85D60824-B875-432C-A567-E973515EEAE7}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{85D60824-B875-432C-A567-E973515EEAE7}.Debug|Win32.ActiveCfg = Debug|Any CPU
+		{85D60824-B875-432C-A567-E973515EEAE7}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{85D60824-B875-432C-A567-E973515EEAE7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{85D60824-B875-432C-A567-E973515EEAE7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{85D60824-B875-432C-A567-E973515EEAE7}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{85D60824-B875-432C-A567-E973515EEAE7}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{85D60824-B875-432C-A567-E973515EEAE7}.Release|Win32.ActiveCfg = Release|Any CPU
+		{85D60824-B875-432C-A567-E973515EEAE7}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

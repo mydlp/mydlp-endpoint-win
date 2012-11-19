@@ -60,9 +60,9 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="fltlib.lib Setupapi.lib"
+				AdditionalDependencies="fltlib.lib Setupapi.lib Secur32.lib wtsapi32.lib"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="C:\WinDDK\7600.16385.1\lib\wxp\i386"
+				AdditionalLibraryDirectories="C:\WinDDK\7600.16385.1\lib\wxp\i386;&quot;C:\Program Files (x86)\Microsoft SDKs\Windows\v6.0A\bin&quot;"
 				GenerateDebugInformation="true"
 				AssemblyDebug="1"
 				TargetMachine="1"
