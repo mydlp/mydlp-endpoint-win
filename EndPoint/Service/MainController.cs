@@ -111,6 +111,7 @@ namespace MyDLP.EndPoint.Service
 
                     SessionManager.Start();
 
+                    Engine.GetPhysicalMemory = new Engine.GetPhysicalMemoryDelegate(GetPhysicalMemory);
                     Engine.Start();
                     Configuration.SetPids();
 
@@ -162,6 +163,7 @@ namespace MyDLP.EndPoint.Service
                 confTimer.Enabled = true;
 
                 Logger.GetInstance().Info("mydlpepwin service started");
+
             }
         }
 
@@ -273,6 +275,11 @@ namespace MyDLP.EndPoint.Service
                     ScreenShotContoller.Start();
                 }
             }
+        }
+
+        public static int GetPhysicalMemory()
+        {
+            return MyDLPEP.SessionUtils.GetPhysicalMemory();
         }
 
         private static MainController controller = null;

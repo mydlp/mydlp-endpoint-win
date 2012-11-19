@@ -31,6 +31,10 @@ namespace MyDLP.EndPoint.Core
 {
     public class Engine
     {
+
+        public delegate int GetPhysicalMemoryDelegate();
+        public static GetPhysicalMemoryDelegate GetPhysicalMemory;
+
         [DllImport("kernel32.dll", CharSet = CharSet.Auto)]
         public static extern int GetShortPathName(
             [MarshalAs(UnmanagedType.LPTStr)]
@@ -39,13 +43,19 @@ namespace MyDLP.EndPoint.Core
         StringBuilder shortPath,
             int shortPathLength);
 
-        static String javaStartCmd = @"cd " + Configuration.JavaBackendPath + " && Run.bat";
-        static String erlStartCmd = @"cd " + Configuration.ErlangPath + " && Run.bat";
-        static String erlInstallCmd = @"cd " + Configuration.ErlangPath + " && RegisterService.bat";
-        static String erlStartInteractiveCmd = @"cd " + Configuration.ErlangPath + " && InteractiveRun.bat";
+        static String javaStartCmd;
+        static String erlStartCmd;
+        static String erlInstallCmd;
+        static String erlStartInteractiveCmd;
 
         public static void Start()
         {
+
+            javaStartCmd = @"cd " + Configuration.JavaBackendPath + " && Run.bat";
+            erlStartCmd = @"cd " + Configuration.ErlangPath + " && Run.bat";
+            erlInstallCmd = @"cd " + Configuration.ErlangPath + " && RegisterService.bat";
+            erlStartInteractiveCmd = @"cd " + Configuration.ErlangPath + " && InteractiveRun.bat";
+
             DelPids();
 
             KillProcByName("erl");
@@ -59,10 +69,34 @@ namespace MyDLP.EndPoint.Core
                 new EnvVar("ERLANG_HOME", GetShortPath(Configuration.ErlangHome))
             };
 
+            int phyMemory = GetPhysicalMemory();
+            int javaMemory = 256;
+
+            if (phyMemory < 300)
+            {
+                Logger.GetInstance().Error("Not enough memory, MyDLP Engine can not function under 300 MB memory");
+                Engine.Stop();
+                return;
+            }
+
+            else if (phyMemory < 600)
+            {
+                javaMemory = 256;
+            }
+
+            else
+            {
+                javaMemory = 256 + ((phyMemory - 600) / 3);
+            }
+
+            Logger.GetInstance().Info("Setting Java memory: " + javaMemory);
+
+
             EnvVar[] javaEnv = new EnvVar[] {
                 new EnvVar("JRE_BIN_DIR", GetShortPath(Configuration.JavaBinPaths)), 
-                new EnvVar("BACKEND_DIR",GetShortPath(Configuration.JavaPath)), 
-                new EnvVar("MYDLP_APPDIR",GetShortPath(Configuration.AppPath))
+                new EnvVar("BACKEND_DIR", GetShortPath(Configuration.JavaPath)), 
+                new EnvVar("MYDLP_APPDIR", GetShortPath(Configuration.AppPath)),
+                new EnvVar("JAVAXMX",javaMemory.ToString())
             };
 
 

@@ -182,8 +182,8 @@ namespace MyDLPEP
 			)
 		{
 			//Logger::GetInstance()->Debug("Logon type non interactive:" + sessionData->LogonType);
-		LsaFreeReturnBuffer(sessionData);
-		return nullptr;
+			LsaFreeReturnBuffer(sessionData);
+			return nullptr;
 		}
 
 		if (sessionData->Upn.Buffer != NULL) {
@@ -318,7 +318,7 @@ namespace MyDLPEP
 
 	bool SessionUtils::ImpersonateActiveUser()
 	{
-	
+
 		if (System::Environment::UserInteractive)
 			return true;
 
@@ -348,5 +348,17 @@ namespace MyDLPEP
 			return true;
 
 		return RevertToSelf();
+	}
+
+	int SessionUtils::GetPhysicalMemory()
+	{	
+		MEMORYSTATUSEX statex;
+		statex.dwLength = sizeof (statex);
+
+		GlobalMemoryStatusEx (&statex);
+
+		//return total memory in MB
+		return statex.ullTotalPhys / (1024 * 1024);
+
 	}
 }

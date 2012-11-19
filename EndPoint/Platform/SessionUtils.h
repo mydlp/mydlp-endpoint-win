@@ -73,5 +73,6 @@ namespace MyDLPEP
 		static InteractiveSession^ GetActiveSession();
 		static bool ImpersonateActiveUser();
 		static bool StopImpersonation();
+		static int GetPhysicalMemory();
 	};
 }
