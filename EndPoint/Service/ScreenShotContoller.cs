@@ -45,6 +45,13 @@ namespace MyDLP.EndPoint.Service
             @"SELECT * FROM Win32_ProcessStopTrace";
 
 
+        static string snippingToolKeyPath = "SOFTWARE\\Policies\\Microsoft\\TabletPC";
+        static string snippingToolValueName = "DisableSnippingTool";
+        static int origSnippingToolValue = 0;
+
+        //CD prevention
+        //static const string cdBurnerKeyPath = "User\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer";
+        //static const string cdBurnerValueName = "NoCDBurning"=dword:00000001
 
         static public void Start()
         {
@@ -171,8 +178,9 @@ namespace MyDLP.EndPoint.Service
                 return;
 
             Logger.GetInstance().Debug("ScreenShotController block");
-
             MyDLPEP.KbFilterController.GetInstance().ActivateDevice();
+            origSnippingToolValue = MyDLPEP.LGPOEditor.EditDword(snippingToolKeyPath, snippingToolValueName, 1);
+            
             block = true;
         }
 
@@ -183,6 +191,7 @@ namespace MyDLP.EndPoint.Service
 
             Logger.GetInstance().Debug("ScreenShotController unblock");
 
+            MyDLPEP.LGPOEditor.EditDword(snippingToolKeyPath, snippingToolValueName, origSnippingToolValue);
             MyDLPEP.KbFilterController.GetInstance().DeactivateDevice();
             block = false;
         }
