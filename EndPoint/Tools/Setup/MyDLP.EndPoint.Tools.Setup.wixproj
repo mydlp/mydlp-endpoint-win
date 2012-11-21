@@ -19,6 +19,7 @@
 -dprintingPath=$(SolutionDir)..\..\mydlp-endpoint-win\EndPoint\Service\printing
 -dengine_javaPath=$(SolutionDir)..\..\mydlp-endpoint-win\EndPoint\Engine\mydlp\src\backend
 -djre7Path=$(SolutionDir)..\..\mydlp-deployment-env\jre7
+-dinternalPath=$(SolutionDir)..\..\mydlp-deployment-env\internal
 -dcygwinPath=$(SolutionDir)..\..\mydlp-deployment-env\cygwin</CompilerAdditionalOptions>
     <SuppressIces>ICE20</SuppressIces>
   </PropertyGroup>
