@@ -617,6 +617,16 @@ namespace MyDLP.EndPoint.Service
                                 }
                             }
                         }
+
+                        MyDLPEP.PrinterUtils.TakePrinterOwnership(queue.Name);
+                        if (Environment.UserInteractive)
+                        {
+                            MyDLPEP.PrinterUtils.SetPrinterSecurityDescriptor(queue.Name, BuiltinAdminsPrinterSecurityDescriptor);
+                        }
+                        else
+                        {
+                            MyDLPEP.PrinterUtils.SetPrinterSecurityDescriptor(queue.Name, SystemPrinterSecurityDescriptor);
+                        }
                         MyDLPEP.PrinterUtils.RemovePrinter(queue.Name);
 
                     }
