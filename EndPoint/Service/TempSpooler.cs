@@ -41,6 +41,7 @@ namespace MyDLP.EndPoint.Service
         static bool started = false;
         static bool hasSharedPrinter = false;
         static bool checkingPrinters = false;
+        static string spoolShareDirName = "SpoolShare";
 
         static ManagementEventWatcher shareWatcher = null;
         static FileSystemWatcher spoolWatcher;
@@ -157,7 +158,7 @@ namespace MyDLP.EndPoint.Service
                 Logger.GetInstance().Debug("StartShareSpoolListener");
 
                 Directory.CreateDirectory(Configuration.SharedSpoolPath);
-                ShareDirectory(Configuration.SharedSpoolPath, "SpoolShare", "None");
+                ShareDirectory(Configuration.SharedSpoolPath, spoolShareDirName, "None");
 
                 //Set NTFS permissions for share spool
                 if (System.Environment.UserInteractive)
@@ -386,9 +387,12 @@ namespace MyDLP.EndPoint.Service
                     //It is a network printer connection
                     PrinterController.PrinterConnection connection = controller.GetPrinterConnection(printerName);
 
+                    //remove XP printer share format on machine before sending if any
+                    string normalizedPrinterName = printerName.Replace("_on_" + PrinterController.NormalizePrinterName(connection.server),"");
+
                     //Impersonate, Local System can not reach shared resources. 
                     MyDLPEP.SessionUtils.ImpersonateActiveUser();
-                    string remotepath = @"\\" + connection.server + "\\SharedSpool\\" + printerName + "\\";
+                    string remotepath = @"\\" + connection.server + "\\" + spoolShareDirName + "\\" + normalizedPrinterName + "\\";
                     try
                     {
                         Directory.CreateDirectory(remotepath);

@@ -242,9 +242,13 @@ namespace MyDLP.EndPoint.Service
         public static String GetSecurePrinterName(String qName)
         {
 
-            qName = PrinterPrefix +
-                qName
-                .Replace(":", "_")
+            qName = PrinterPrefix + NormalizePrinterName(qName);                             
+            return qName;
+        }
+
+        public static String NormalizePrinterName(String qName)
+        {
+            return qName.Replace(":", "_")
                 .Replace("\\", "_")
                 .Replace("/", "_")
                 .Replace("|", "_")
@@ -252,7 +256,7 @@ namespace MyDLP.EndPoint.Service
                 .Replace(">", "_")
                 .Replace("*", "_")
                 .Replace(".", "_");
-            return qName;
+            
         }
 
         public void ListenPrinterConnections(String sid)
