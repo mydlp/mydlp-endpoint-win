@@ -47,8 +47,7 @@ namespace MyDLP.EndPoint.Core
         static String erlStartCmd;
         static String erlInstallCmd;
         static String erlStartInteractiveCmd;
-        //JAVAXMX over 1.5 GB prevents JVM start
-        static int xmx32BitLimit = 1536;
+        static int xmx32BitLimit = 2000;
 
         public static void Start()
         {
@@ -88,7 +87,7 @@ namespace MyDLP.EndPoint.Core
 
             else
             {
-                javaMemory = 256 + ((phyMemory - 600) / 3);
+                javaMemory = 256 + ((phyMemory - 600) / 4);
 
                 if (javaMemory > xmx32BitLimit)
                     javaMemory = xmx32BitLimit;
