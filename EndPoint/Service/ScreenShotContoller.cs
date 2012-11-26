@@ -64,7 +64,7 @@ namespace MyDLP.EndPoint.Service
 
                 foreach (String pName in Configuration.ScreentShotProcesses.Split(','))
                 {
-                    String processName = pName.Trim().ToLower();
+                    String processName = pName.Trim().ToLowerInvariant();
                     if (processName.Length > 0)
                     {
                         sensitiveProcessesList.Add(processName);
@@ -99,7 +99,7 @@ namespace MyDLP.EndPoint.Service
 
                 foreach (Process process in Process.GetProcesses())
                 {
-                    String pName = process.ProcessName.ToLower() + ".exe";
+                    String pName = process.ProcessName.ToLowerInvariant() + ".exe";
                     if (sensitiveProcessesList.Contains(pName))
                     {
                         if (!activeSensitiveProcesses.Contains(pName))
@@ -140,7 +140,7 @@ namespace MyDLP.EndPoint.Service
 
         static void startWatch_EventArrived(object sender, EventArrivedEventArgs e)
         {
-            String pName = ((String)e.NewEvent.Properties["ProcessName"].Value).ToLower();
+            String pName = ((String)e.NewEvent.Properties["ProcessName"].Value).ToLowerInvariant();
             Logger.GetInstance().Debug(pName + " started");
 
             if (sensitiveProcessesList.Contains(pName))
@@ -156,7 +156,7 @@ namespace MyDLP.EndPoint.Service
 
         static void stopWatch_EventArrived(object sender, EventArrivedEventArgs e)
         {
-            String pName = ((String)e.NewEvent.Properties["ProcessName"].Value).ToLower();
+            String pName = ((String)e.NewEvent.Properties["ProcessName"].Value).ToLowerInvariant();
             Logger.GetInstance().Debug(pName + " stopped");
 
             if (activeSensitiveProcesses.Contains(pName))

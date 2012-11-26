@@ -26,55 +26,108 @@ ULONG pendingIrpCount;
 
 PDEVICE_OBJECT pKbdDeviceObject;
 PDEVICE_OBJECT topOfStack;
-IRPMJREAD oldFunction;
+//IRPMJREAD oldFunction;
 
-
-
-NTSTATUS DriverEntry(IN PDRIVER_OBJECT DriverObject,
+NTSTATUS DriverEntry(IN PDRIVER_OBJECT pDriverObject,
 					 IN PUNICODE_STRING RegistryPath)
 {
 
-	UNICODE_STRING uniNtDeviceName;
-	UNICODE_STRING uniDosDeviceName;
-	ULONG i;
-	PDEVICE_OBJECT DeviceObject;
+	ULONG i;	
 	NTSTATUS status = STATUS_SUCCESS;
+	skip = 0;
 
-	DbgPrint(("MyDLPKBF: DriverEntry.\n"));
+	DbgPrint("MyDLPKBF: DriverEntry.\n");
 
+	//Set noop functions to allow Irps to pass 
 	for(i = 0; i <= IRP_MJ_MAXIMUM_FUNCTION; i++)
 	{
-		DriverObject->MajorFunction[i] = MyDLPKBF_PassThrough;
+		pDriverObject->MajorFunction[i] = MyDLPKBF_PassThrough;
 	}
 
-	DriverObject->MajorFunction[IRP_MJ_CREATE] = MyDLPKBF_CreateClose;
-	DriverObject->MajorFunction[IRP_MJ_CLOSE] = MyDLPKBF_CreateClose;
-	DriverObject->MajorFunction[IRP_MJ_READ] = MyDLPKBF_DispatchRead;
-	DriverObject->DriverUnload = MyDLPKBF_Unload;
+	//Set functions which adds the flavor
+	pDriverObject->MajorFunction[IRP_MJ_CREATE] = MyDLPKBF_CreateClose;
+	pDriverObject->MajorFunction[IRP_MJ_CLOSE] = MyDLPKBF_CreateClose;
+	pDriverObject->MajorFunction[IRP_MJ_READ] = MyDLPKBF_DispatchRead;
+	pDriverObject->DriverUnload = MyDLPKBF_Unload;
+	DbgPrint("MyDLPKBF: DriverEntry 1.\n");
+	for (i = 0; i <= MAX_KBDCLASS; i++)
+	{
+		DbgPrint("MyDLPKBF: DriverEntry 2. %d\n",i);
+		status = MyDLPKBF_CreateDevice(pDriverObject, i);
+		if(!NT_SUCCESS(status))
+		{
+			DbgPrint("MyDLPKBF: DriverEntry Fail: %d Status:%x\n", i, status);
+			return status;
+		}
 
-	RtlInitUnicodeString(&uniNtDeviceName, NT_DEVICE_NAME);
-	RtlInitUnicodeString(&uniDosDeviceName, DOS_DEVICE_NAME);
+	}
+	return status;
+}
 
-	status = IoCreateDevice(DriverObject, 0, &uniNtDeviceName,FILE_DEVICE_UNKNOWN, 0, FALSE, &DeviceObject);
 
+NTSTATUS 
+MyDLPKBF_CreateDevice (IN PDRIVER_OBJECT pDriverObject,
+					   IN ULONG DeviceNumber)
+{
+
+	PDEVICE_OBJECT pDevObj;
+	UNICODE_STRING uniNtDeviceName, uniDosDeviceName, uniNumber;	
+	WCHAR ntDeviceNameBuffer[MYDLP_MAX_NAME_LENGTH];
+	WCHAR dosDeviceNameBuffer[MYDLP_MAX_NAME_LENGTH];	
+	WCHAR numberBuffer[2];
+	PMYDLPKBF_DEVICE_EXTENSION pDevExt;
+	NTSTATUS status = STATUS_SUCCESS;
+
+	DbgPrint("MyDLPKBF: MyDLPKBF_Create_Device. [%d]\n", DeviceNumber);
+
+	uniNtDeviceName.Buffer = ntDeviceNameBuffer;
+	uniNtDeviceName.MaximumLength  = MYDLP_MAX_NAME_LENGTH * 2;
+	uniNtDeviceName.Length = 0;
+
+	uniDosDeviceName.Buffer = dosDeviceNameBuffer;
+	uniDosDeviceName.MaximumLength  = MYDLP_MAX_NAME_LENGTH * 2;
+	uniDosDeviceName.Length = 0;
+
+	uniNumber.Buffer = numberBuffer;
+	uniNumber.MaximumLength = 4;
+	uniNumber.Length = 0;
+
+	RtlIntegerToUnicodeString( DeviceNumber, 10, &uniNumber); 
+	RtlAppendUnicodeToString( &uniNtDeviceName, NT_DEVICE_NAME);	
+	RtlAppendUnicodeStringToString( &uniNtDeviceName, &uniNumber);
+	RtlAppendUnicodeToString( &uniDosDeviceName, DOS_DEVICE_NAME);	
+	RtlAppendUnicodeStringToString( &uniDosDeviceName, &uniNumber);
+
+	status = IoCreateDevice(pDriverObject, sizeof(MYDLPKBF_DEVICE_EXTENSION), &uniNtDeviceName, FILE_DEVICE_UNKNOWN, 0, FALSE, &pDevObj);
 	if(!NT_SUCCESS(status))
 	{
 		return status;
 	}
 
-	status = IoCreateSymbolicLink(&uniDosDeviceName, &uniNtDeviceName);
+	//set device number in device extension
+	if (pDevObj!= NULL && pDevObj->DeviceExtension != NULL)
+	{
+		DbgPrint("MyDLPKBF: MyDLPKBF_Create Set Extension DeviceNumber:[%d]\n", DeviceNumber);
+		pDevExt = pDevObj->DeviceExtension;
+		pDevExt->DeviceNumber = DeviceNumber;
+	}
 
+	DbgPrint("MyDLPKBF: IoCreateSymbolicLink %wZ to %wZ\n", &uniDosDeviceName, &uniNtDeviceName);
+	status = IoCreateSymbolicLink(&uniDosDeviceName, &uniNtDeviceName);
 	if(status != STATUS_SUCCESS )
 	{
-		IoDeleteDevice(DeviceObject);
+		IoDeleteDevice(pDevObj);			
+
 		return status;
 	}
 
-	DeviceObject->Flags |= DO_BUFFERED_IO;
-	DeviceObject->Flags &= ~DO_DEVICE_INITIALIZING;
-	skip = 0;
+
+	pDevObj->Flags |= DO_BUFFERED_IO;
+	pDevObj->Flags &= ~DO_DEVICE_INITIALIZING;
+	//skip = 0;
 	return status;
 }
+
 
 NTSTATUS
 MyDLPKBF_CreateClose(IN PDEVICE_OBJECT DeviceObject,
@@ -82,6 +135,7 @@ MyDLPKBF_CreateClose(IN PDEVICE_OBJECT DeviceObject,
 {
 	ULONG i;
 	NTSTATUS status;
+	PMYDLPKBF_DEVICE_EXTENSION pDevExt;
 	PIO_STACK_LOCATION stack;
 	UNICODE_STRING uniKbdDeviceName;
 	PFILE_OBJECT KbdFileObject;
@@ -104,7 +158,16 @@ MyDLPKBF_CreateClose(IN PDEVICE_OBJECT DeviceObject,
 	{
 	case IRP_MJ_CREATE:
 		{
-			if(InterlockedIncrement(&startCount) == 1)
+
+			DbgPrint("MyDLPKBF: MyDLPKBF_Create.\n");
+
+			if (DeviceObject->DeviceExtension != NULL)
+			{
+				pDevExt = DeviceObject->DeviceExtension;
+				DbgPrint("MyDLPKBF: MyDLPKBF_Create no:%d", pDevExt->DeviceNumber);
+			}
+
+			//if(InterlockedIncrement(&startCount) == 1)
 			{
 				if(skip)
 				{
@@ -163,48 +226,61 @@ MyDLPKBF_CreateClose(IN PDEVICE_OBJECT DeviceObject,
 					else if(arKbdCls[i] == 0x32)
 						kbdClsNum |= KBDCLASS_2;
 				}
-				if(kbdClsNum & KBDCLASS_0)
+
+				pDevExt = DeviceObject->DeviceExtension;
+				DbgPrint("MyDLPKBF: MyDLPKBF_Create device:%d\n", pDevExt->DeviceNumber);	
+
+				if (pDevExt->DeviceNumber == 0)
 				{
-					RtlInitUnicodeString(&uniKbdDeviceName, L"\\Device\\KeyboardClass0");
+					if(kbdClsNum & KBDCLASS_0)
+					{
+						RtlInitUnicodeString(&uniKbdDeviceName, L"\\Device\\KeyboardClass0");
+					}
 				}
-				else
+
+				else if (pDevExt->DeviceNumber == 2)
 				{
 					if(kbdClsNum & KBDCLASS_2)
 					{
 						RtlInitUnicodeString(&uniKbdDeviceName, L"\\Device\\KeyboardClass2");
 					}
-					else if(kbdClsNum & KBDCLASS_1)
+				}
+
+				else if (pDevExt->DeviceNumber == 1)
+				{
+					if(kbdClsNum & KBDCLASS_1)
 					{
 						RtlInitUnicodeString(&uniKbdDeviceName, L"\\Device\\KeyboardClass1");
 					}
-					else
-					{
-						skip = 1;
-						break;
-					}
 				}
+				else
+				{
+					skip = 1;
+					break;
+				}
+
 				status = MyDLPKBF_IoGetDeviceObjectPointer(&uniKbdDeviceName, 0, &KbdFileObject, &KbdDeviceObject);
 
 				if(NT_SUCCESS(status))
 				{
 					pKbdDeviceObject = KbdDeviceObject;
 					ObDereferenceObject(KbdFileObject);
-					//DbgPrint(("MyDLPKBF: Attach Device.\n"));
+
 					__try
 					{
 						topOfStack = IoAttachDeviceToDeviceStack(DeviceObject, KbdDeviceObject);
-
-						if (topOfStack != NULL)
+						DbgPrint("MyDLPKBF: Attached Device.\n");
+						/*if (topOfStack != NULL)
 						{
-							oldFunction = pKbdDeviceObject->DriverObject->MajorFunction[IRP_MJ_READ];
-							pKbdDeviceObject->DriverObject->MajorFunction[IRP_MJ_READ] = MyDLPKBF_HookProc;
+						oldFunction = pKbdDeviceObject->DriverObject->MajorFunction[IRP_MJ_READ];
+						pKbdDeviceObject->DriverObject->MajorFunction[IRP_MJ_READ] = MyDLPKBF_HookProc;
 						}
 						else
 						{
-							skip = 1;
-							topOfStack = NULL;
-							break;
-						}
+						skip = 1;
+						topOfStack = NULL;
+						break;
+						}*/
 					}
 					__except(1)
 					{
@@ -222,7 +298,9 @@ MyDLPKBF_CreateClose(IN PDEVICE_OBJECT DeviceObject,
 		}
 	case IRP_MJ_CLOSE:
 		{
-			if(InterlockedDecrement(&startCount) == 0)
+			DbgPrint("MyDLPKBF: MyDLPKBF_Close.\n");
+
+			//if(InterlockedDecrement(&startCount) == 0)
 			{
 				if(skip)
 				{
@@ -232,12 +310,12 @@ MyDLPKBF_CreateClose(IN PDEVICE_OBJECT DeviceObject,
 				{
 					if(topOfStack)
 					{
-						if(oldFunction)
+						/*if(oldFunction)
 						{
-							pKbdDeviceObject->DriverObject->MajorFunction[IRP_MJ_READ] = oldFunction;
-							oldFunction = NULL;
-						}
-						DbgPrint(("MyDLPKBF: Detach Device. \n"));
+						pKbdDeviceObject->DriverObject->MajorFunction[IRP_MJ_READ] = oldFunction;
+						oldFunction = NULL;
+						}*/
+						DbgPrint("MyDLPKBF: Detach Device. \n");
 						IoDetachDevice(topOfStack);
 						topOfStack = NULL;
 					}
@@ -289,12 +367,13 @@ NTSTATUS MyDLPKBF_IoGetDeviceObjectPointer( IN PUNICODE_STRING ObjectName,
 	return status;
 }
 
+/*
 NTSTATUS MyDLPKBF_HookProc(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 {
-	NTSTATUS status;
-	status = oldFunction(DeviceObject, Irp);
-	return status;
-}
+NTSTATUS status;
+status = oldFunction(DeviceObject, Irp);
+return status;
+}*/
 
 NTSTATUS MyDLPKBF_DispatchRead(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 {
@@ -302,15 +381,15 @@ NTSTATUS MyDLPKBF_DispatchRead(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 	PIO_STACK_LOCATION nextIrpStack;
 	NTSTATUS status;
 
-	pendingIrpCount++;
-	//DbgPrint(("MyDLPKBF: DispatchRead Start \n"));
+	DbgPrint("MyDLPKBF: DispatchRead Start \n");
+	InterlockedIncrement(&pendingIrpCount);	
 	currentIrpStack = IoGetCurrentIrpStackLocation(Irp);
 
 	nextIrpStack = IoGetNextIrpStackLocation(Irp);
 	*nextIrpStack = *currentIrpStack;
 	IoSetCompletionRoutine(Irp, MyDLPKBF_ReadComplete, DeviceObject, TRUE, TRUE, TRUE);
 	status = IoCallDriver(topOfStack, Irp);
-	DbgPrint(("MyDLPKBF: DispatchRead End\n"));
+	DbgPrint("MyDLPKBF: DispatchRead End\n");
 	return status;
 }
 
@@ -324,7 +403,7 @@ NTSTATUS MyDLPKBF_ReadComplete(IN PDEVICE_OBJECT DeviceObject,
 
 	PKEYBOARD_INPUT_DATA keys;
 
-	//DbgPrint(("MyDLPKBF: ReadComplete Start\n"));
+	DbgPrint("MyDLPKBF: ReadComplete Start\n");
 
 	keys = (PKEYBOARD_INPUT_DATA)Irp->AssociatedIrp.SystemBuffer;
 	numKeys = Irp->IoStatus.Information / sizeof(KEYBOARD_INPUT_DATA);
@@ -332,7 +411,7 @@ NTSTATUS MyDLPKBF_ReadComplete(IN PDEVICE_OBJECT DeviceObject,
 	block = 0;
 	for(i = 0; i < numKeys; i++)
 	{
-		//DbgPrint("ScanCode: %x\n", keys[i].MakeCode);
+		DbgPrint("ScanCode: %x\n", keys[i].MakeCode);
 		//if(keys[i].Flags == KEY_MAKE)
 		//DbgPrint("%s\n","Key Down");
 		//if(keys[i].Flags == KEY_BREAK)
@@ -349,9 +428,9 @@ NTSTATUS MyDLPKBF_ReadComplete(IN PDEVICE_OBJECT DeviceObject,
 		IoMarkIrpPending(Irp);
 	}
 
-	pendingIrpCount--;
+	InterlockedDecrement(&pendingIrpCount);
 
-	//DbgPrint(("MyDLPKBF: ReadComplete End.\n"));
+	//DbgPrint("MyDLPKBF: ReadComplete End.\n");
 
 	if (block)
 	{
@@ -362,7 +441,7 @@ NTSTATUS MyDLPKBF_ReadComplete(IN PDEVICE_OBJECT DeviceObject,
 	}
 	else
 	{
-		//DbPrint(("MyDLPKBF: Allow keypress\n"));
+		//DbPrint("MyDLPKBF: Allow keypress\n");
 		return Irp->IoStatus.Status;
 	}
 }
@@ -370,27 +449,41 @@ NTSTATUS MyDLPKBF_ReadComplete(IN PDEVICE_OBJECT DeviceObject,
 NTSTATUS MyDLPKBF_PassThrough(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 {
 	NTSTATUS status;
-	//DbgPrint(("MyDLPKBF: Start MyDLPKBF_PassThrough\n"));
+	DbgPrint("MyDLPKBF: Start MyDLPKBF_PassThrough\n");
 	if(!skip)
 	{
 		IoSkipCurrentIrpStackLocation(Irp);
 		status = IoCallDriver(topOfStack, Irp);
 	}
-	//DbgPrint(("MyDLPKBF: End MyDLPKBF_PassThrough\n"));
+	//DbgPrint("MyDLPKBF: End MyDLPKBF_PassThrough\n");
 	return status;
 }
 
 //This is called on driver service stop
-VOID MyDLPKBF_Unload( __in PDRIVER_OBJECT DriverObject)
+VOID MyDLPKBF_Unload( __in PDRIVER_OBJECT pDriverObject)
 {
-	UNICODE_STRING uniWin32NameString;
-	PDEVICE_OBJECT deviceObject = DriverObject->DeviceObject;
+
+	UNICODE_STRING uniDosDeviceName, uniNumber;	
+	WCHAR dosDeviceNameBuffer[MYDLP_MAX_NAME_LENGTH];	
+	WCHAR numberBuffer[2];
+	PDEVICE_OBJECT pDeviceObject;
+	PDEVICE_OBJECT pNextDeviceObject;
 	KTIMER kTimer;
 	LARGE_INTEGER timeout;
-
+	ULONG i;
+	NTSTATUS status;
+	PMYDLPKBF_DEVICE_EXTENSION pDevExt;
 	PAGED_CODE();
 
-	DbgPrint(("MyDLPKBF: Unload\n"));
+	DbgPrint("MyDLPKBF: Unload\n");
+
+	uniDosDeviceName.Buffer = dosDeviceNameBuffer;
+	uniDosDeviceName.MaximumLength  = MYDLP_MAX_NAME_LENGTH * 2;
+	uniDosDeviceName.Length = 0;
+
+	uniNumber.Buffer = numberBuffer;
+	uniNumber.MaximumLength = 4;
+	uniNumber.Length = 0;
 
 	timeout.QuadPart = 1000000;
 	KeInitializeTimer(&kTimer);
@@ -403,11 +496,46 @@ VOID MyDLPKBF_Unload( __in PDRIVER_OBJECT DriverObject)
 		KeWaitForSingleObject(&kTimer,Executive,KernelMode,NULL ,NULL);
 	}
 
-	RtlInitUnicodeString(&uniWin32NameString, DOS_DEVICE_NAME);
+	//remove symlink for all devices
+	for(i=0; i<= MAX_KBDCLASS; i++)
+	{		
+		RtlIntegerToUnicodeString( i, 10, &uniNumber); 
+		RtlAppendUnicodeToString( &uniDosDeviceName, DOS_DEVICE_NAME);	
+		RtlAppendUnicodeStringToString( &uniDosDeviceName, &uniNumber);
+		DbgPrint("MyDLPKBF: Deleting Device Symlink:%d name:%wZ\n",i, &uniDosDeviceName);
+		status = IoDeleteSymbolicLink(&uniDosDeviceName);
+		if(!NT_SUCCESS(status))
+		{
+			DbgPrint("MyDLPKBF: IoDeleteSymbolicLink Fail: %d Status:%x\n", i, status);
+		}
+		uniDosDeviceName.Length = 0;
+		uniNumber.Length = 0;
+	}
 
-	IoDeleteSymbolicLink(&uniWin32NameString);
+	//Delete devices to completely remove driver instance
+	pDeviceObject = pDriverObject->DeviceObject;
+	pNextDeviceObject = pDeviceObject->NextDevice;
+	pDevExt = pDeviceObject->DeviceExtension;
+	DbgPrint("MyDLPKBF: Deleting Device Ext Address:%x\n", pDevExt);
+	DbgPrint("MyDLPKBF: Deleting Device %d\n", pDevExt->DeviceNumber);
+	DbgPrint("MyDLPKBF: Deleting Device Address:%x\n", pDeviceObject);
+	
+	IoDeleteDevice(pDeviceObject);
+	
 
-	//Delete device to compleely remove driver instance
-	IoDeleteDevice(deviceObject);
-	DbgPrint(("MyDLPKBF: Deleted Device\n"));
+	while(pNextDeviceObject != NULL)
+	{		
+		pDeviceObject = pNextDeviceObject;
+		DbgPrint("MyDLPKBF: Deleting Device Address:%x\n", pDeviceObject);
+		pNextDeviceObject = pDeviceObject->NextDevice;			
+
+		pDevExt = pDeviceObject->DeviceExtension;
+		
+		DbgPrint("MyDLPKBF: Deleting Device Ext Address:%x\n", pDevExt);
+		DbgPrint("MyDLPKBF: Deleting Device %d\n", pDevExt->DeviceNumber);
+		IoDeleteDevice(pDeviceObject);
+	}
+
+
+	DbgPrint("MyDLPKBF: Deleted Devices\n");
 }

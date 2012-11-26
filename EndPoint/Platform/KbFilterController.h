@@ -22,6 +22,7 @@
 #include <strsafe.h>
 #include <Setupapi.h>
 #include <stdio.h>
+#define MAX_DEVICE_COUNT 3
 
 namespace MyDLPEP
 {
@@ -30,7 +31,7 @@ namespace MyDLPEP
 	private:
 		KbFilterController( void );
 		static KbFilterController ^controller = nullptr;	
-		static HANDLE drvDevice;
+		array<HANDLE>^ devices; 
 
 	public:
 		static KbFilterController ^GetInstance();

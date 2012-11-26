@@ -149,18 +149,36 @@ namespace MyDLPEP
 		CloseServiceHandle(hSCManager);
 	}
 	void KbFilterController::ActivateDevice()
-	{
-		drvDevice = CreateFileA( "\\\\.\\MyDLPKBF", GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
+	{	
+		devices = gcnew array<HANDLE>(MAX_DEVICE_COUNT);
+		for (int i = 0; i < MAX_DEVICE_COUNT; i++)
+		{ 
+			String ^ deviceName = L"\\\\.\\MyDLPKBF" + i;
+			IntPtr cPtr = Marshal::StringToHGlobalUni(deviceName);
 
-        if ( drvDevice == INVALID_HANDLE_VALUE )
-		{
-			Logger::GetInstance()->Error ("CreateFile Failed " + GetLastError());
-          
-        }
+			devices[i] = CreateFile((LPCWSTR)cPtr.ToPointer(), GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
+			Marshal::FreeHGlobal(cPtr);
+
+			if ( devices[i] == INVALID_HANDLE_VALUE )
+			{
+				Logger::GetInstance()->Error ("CreateFile Failed " + GetLastError());				
+			}
+			else 
+			{
+				Logger::GetInstance()->Error ("Opened Device: " + i);
+			}
+		}
 	}
 
 	void KbFilterController::DeactivateDevice()
 	{
-		CloseHandle(drvDevice);
+		for (int i = 0; i < MAX_DEVICE_COUNT; i++)
+		{
+			int success = CloseHandle(devices[i]);
+			if (success)
+			{
+				Logger::GetInstance()->Error ("Close Device: " + i);
+			}
+		}
 	}
 }
