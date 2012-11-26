@@ -26,7 +26,7 @@
 #define KBDCLASS_0 0x1
 #define KBDCLASS_1 0x2
 #define KBDCLASS_2 0x4
-#define MAX_KBDCLASS 2
+#define MAX_KBDCOUNT 3
 #define	MYDLP_MAX_NAME_LENGTH		50
 
 #define ALLOC_SIZE 0x1000

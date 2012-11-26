@@ -25,7 +25,7 @@ ULONG skip;
 ULONG pendingIrpCount;
 
 PDEVICE_OBJECT pKbdDeviceObject;
-PDEVICE_OBJECT topOfStack;
+PDEVICE_OBJECT topOfStack[MAX_KBDCOUNT];
 //IRPMJREAD oldFunction;
 
 NTSTATUS DriverEntry(IN PDRIVER_OBJECT pDriverObject,
@@ -50,7 +50,7 @@ NTSTATUS DriverEntry(IN PDRIVER_OBJECT pDriverObject,
 	pDriverObject->MajorFunction[IRP_MJ_READ] = MyDLPKBF_DispatchRead;
 	pDriverObject->DriverUnload = MyDLPKBF_Unload;
 	DbgPrint("MyDLPKBF: DriverEntry 1.\n");
-	for (i = 0; i <= MAX_KBDCLASS; i++)
+	for (i = 0; i < MAX_KBDCOUNT; i++)
 	{
 		DbgPrint("MyDLPKBF: DriverEntry 2. %d\n",i);
 		status = MyDLPKBF_CreateDevice(pDriverObject, i);
@@ -153,7 +153,8 @@ MyDLPKBF_CreateClose(IN PDEVICE_OBJECT DeviceObject,
 	char arKbdCls[0x10];
 
 	stack = IoGetCurrentIrpStackLocation(Irp);
-
+	pDevExt = DeviceObject->DeviceExtension;
+	
 	switch (stack->MajorFunction)
 	{
 	case IRP_MJ_CREATE:
@@ -227,7 +228,6 @@ MyDLPKBF_CreateClose(IN PDEVICE_OBJECT DeviceObject,
 						kbdClsNum |= KBDCLASS_2;
 				}
 
-				pDevExt = DeviceObject->DeviceExtension;
 				DbgPrint("MyDLPKBF: MyDLPKBF_Create device:%d\n", pDevExt->DeviceNumber);	
 
 				if (pDevExt->DeviceNumber == 0)
@@ -235,6 +235,7 @@ MyDLPKBF_CreateClose(IN PDEVICE_OBJECT DeviceObject,
 					if(kbdClsNum & KBDCLASS_0)
 					{
 						RtlInitUnicodeString(&uniKbdDeviceName, L"\\Device\\KeyboardClass0");
+
 					}
 				}
 
@@ -259,6 +260,7 @@ MyDLPKBF_CreateClose(IN PDEVICE_OBJECT DeviceObject,
 					break;
 				}
 
+				DbgPrint("MyDLPKBF: MyDLPKBF_Attached device no:%d kbddevice: %wZ\n ", pDevExt->DeviceNumber, &uniKbdDeviceName);	
 				status = MyDLPKBF_IoGetDeviceObjectPointer(&uniKbdDeviceName, 0, &KbdFileObject, &KbdDeviceObject);
 
 				if(NT_SUCCESS(status))
@@ -268,7 +270,7 @@ MyDLPKBF_CreateClose(IN PDEVICE_OBJECT DeviceObject,
 
 					__try
 					{
-						topOfStack = IoAttachDeviceToDeviceStack(DeviceObject, KbdDeviceObject);
+						topOfStack[pDevExt->DeviceNumber] = IoAttachDeviceToDeviceStack(DeviceObject, KbdDeviceObject);
 						DbgPrint("MyDLPKBF: Attached Device.\n");
 						/*if (topOfStack != NULL)
 						{
@@ -308,7 +310,7 @@ MyDLPKBF_CreateClose(IN PDEVICE_OBJECT DeviceObject,
 				}
 				__try
 				{
-					if(topOfStack)
+					if(topOfStack[pDevExt->DeviceNumber])
 					{
 						/*if(oldFunction)
 						{
@@ -316,8 +318,8 @@ MyDLPKBF_CreateClose(IN PDEVICE_OBJECT DeviceObject,
 						oldFunction = NULL;
 						}*/
 						DbgPrint("MyDLPKBF: Detach Device. \n");
-						IoDetachDevice(topOfStack);
-						topOfStack = NULL;
+						IoDetachDevice(topOfStack[pDevExt->DeviceNumber]);
+						topOfStack[pDevExt->DeviceNumber] = NULL;
 					}
 				}
 				__except(1)
@@ -380,15 +382,17 @@ NTSTATUS MyDLPKBF_DispatchRead(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 	PIO_STACK_LOCATION currentIrpStack;
 	PIO_STACK_LOCATION nextIrpStack;
 	NTSTATUS status;
+	PMYDLPKBF_DEVICE_EXTENSION pDevExt;
 
 	DbgPrint("MyDLPKBF: DispatchRead Start \n");
 	InterlockedIncrement(&pendingIrpCount);	
 	currentIrpStack = IoGetCurrentIrpStackLocation(Irp);
+	pDevExt = DeviceObject->DeviceExtension;
 
 	nextIrpStack = IoGetNextIrpStackLocation(Irp);
 	*nextIrpStack = *currentIrpStack;
 	IoSetCompletionRoutine(Irp, MyDLPKBF_ReadComplete, DeviceObject, TRUE, TRUE, TRUE);
-	status = IoCallDriver(topOfStack, Irp);
+	status = IoCallDriver(topOfStack[pDevExt->DeviceNumber], Irp);
 	DbgPrint("MyDLPKBF: DispatchRead End\n");
 	return status;
 }
@@ -449,11 +453,13 @@ NTSTATUS MyDLPKBF_ReadComplete(IN PDEVICE_OBJECT DeviceObject,
 NTSTATUS MyDLPKBF_PassThrough(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 {
 	NTSTATUS status;
+	PMYDLPKBF_DEVICE_EXTENSION pDevExt;
 	DbgPrint("MyDLPKBF: Start MyDLPKBF_PassThrough\n");
 	if(!skip)
 	{
+		pDevExt =  DeviceObject->DeviceExtension;
 		IoSkipCurrentIrpStackLocation(Irp);
-		status = IoCallDriver(topOfStack, Irp);
+		status = IoCallDriver(topOfStack[pDevExt->DeviceNumber], Irp);
 	}
 	//DbgPrint("MyDLPKBF: End MyDLPKBF_PassThrough\n");
 	return status;
@@ -497,7 +503,7 @@ VOID MyDLPKBF_Unload( __in PDRIVER_OBJECT pDriverObject)
 	}
 
 	//remove symlink for all devices
-	for(i=0; i<= MAX_KBDCLASS; i++)
+	for(i=0; i< MAX_KBDCOUNT; i++)
 	{		
 		RtlIntegerToUnicodeString( i, 10, &uniNumber); 
 		RtlAppendUnicodeToString( &uniDosDeviceName, DOS_DEVICE_NAME);	
