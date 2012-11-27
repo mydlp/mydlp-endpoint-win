@@ -84,10 +84,10 @@ namespace MyDLP.EndPoint.Service
                 spoolWatcher.Path = Configuration.PrintSpoolPath;
                 spoolWatcher.IncludeSubdirectories = true;
                 spoolWatcher.Filter = "*.meta";
-                spoolWatcher.NotifyFilter = NotifyFilters.LastAccess | NotifyFilters.LastWrite
-               | NotifyFilters.FileName | NotifyFilters.DirectoryName;
-                //spoolWatcher.Created += new FileSystemEventHandler(OnCreate);
-                spoolWatcher.Changed += new FileSystemEventHandler(OnCreate);
+                //spoolWatcher.NotifyFilter = NotifyFilters.LastAccess | NotifyFilters.LastWrite
+                // | NotifyFilters.FileName | NotifyFilters.DirectoryName;
+                spoolWatcher.Created += new FileSystemEventHandler(OnCreate);
+                //spoolWatcher.Changed += new FileSystemEventHandler(OnCreate);
                 spoolWatcher.EnableRaisingEvents = true;
                 spoolWatcher.Error += new ErrorEventHandler(SpoolWatcherError);
 
@@ -176,9 +176,9 @@ namespace MyDLP.EndPoint.Service
                 shareSpoolWatcher.Path = Configuration.SharedSpoolPath;
                 shareSpoolWatcher.IncludeSubdirectories = true;
                 shareSpoolWatcher.Filter = "*.meta";
-                shareSpoolWatcher.NotifyFilter = NotifyFilters.LastAccess | NotifyFilters.LastWrite
-               | NotifyFilters.FileName | NotifyFilters.DirectoryName;
-                shareSpoolWatcher.Changed += new FileSystemEventHandler(OnCreate);
+                //shareSpoolWatcher.NotifyFilter = NotifyFilters.LastAccess | NotifyFilters.LastWrite
+               //| NotifyFilters.FileName | NotifyFilters.DirectoryName;
+                shareSpoolWatcher.Created += new FileSystemEventHandler(OnCreate);
                 shareSpoolWatcher.EnableRaisingEvents = true;
                 shareSpoolWatcher.Error += new ErrorEventHandler(SharedSpoolWatcherError);
 
