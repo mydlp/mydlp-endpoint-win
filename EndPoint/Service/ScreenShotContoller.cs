@@ -130,7 +130,9 @@ namespace MyDLP.EndPoint.Service
                     stopWatch.Stop();
 
                 UnBlock();
-                MyDLPEP.KbFilterController.GetInstance().Stop();
+                //Todo: Find a proper way to cancel dispatch read request 
+                //Do not try to remove driver until you find a way
+                //MyDLPEP.KbFilterController.GetInstance().Stop();
             }
             catch (Exception e)
             {
