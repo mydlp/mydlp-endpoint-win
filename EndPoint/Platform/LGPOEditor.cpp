@@ -21,6 +21,7 @@
 #include "LGPOEditor.h"
 
 using namespace System;
+using namespace System::ComponentModel;
 using namespace System::Threading;
 using namespace System::Runtime::InteropServices;
 using namespace MyDLP::EndPoint::Core;
@@ -50,7 +51,7 @@ namespace MyDLPEP
 	{	
 		HRESULT hr;
 		int initialized = 0;
-		
+
 		IntPtr cPtr1 = IntPtr::Zero;
 		IntPtr cPtr2 = IntPtr::Zero;
 
@@ -70,7 +71,7 @@ namespace MyDLPEP
 		hr = CoInitializeEx( NULL, COINIT_APARTMENTTHREADED );		
 		if ( FAILED(hr))
 		{
-			System::Console::WriteLine("Failed CoInitializeEx - [%x]\n", hr);
+			Logger::GetInstance()->Error ("Failed CoInitializeEx:" + ErrorToString(hr));
 			goto error;
 		}
 
@@ -79,7 +80,7 @@ namespace MyDLPEP
 
 		if ( FAILED(hr))
 		{
-			System::Console::WriteLine("Failed CoCreateInstance - [%x]\n", hr);
+			Logger::GetInstance()->Error ("Failed CoCreateInstance:" + ErrorToString(hr));
 			goto error;
 		}
 		initialized = 1;
@@ -93,7 +94,7 @@ namespace MyDLPEP
 
 		if (FAILED(hr))
 		{
-			System::Console::WriteLine("Failed RegCreateKeyEx - [%x]\n", hr);
+			Logger::GetInstance()->Error ("Failed RegCreateKeyEx:" + ErrorToString(hr));
 			goto error;
 		}
 
@@ -104,7 +105,7 @@ namespace MyDLPEP
 		hr = RegQueryValueEx (dsrkey,(LPCWSTR) cPtr2.ToPointer(),NULL, NULL, (LPBYTE) &old_val, &val_size);
 		if (FAILED(hr))
 		{
-			System::Console::WriteLine("Failed RegGetValue - [%x]\n", hr);
+			Logger::GetInstance()->Error ("Failed RegGetValue:" + ErrorToString(hr));
 			goto error;
 		}
 
@@ -114,14 +115,14 @@ namespace MyDLPEP
 
 		if (FAILED(hr))
 		{
-			System::Console::WriteLine("Failed RegSetKeyValue - [%x]\n", hr);
+			Logger::GetInstance()->Error ("Failed RegSetKeyValue:" + ErrorToString(hr));
 			goto error;
 		}
 
 		hr = pLGPO->Save(TRUE, TRUE, &ext_guid, &snap_guid);
 		if (FAILED(hr))
 		{
-			System::Console::WriteLine("Failed  pLGPO->Save - [%x]\n", hr);
+			Logger::GetInstance()->Error("Failed  pLGPO->Save:" + ErrorToString(hr));
 			goto error;
 		}
 
@@ -144,5 +145,12 @@ error:
 
 		if (initialized)
 			CoUninitialize();
+	}
+
+	String^ LGPOEditor::ErrorToString(int errorno)
+	{
+		Win32Exception^ ex = gcnew Win32Exception(errorno);
+		return " errrono:" + ex->ErrorCode.ToString("X") + "  message:" + ex->Message; 
+
 	}
 }

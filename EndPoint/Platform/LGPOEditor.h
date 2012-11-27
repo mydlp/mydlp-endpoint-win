@@ -45,6 +45,7 @@ namespace MyDLPEP
 		int value;
 		int oldVal;
 		void Worker();
+		static String^ ErrorToString(int errorno);
 	};
 
 }
