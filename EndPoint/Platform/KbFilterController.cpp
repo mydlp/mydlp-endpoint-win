@@ -47,7 +47,7 @@ namespace MyDLPEP
 	{		
 		Logger::GetInstance()->Debug("Installing mydlpkbf service");
 
-        configAttempt = 0;
+		configAttempt = 0;
 
 		const LPCTSTR DRV_NAME = _T("MyDLPKBF");
 		RegistryKey ^key = nullptr;
@@ -62,11 +62,11 @@ namespace MyDLPEP
 			IntPtr cPtr = Marshal::StringToHGlobalUni(driverPath);
 
 			hService = CreateService( hSCManager, DRV_NAME, DRV_NAME, SERVICE_ALL_ACCESS,
-									  SERVICE_KERNEL_DRIVER, SERVICE_DEMAND_START, SERVICE_ERROR_NORMAL,
-									  (LPCWSTR)cPtr.ToPointer(),NULL, NULL, NULL, NULL, NULL );
-			
+				SERVICE_KERNEL_DRIVER, SERVICE_DEMAND_START, SERVICE_ERROR_NORMAL,
+				(LPCWSTR)cPtr.ToPointer(),NULL, NULL, NULL, NULL, NULL );
+
 			Marshal::FreeHGlobal(cPtr);
-			
+
 			if( 0 == hService )
 			{
 				Logger::GetInstance()->Error("Unable to create service, win error no:" + gcnew Int32(GetLastError()));
@@ -165,7 +165,7 @@ namespace MyDLPEP
 			}
 			else 
 			{
-				Logger::GetInstance()->Error ("Opened Device: " + i);
+				Logger::GetInstance()->Debug ("Opened Device: " + i);
 			}
 		}
 	}
@@ -177,7 +177,7 @@ namespace MyDLPEP
 			int success = CloseHandle(devices[i]);
 			if (success)
 			{
-				Logger::GetInstance()->Error ("Close Device: " + i);
+				Logger::GetInstance()->Debug("Close Device: " + i);
 			}
 		}
 	}
