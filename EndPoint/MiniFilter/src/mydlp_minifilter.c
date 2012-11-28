@@ -129,8 +129,8 @@ DriverEntry (
     UNREFERENCED_PARAMETER( RegistryPath );
 	
 	//Timeouts hardcoded for now
-	FilterConf.ReadTimeout.QuadPart = (LONGLONG) - 10 * 1000 * 1000;  //1 seconds
-	FilterConf.WriteTimeout.QuadPart = (LONGLONG) - 300 * 1000 * 1000;  //30 seconds
+	FilterConf.ReadTimeout.QuadPart = (LONGLONG) - 30 * 1000 * 1000;  //3 seconds
+	FilterConf.WriteTimeout.QuadPart = (LONGLONG) - 1500 * 1000 * 1000;  //150 seconds
 
 
 #ifdef DBG_PRINT
