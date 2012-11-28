@@ -1,4 +1,4 @@
-// Copyright (C) 2012 Huseyin Ozgur Batur <ozgur@medra.com.tr>
+// Copyright (C) 2012 Husetyin Ozgur Batur <ozgur@medra.com.tr>
 //
 //--------------------------------------------------------------------------
 // This file is part of MyDLP.
@@ -25,6 +25,7 @@ ULONG pendingIrpCount;
 
 PDEVICE_OBJECT pKbdDeviceObject;
 PDEVICE_OBJECT topOfStack[MAX_KBDCOUNT];
+ULONG deviceEnabled[MAX_KBDCOUNT];
 //IRPMJREAD oldFunction;
 
 NTSTATUS DriverEntry(IN PDRIVER_OBJECT pDriverObject,
@@ -166,14 +167,18 @@ MyDLPKBF_CreateClose(IN PDEVICE_OBJECT DeviceObject,
 			{
 				pDevExt = DeviceObject->DeviceExtension;
 				DbgPrint("MyDLPKBF: MyDLPKBF_Create no:%d", pDevExt->DeviceNumber);
+				deviceEnabled[pDevExt->DeviceNumber] = 1;
+				DbgPrint("MyDLPKBF: deviceEnabled 1 no:%d", pDevExt->DeviceNumber);
 			}
 
 			//if(InterlockedIncrement(&startCount) == 1)
 			{
-				if(pDevExt->Skip)
-				{
-					break;
-				}
+				//if(pDevExt->Skip)
+				//{
+				//	break;
+				//}
+
+				pDevExt->Skip = 0;
 				RtlInitUnicodeString(&uniOa, L"\\Device");
 				InitializeObjectAttributes(&oa, &uniOa, OBJ_CASE_INSENSITIVE, NULL, NULL);
 				status = ZwOpenDirectoryObject(&hDir, DIRECTORY_ALL_ACCESS, &oa);
@@ -327,6 +332,13 @@ MyDLPKBF_CreateClose(IN PDEVICE_OBJECT DeviceObject,
 			{
 				pDevExt = DeviceObject->DeviceExtension;
 				DbgPrint("MyDLPKBF: MyDLPKBF_Close no:%d", pDevExt->DeviceNumber);
+				if (deviceEnabled[pDevExt->DeviceNumber] == 0)
+				{
+					DbgPrint("MyDLPKBF: Close deviceEnable 0 break %d", pDevExt->DeviceNumber);
+					break;
+				}
+				DbgPrint("MyDLPKBF: Close set deviceEnable 0 %d", pDevExt->DeviceNumber);
+				deviceEnabled[pDevExt->DeviceNumber] = 0;
 			}
 
 			//if(InterlockedDecrement(&startCount) == 0)
@@ -435,9 +447,23 @@ NTSTATUS MyDLPKBF_ReadComplete(IN PDEVICE_OBJECT DeviceObject,
 	int i;
 	int block;
 
+	PMYDLPKBF_DEVICE_EXTENSION pDevExt;
 	PKEYBOARD_INPUT_DATA keys;
 
 	DbgPrint("MyDLPKBF: ReadComplete Start\n");
+
+	pDevExt = DeviceObject->DeviceExtension;
+
+	if(Irp->PendingReturned)
+	{
+		IoMarkIrpPending(Irp);
+	}
+
+	if (!deviceEnabled[pDevExt->DeviceNumber])
+	{
+		DbgPrint("MyDLPKBF: ReadComplete deviceEnabled 0 return status success %d \n", deviceEnabled[pDevExt->DeviceNumber]);
+		return Irp->IoStatus.Status;;
+	}
 
 	keys = (PKEYBOARD_INPUT_DATA)Irp->AssociatedIrp.SystemBuffer;
 	numKeys = Irp->IoStatus.Information / sizeof(KEYBOARD_INPUT_DATA);
@@ -455,11 +481,6 @@ NTSTATUS MyDLPKBF_ReadComplete(IN PDEVICE_OBJECT DeviceObject,
 		{
 			block = 1;
 		}
-	}
-
-	if(Irp->PendingReturned)
-	{
-		IoMarkIrpPending(Irp);
 	}
 
 	InterlockedDecrement(&pendingIrpCount);
@@ -485,7 +506,8 @@ NTSTATUS MyDLPKBF_PassThrough(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 	PMYDLPKBF_DEVICE_EXTENSION pDevExt;
 	DbgPrint("MyDLPKBF: Start MyDLPKBF_PassThrough\n");
 	pDevExt = DeviceObject->DeviceExtension;
-	if(!pDevExt->Skip)
+	status = STATUS_SUCCESS;
+	if(!pDevExt->Skip && deviceEnabled[pDevExt->DeviceNumber])
 	{
 		IoSkipCurrentIrpStackLocation(Irp);
 		status = IoCallDriver(topOfStack[pDevExt->DeviceNumber], Irp);
