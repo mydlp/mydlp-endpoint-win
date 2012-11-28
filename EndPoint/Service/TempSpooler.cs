@@ -198,16 +198,18 @@ namespace MyDLP.EndPoint.Service
             {
                 Logger.GetInstance().Debug("StopShareSpoolListener");
 
+                if (shareSpoolWatcher != null)
+                    shareSpoolWatcher.EnableRaisingEvents = false;
+
                 UnshareDirectory(Configuration.SharedSpoolPath);
 
                 //no shared printer
                 if (Directory.Exists(Configuration.SharedSpoolPath))
                 {
-                    Directory.Delete(Configuration.SharedSpoolPath);
+                    Directory.Delete(Configuration.SharedSpoolPath, true);
                 }
 
-                if (shareSpoolWatcher != null)
-                    shareSpoolWatcher.EnableRaisingEvents = false;
+              
 
                 return true;
             }
