@@ -388,7 +388,7 @@ namespace MyDLP.EndPoint.Service
                     PrinterController.PrinterConnection connection = controller.GetPrinterConnection(printerName);
 
                     //remove XP printer share format on machine before sending if any
-                    string normalizedPrinterName = printerName.Replace("_on_" + PrinterController.NormalizePrinterName(connection.server),"");
+                    string normalizedPrinterName = printerName.Replace("_on_" + PrinterController.NormalizePrinterName(connection.server), "");
 
                     //Impersonate, Local System can not reach shared resources. 
                     MyDLPEP.SessionUtils.ImpersonateActiveUser();
@@ -400,8 +400,15 @@ namespace MyDLP.EndPoint.Service
                         File.Copy(metaPath, remotepath + Path.GetFileName(metaPath), true);
                         MyDLPEP.SessionUtils.StopImpersonation();
                     }
+                    catch (IOException ex)
+                    {
+                        MyDLPEP.SessionUtils.StopImpersonation();
+                        Logger.GetInstance().Error("Remote machine is not available on path:"  + remotepath + " Unable to print file" +  xpsPath);
+                    }
+
                     catch (Exception ex)
                     {
+                        MyDLPEP.SessionUtils.StopImpersonation();
                         Logger.GetInstance().Error("Unable to print file: " + xpsPath + " on connection: " + connection
                             + " exception:" + ex.Message + " " + ex.StackTrace);
                     }
