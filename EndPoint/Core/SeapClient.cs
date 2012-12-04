@@ -37,7 +37,7 @@ namespace MyDLP.EndPoint.Core
         StreamWriter writer;
         BinaryWriter binaryWriter;
 
-        int readTimeout = 29500;
+        int readTimeout = 145000;
         int writeTimeout = 1800;
         int responseLength = 512;
 

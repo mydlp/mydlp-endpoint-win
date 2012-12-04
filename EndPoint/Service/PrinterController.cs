@@ -534,7 +534,7 @@ namespace MyDLP.EndPoint.Service
             }
             catch (Exception e)
             {
-                Logger.GetInstance().Error("InstallSecurePrinters failed: " + e.Message);
+                Logger.GetInstance().Error("InstallSecurePrinters failed: " + e.Message + " " + e.StackTrace );
             }
             finally
             {

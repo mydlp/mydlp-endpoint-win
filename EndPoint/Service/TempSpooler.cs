@@ -177,7 +177,7 @@ namespace MyDLP.EndPoint.Service
                 shareSpoolWatcher.IncludeSubdirectories = true;
                 shareSpoolWatcher.Filter = "*.meta";
                 //shareSpoolWatcher.NotifyFilter = NotifyFilters.LastAccess | NotifyFilters.LastWrite
-               //| NotifyFilters.FileName | NotifyFilters.DirectoryName;
+                //| NotifyFilters.FileName | NotifyFilters.DirectoryName;
                 shareSpoolWatcher.Created += new FileSystemEventHandler(OnCreate);
                 shareSpoolWatcher.EnableRaisingEvents = true;
                 shareSpoolWatcher.Error += new ErrorEventHandler(SharedSpoolWatcherError);
@@ -198,16 +198,18 @@ namespace MyDLP.EndPoint.Service
             {
                 Logger.GetInstance().Debug("StopShareSpoolListener");
 
+                if (shareSpoolWatcher != null)
+                    shareSpoolWatcher.EnableRaisingEvents = false;
+
                 UnshareDirectory(Configuration.SharedSpoolPath);
 
                 //no shared printer
                 if (Directory.Exists(Configuration.SharedSpoolPath))
                 {
-                    Directory.Delete(Configuration.SharedSpoolPath);
+                    Directory.Delete(Configuration.SharedSpoolPath, true);
                 }
 
-                if (shareSpoolWatcher != null)
-                    shareSpoolWatcher.EnableRaisingEvents = false;
+              
 
                 return true;
             }
@@ -308,19 +310,25 @@ namespace MyDLP.EndPoint.Service
 
             xpsPath = metaPath.Replace(".meta", ".xps");
 
-
             try
             {
-                string[] metaText = System.IO.File.ReadAllLines(metaPath, System.Text.Encoding.Unicode);
-
-                if (metaText.Length > 0)
+                if (WaitForFile(metaPath))
                 {
-                    docName = metaText[0].Replace("docname:", "").Trim();
+                    string[] metaText = System.IO.File.ReadAllLines(metaPath, System.Text.Encoding.Unicode);
+
+                    if (metaText.Length > 0)
+                    {
+                        docName = metaText[0].Replace("docname:", "").Trim();
+                    }
+                }
+                else 
+                {
+                    Logger.GetInstance().Error("OnCreate: WaitForFile failed for meta file");
                 }
             }
             catch (Exception ex)
             {
-                Logger.GetInstance().Error(ex.Message);
+                Logger.GetInstance().Error("OnCreate:" + ex.Message + ex.StackTrace);
             }
 
 
@@ -388,7 +396,7 @@ namespace MyDLP.EndPoint.Service
                     PrinterController.PrinterConnection connection = controller.GetPrinterConnection(printerName);
 
                     //remove XP printer share format on machine before sending if any
-                    string normalizedPrinterName = printerName.Replace("_on_" + PrinterController.NormalizePrinterName(connection.server),"");
+                    string normalizedPrinterName = printerName.Replace("_on_" + PrinterController.NormalizePrinterName(connection.server), "");
 
                     //Impersonate, Local System can not reach shared resources. 
                     MyDLPEP.SessionUtils.ImpersonateActiveUser();
@@ -400,8 +408,15 @@ namespace MyDLP.EndPoint.Service
                         File.Copy(metaPath, remotepath + Path.GetFileName(metaPath), true);
                         MyDLPEP.SessionUtils.StopImpersonation();
                     }
+                    catch (IOException ex)
+                    {
+                        MyDLPEP.SessionUtils.StopImpersonation();
+                        Logger.GetInstance().Error("Remote machine is not available on path:" + remotepath + " Unable to print file" + xpsPath);
+                    }
+
                     catch (Exception ex)
                     {
+                        MyDLPEP.SessionUtils.StopImpersonation();
                         Logger.GetInstance().Error("Unable to print file: " + xpsPath + " on connection: " + connection
                             + " exception:" + ex.Message + " " + ex.StackTrace);
                     }
@@ -425,18 +440,28 @@ namespace MyDLP.EndPoint.Service
                         throw new Exception("Unable to find a matching non secure printer for mydlp printer: " + printerName);
                     Logger.GetInstance().Debug("Adding print job on real printer: " + pQueue.Name +
                         ", path:" + xpsPath + ", jobID:" + jobId);
-                    pQueue.AddJob(jobId, xpsPath, false);
-                    Thread.Sleep(1000);
-                    Logger.GetInstance().Debug("Removing:" + xpsPath);
-                    File.Delete(xpsPath);
-                    File.Delete(metaPath);
-                    Logger.GetInstance().Debug("Finished Printing");
+
+                    if (WaitForFile(xpsPath))
+                    {
+
+                        pQueue.AddJob(jobId, xpsPath, false);
+                        Thread.Sleep(1000);
+
+                        Logger.GetInstance().Debug("Removing:" + xpsPath);
+                        File.Delete(xpsPath);
+                        File.Delete(metaPath);
+                        Logger.GetInstance().Debug("Finished Printing");
+                    }
+                    else 
+                    {
+                        Logger.GetInstance().Debug("WorkerMethodLocal WaitForFile failed for xps file");             
+                    } 
                 }
 
             }
             catch (Exception e)
             {
-                Logger.GetInstance().Error(e.Message + e.StackTrace);
+                Logger.GetInstance().Error("WorkerMethod Exception" + e.Message + e.StackTrace);
                 if (e.InnerException != null)
                 {
                     Logger.GetInstance().Error(e.InnerException.Message + e.InnerException.StackTrace);
@@ -566,6 +591,38 @@ namespace MyDLP.EndPoint.Service
                 Logger.GetInstance().Error("ShareDirectory exception " + ex.Message + ex.Source);
                 return false;
             }
+        }
+
+
+        static bool WaitForFile(string fullPath)
+        {
+            int numTries = 0;
+            while (true)
+            {
+                ++numTries;
+                try
+                {
+                    using (FileStream fs = new FileStream(fullPath,
+                        FileMode.Open, FileAccess.ReadWrite,
+                        FileShare.None, 100))
+                    {
+                        fs.ReadByte();
+                        break;
+                    }
+                }
+                catch (Exception ex)
+                {                    
+                    if (numTries > 10)
+                    {
+                        Logger.GetInstance().Error("WaitForFile giving up after 10 tries path: " +  fullPath);
+                        return false;
+                    }
+
+                    System.Threading.Thread.Sleep(500);
+                }
+            }
+
+            return true;
         }
     }
 }
