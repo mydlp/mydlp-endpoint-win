@@ -22,7 +22,7 @@
 
 #define NT_DEVICE_NAME L"\\Device\\MyDLPKBF"
 #define DOS_DEVICE_NAME L"\\DosDevices\\MyDLPKBF"
-#define PoolTag "MyDLPKBF"
+#define PoolTag 'MKBF'
 #define KBDCLASS_0 0x1
 #define KBDCLASS_1 0x2
 #define KBDCLASS_2 0x4
