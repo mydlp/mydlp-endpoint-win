@@ -102,7 +102,7 @@ MyDLPKBF_CreateDevice (IN PDRIVER_OBJECT pDriverObject,
 	RtlAppendUnicodeStringToString( &uniDosDeviceName, &uniNumber);
 
 	DbgPrint("IOCreateDevice: BeforeStart\n");
-	status = IoCreateDevice(pDriverObject, sizeof(MYDLPKBF_DEVICE_EXTENSION), &uniNtDeviceName, FILE_DEVICE_UNKNOWN, 0, FALSE, &pDevObj);
+	status = IoCreateDevice(pDriverObject, sizeof(MYDLPKBF_DEVICE_EXTENSION), &uniNtDeviceName, FILE_DEVICE_UNKNOWN, 0, TRUE, &pDevObj);
 	if(!NT_SUCCESS(status))
 	{
 		DbgPrint("MyDLPKBF_CreateDevice: IoCreateDevice failed\n");
