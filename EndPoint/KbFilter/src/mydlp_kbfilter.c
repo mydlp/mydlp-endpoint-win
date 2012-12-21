@@ -49,6 +49,10 @@ NTSTATUS DriverEntry(IN PDRIVER_OBJECT pDriverObject,
 			DbgPrint("DriverEntry: End\n");
 			return status;
 		}
+		else
+		{
+			DbgPrint("DriverEntry: Created device no:%d\n", i);
+		}
 	}
 
 	DbgPrint("DriverEntry: End\n");
@@ -89,10 +93,16 @@ MyDLPKBF_CreateDevice (IN PDRIVER_OBJECT pDriverObject,
 	RtlAppendUnicodeToString( &uniDosDeviceName, DOS_DEVICE_NAME);
 	RtlAppendUnicodeStringToString( &uniDosDeviceName, &uniNumber);
 
-	status = IoCreateDevice(pDriverObject, sizeof(MYDLPKBF_DEVICE_EXTENSION), &uniNtDeviceName, FILE_DEVICE_UNKNOWN, 0, TRUE, &pDevObj);
+	status = IoCreateDevice(pDriverObject, sizeof(MYDLPKBF_DEVICE_EXTENSION),
+		&uniNtDeviceName, FILE_DEVICE_UNKNOWN,
+		0,
+		TRUE,
+		&pDevObj);
+
 	if(!NT_SUCCESS(status))
 	{
-		DbgPrint("MyDLPKBF_CreateDevice: IoCreateDevice failed\n");
+		DbgPrint("MyDLPKBF_CreateDevice: IoCreateDevice failed\
+				 device no:%d\n", DeviceNumber);
 		return status;
 	}
 
@@ -101,12 +111,14 @@ MyDLPKBF_CreateDevice (IN PDRIVER_OBJECT pDriverObject,
 	{
 		pDevExt = pDevObj->DeviceExtension;
 		pDevExt->DeviceNumber = DeviceNumber;
-		pDevExt->Skip = 0;
+		pDevExt->Skip = 1;
 		pDevExt->OpenAttempt = 0;
 	}
 	else
 	{
-		DbgPrint("MyDLPKBF_CreateDevice: pDevObj!= NULL && pDevObj->DeviceExtension != NULL failed\n");
+		DbgPrint("MyDLPKBF_CreateDevice: pDevObj!= NULL &&\
+				 pDevObj->DeviceExtension != NULL failed device no:%d\n",
+				 DeviceNumber);
 		return status;
 	}
 
@@ -147,32 +159,39 @@ MyDLPKBF_CreateClose(IN PDEVICE_OBJECT DeviceObject,
 	case IRP_MJ_CREATE:
 		{
 			DbgPrint("MyDLPKBF_CreateClose: IRP_MJ_CREATE\n");
-			pDevExt = DeviceObject->DeviceExtension;	
+			pDevExt = DeviceObject->DeviceExtension;
 
 			if (pDevExt->Skip == 0)
 			{
-				InterlockedIncrement(&(pDevExt->OpenAttempt)); 
-				DbgPrint("MyDLPKBF_CreateClose: Device already opened\n");
+				InterlockedIncrement(&(pDevExt->OpenAttempt));
+				DbgPrint("MyDLPKBF_CreateClose: Device already opened\
+						 device no:%d\n", pDevExt->DeviceNumber);
 				break;
 			}
 
 			switch (pDevExt->DeviceNumber)
 			{
 			case 0:
-				RtlInitUnicodeString(&uniKbdDeviceName, L"\\Device\\KeyboardClass0");
-				break;			
+				RtlInitUnicodeString(&uniKbdDeviceName,
+					L"\\Device\\KeyboardClass0");
+				break;
 			case 1:
-				RtlInitUnicodeString(&uniKbdDeviceName, L"\\Device\\KeyboardClass1");
-				break;	
+				RtlInitUnicodeString(&uniKbdDeviceName,
+					L"\\Device\\KeyboardClass1");
+				break;
 			case 2:
-				RtlInitUnicodeString(&uniKbdDeviceName, L"\\Device\\KeyboardClass2");
-				break;	
+				RtlInitUnicodeString(&uniKbdDeviceName,
+					L"\\Device\\KeyboardClass2");
+				break;
 			default:
 				pDevExt->Skip = 1;
 				goto End;
 			}
 
-			status = MyDLPKBF_IoGetDeviceObjectPointer(&uniKbdDeviceName, 0, &KbdFileObject, &KbdDeviceObject);
+			status = MyDLPKBF_IoGetDeviceObjectPointer(&uniKbdDeviceName,
+				0,
+				&KbdFileObject,
+				&KbdDeviceObject);
 
 			if(NT_SUCCESS(status))
 			{
@@ -180,8 +199,14 @@ MyDLPKBF_CreateClose(IN PDEVICE_OBJECT DeviceObject,
 
 				__try
 				{
-					pDevExt->TopOfStack = IoAttachDeviceToDeviceStack(DeviceObject, KbdDeviceObject);
-					DbgPrint("MyDLPKBF: Attached Device.\n");
+					pDevExt->TopOfStack = IoAttachDeviceToDeviceStack(
+						DeviceObject,
+						KbdDeviceObject);
+
+					DbgPrint("MyDLPKBF: Attached Device device number:\
+							 %d name:%wZ\n",
+							 pDevExt->DeviceNumber,
+							 uniKbdDeviceName);
 					pDevExt->Skip = 0;
 				}
 				__except(1)
@@ -207,15 +232,19 @@ MyDLPKBF_CreateClose(IN PDEVICE_OBJECT DeviceObject,
 
 				if (pDevExt->Skip == 1)
 				{
-					DbgPrint("MyDLPKBF_CreateClose: Unable to close already not enabled device\n");
+					DbgPrint("MyDLPKBF_CreateClose: Unable to close already\
+							 not enabled device no:%d\n",
+							 pDevExt->DeviceNumber);
 					break;
 				}
 
 				if (pDevExt->OpenAttempt > 0)
 				{
 					InterlockedDecrement(&(pDevExt->OpenAttempt));
-					DbgPrint("MyDLPKBF_CreateClose: Discarding close for unscuccessfull open attempt");					
-					break;
+					DbgPrint("MyDLPKBF_CreateClose: Discarding close for\
+							 unscuccessfull open attempt",
+							 pDevExt->DeviceNumber);
+							 break;
 				}
 
 				__try
@@ -254,23 +283,41 @@ NTSTATUS MyDLPKBF_IoGetDeviceObjectPointer( IN PUNICODE_STRING ObjectName,
 	NTSTATUS status;
 	OBJECT_ATTRIBUTES oa;
 	IO_STATUS_BLOCK iostatus;
-	HANDLE objectHandle; 
+	HANDLE objectHandle;
 	PVOID ptr;
 
-	DbgPrint("MyDLPKBF_IoGetDeviceObjectPointer: Start\n");
+	DbgPrint("MyDLPKBF_IoGetDeviceObjectPointer: Start device name: %wZ\n",
+		ObjectName);
 
 	InitializeObjectAttributes( &oa, ObjectName, OBJ_KERNEL_HANDLE, NULL, NULL);
 
-	status = ZwOpenFile( &objectHandle, DesiredAccess, &oa, &iostatus, 0x07, 0x40);
+	status = ZwOpenFile( &objectHandle,
+		DesiredAccess,
+		&oa,
+		&iostatus,
+		0x07,
+		0x40);
 
 	if(!NT_SUCCESS(status))
 	{
+		DbgPrint("MyDLPKBF_IoGetDeviceObjectPointer: ZwOpenFie Failed\
+				 device name: %wZ status:%d\n", ObjectName, status);
 		return status;
 	}
-	status = ObReferenceObjectByHandle( objectHandle, DesiredAccess, 0, KernelMode, &ptr, 0);
+	status = ObReferenceObjectByHandle( objectHandle,
+		DesiredAccess,
+		0,
+		KernelMode,
+		&ptr,
+		0);
 
 	if(!NT_SUCCESS(status))
 	{
+		DbgPrint("MyDLPKBF_IoGetDeviceObjectPointer:\
+				 ObReferenceObjectByHandle Failed\
+				 device name: %wZ status:%d\n",
+				 ObjectName,
+				 status);
 		ZwClose(objectHandle);
 		return status;
 	}
@@ -297,7 +344,12 @@ NTSTATUS MyDLPKBF_DispatchRead(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 
 	nextIrpStack = IoGetNextIrpStackLocation(Irp);
 	*nextIrpStack = *currentIrpStack;
-	IoSetCompletionRoutine(Irp, MyDLPKBF_ReadComplete, DeviceObject, TRUE, TRUE, TRUE);
+	IoSetCompletionRoutine(Irp,
+		MyDLPKBF_ReadComplete,
+		DeviceObject,
+		TRUE,
+		TRUE,
+		TRUE);
 	status = IoCallDriver(pDevExt->TopOfStack, Irp);
 	DbgPrint("MyDLPKBF_DispatchRead: End\n");
 	return status;
@@ -325,7 +377,8 @@ NTSTATUS MyDLPKBF_ReadComplete(IN PDEVICE_OBJECT DeviceObject,
 
 	if (pDevExt->Skip)
 	{
-		DbgPrint("MyDLPKBF: ReadComplete pDevExt->Skip return 1 status success %d \n", pDevExt->Skip);
+		DbgPrint("MyDLPKBF: ReadComplete pDevExt->Skip return 1 status\
+				 success %d \n", pDevExt->Skip);
 		return Irp->IoStatus.Status;;
 	}
 
@@ -359,14 +412,14 @@ NTSTATUS MyDLPKBF_ReadComplete(IN PDEVICE_OBJECT DeviceObject,
 }
 
 NTSTATUS MyDLPKBF_PassThrough(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
-{	
+{
 	NTSTATUS status;
 	PMYDLPKBF_DEVICE_EXTENSION pDevExt;
 	status = STATUS_SUCCESS;
 	DbgPrint("MyDLPKBF_PassThrough: Start\n");
 
 	pDevExt = DeviceObject->DeviceExtension;
-	if(pDevExt->Skip)
+	if(!pDevExt->Skip)
 	{
 		IoSkipCurrentIrpStackLocation(Irp);
 		status = IoCallDriver(pDevExt->TopOfStack, Irp);
