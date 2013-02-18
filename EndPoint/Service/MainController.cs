@@ -224,6 +224,8 @@ namespace MyDLP.EndPoint.Service
             bool oldPrinterMonitor = Configuration.PrinterMonitor;
             bool oldArchiveInbound = Configuration.ArchiveInbound;
             bool oldBlockScreenShot = Configuration.BlockScreenShot;
+            bool oldRemStorEncryption = Configuration.RemovableStorageEncryption;
+            bool oldHasEncryptionKey = Configuration.HasEncryptionKey;
 
             if (SeapClient.HasNewConfiguration())
             {
@@ -255,6 +257,40 @@ namespace MyDLP.EndPoint.Service
                     Service.PrinterController.getInstance().Stop();
                 }
 
+                if (Configuration.RemovableStorageEncryption && !oldRemStorEncryption)
+                {
+                    DiskCryptor.StartDcrypt();
+                }
+                else if (!Configuration.RemovableStorageEncryption && oldRemStorEncryption)
+                {
+                    DiskCryptor.StopDcrypt();
+                }
+
+                if (Configuration.HasEncryptionKey)
+                {
+                    if (!SeapClient.HasKeyfile())
+                    {
+                        Configuration.HasEncryptionKey = false;
+                        DiskCryptor.AfterKeyLose();
+                    }
+                }
+                else
+                {
+                    if (SeapClient.HasKeyfile())
+                    {
+                        Configuration.HasEncryptionKey = true;
+                        DiskCryptor.AfterKeyReceive();
+                    }
+                }
+
+                if (Configuration.RemovableStorageEncryption && !oldRemStorEncryption)
+                {
+                    DiskCryptor.StartDcrypt();
+                }
+                else if (!Configuration.RemovableStorageEncryption && oldRemStorEncryption)
+                {
+                    DiskCryptor.StopDcrypt();
+                }
 
                 if (oldArchiveInbound != Configuration.ArchiveInbound
                     || oldUSBSerialAC != Configuration.UsbSerialAccessControl)

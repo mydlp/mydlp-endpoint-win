@@ -72,6 +72,8 @@ namespace MyDLP.EndPoint.Core
         static bool newFilterConfiguration;
         static string screentShotProcesses = "";
         static bool blockScreenShot;
+        static bool remStorEncryption;
+        static bool hasEncryptionKey = false;
 
         public static void setNewFilterConfiguration(bool newConf)
         {
@@ -386,6 +388,16 @@ namespace MyDLP.EndPoint.Core
                 else
                 {
                     printerMonitor = true;
+                }
+
+                //Get remStorEncryption
+                if ((int)(getRegistryConfSafe(mydlpKey, "usbstor_encryption", 0, RegistryValueKind.DWord)) == 0)
+                {
+                    remStorEncryption = false;
+                }
+                else
+                {
+                    remStorEncryption = true;
                 }
 
                 //Get managementServer
@@ -727,6 +739,14 @@ namespace MyDLP.EndPoint.Core
             }
         }
 
+        public static bool RemovableStorageEncryption
+        {
+            get
+            {
+                return remStorEncryption;
+            }
+        }
+
         public static int SeapPort
         {
             get
@@ -887,6 +907,17 @@ namespace MyDLP.EndPoint.Core
             }
         }
 
+        public static bool HasEncryptionKey
+        {
+            get
+            {
+                return hasEncryptionKey;
+            }
+            set
+            {
+                hasEncryptionKey = value;
+            }
+        }
 
     }
 }

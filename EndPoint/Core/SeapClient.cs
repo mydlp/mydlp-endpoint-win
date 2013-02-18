@@ -474,6 +474,70 @@ namespace MyDLP.EndPoint.Core
             return false;
         }
 
+        public static string GetKeyfile()
+        {
+            try
+            {
+                Logger.GetInstance().Debug("GetKeyfile");
+                SeapClient sClient = SeapClient.GetInstance();
+                String response;
+                String[] splitResp;
+
+                response = sClient.sendMessage("GETKEY");
+                splitResp = response.Split(' ');
+                if (!splitResp[0].Equals("OK"))
+                {
+                    return null;
+                }
+
+                return splitResp[1];
+
+            }
+            catch (Exception e)
+            {
+                Logger.GetInstance().Error(e.Message);
+                return null;
+            }
+            //todo: Default Acion
+            return null;
+        }
+
+
+        public static bool HasKeyfile()
+        {
+            try
+            {
+                Logger.GetInstance().Debug("HasKeyfile");
+                SeapClient sClient = SeapClient.GetInstance();
+                String response;
+                String[] splitResp;
+
+                response = sClient.sendMessage("HASKEY");
+                splitResp = response.Split(' ');
+                if (!splitResp[0].Equals("OK"))
+                {
+                    return false;
+                }
+
+                if (splitResp[1].Equals("yes"))
+                {
+                    return true;
+                }
+                else if (splitResp[1].Equals("no"))
+                {
+                    return false;
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.GetInstance().Error(e.Message);
+                //todo: Default Acion
+                return false;
+            }
+            //todo: Default Acion
+            return false;
+        }
+
         public static FileOperation.Action NotitfyPrintOperation(String documentName, String printerName, String path)
         {
             try
