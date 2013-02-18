@@ -40,6 +40,16 @@ namespace MyDLP.EndPoint.Core
             return Configuration.AppPath + @"\internal\dcrypt\" + middir;
         }
 
+        private static string getDCCon()
+        {
+            return "cd " + getDCPath() + " && dccon.exe";
+        }
+
+        private static string getDCInst()
+        {
+            return "cd " + getDCPath() + " && dcinst.exe";
+        }
+
         protected static void installDC()
         {
             string command = getDCInst() + @" -setup";
