@@ -149,6 +149,11 @@ namespace MyDLP.EndPoint.Service
                         Service.PrinterController.getInstance().Start();
                     }
 
+                    if (Configuration.RemovableStorageEncryption)
+                    {
+                        DiskCryptor.StartDcrypt();
+                    }
+
                     if (Configuration.UsbSerialAccessControl)
                     {
                         Core.USBController.Activate();
@@ -193,6 +198,11 @@ namespace MyDLP.EndPoint.Service
                 if (Configuration.PrinterMonitor)
                 {
                     Service.PrinterController.getInstance().Stop();
+                }
+
+                if (Configuration.RemovableStorageEncryption)
+                {
+                    DiskCryptor.StopDcrypt();
                 }
 
                 Logger.GetInstance().Info("mydlpepwin service stopped");
