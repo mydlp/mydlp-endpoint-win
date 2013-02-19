@@ -23,12 +23,12 @@ using System.Text;
 using System.Net.Sockets;
 using System.Net;
 using System.Threading;
+using System.IO;
 
 namespace MyDLP.EndPoint.Core
 {
     public class SessionServer
     {
-
         public static SessionServer GetInstance()
         {
             if (sessionServer == null)
@@ -49,11 +49,13 @@ namespace MyDLP.EndPoint.Core
         private Thread listenThread;
         private static SessionServer sessionServer = null;
 
+
         private SessionServer()
         {
-            this.tcpListener = new TcpListener(IPAddress.Any, 9098);//IPAddress.Parse("127.0.0.1"), 9098);
+            Logger.GetInstance().Debug("Started Session Server");
+            this.tcpListener = new TcpListener(IPAddress.Parse("127.0.0.1"), 9098);
             this.listenThread = new Thread(new ThreadStart(ListenConnections));
-            // this.listenThread.Start();
+            this.listenThread.Start();
         }
         private void ListenConnections()
         {
@@ -65,7 +67,7 @@ namespace MyDLP.EndPoint.Core
                 TcpClient client = this.tcpListener.AcceptTcpClient();
 
                 Thread clientThread = new Thread(new ParameterizedThreadStart(HandleClient));
-                clientThread.Start();
+                clientThread.Start(client);
             }
         }
 
@@ -73,38 +75,119 @@ namespace MyDLP.EndPoint.Core
         {
             TcpClient tcpClient = (TcpClient)client;
             NetworkStream clientStream = tcpClient.GetStream();
+            StreamReader reader = new StreamReader(clientStream, System.Text.Encoding.ASCII);
+            StreamWriter writer = new StreamWriter(clientStream, System.Text.Encoding.ASCII);
 
-            byte[] message = new byte[4096];
+            String request;
+            String response;
+            String driveLetter;
             int bytesRead;
 
-            while (true)
-            {
-                bytesRead = 0;
+            bytesRead = 0;
 
+            try
+            {
                 try
                 {
-                    //blocks until a client sends a message
-                    bytesRead = clientStream.Read(message, 0, 4096);
-                    clientStream.Write(message, 0, 4096);
-                }
-                catch
-                {
-                    //a socket error has occured
-                    break;
+                    request = ReadMessage(reader);
+                    if (!request.StartsWith("BEGIN"))
+                    {
+                        throw new InvalidRequestException("Expected BEGIN");
+                    }
+                    WriteMessage(writer, "OK");
+
+                    while (true)
+                    {
+                        request = ReadMessage(reader);
+                        if (!request.StartsWith("NEWVOLUME"))
+                        {
+                            throw new InvalidRequestException("Expected NEWVOLUME");
+                        }
+
+                        driveLetter = request.Split(' ')[1];
+
+                        WriteMessage(writer, "NEEDFORMAT");
+                        request = ReadMessage(reader);
+
+                        if (!request.StartsWith("FORMAT"))
+                        {
+                            tcpClient.Close();
+                            throw new InvalidRequestException("Expexted FORMAT");                            
+                        }
+
+                        Thread.Sleep(21000);
+                        WriteMessage(writer, "FINISHED");
+
+                        request = ReadMessage(reader);
+                        if (!request.StartsWith("GETVOLUMES")) 
+                        {
+                            throw new InvalidRequestException("Expected GETVOLUMES");
+                        }
+                        WriteMessage(writer, "VOLUMES E:,Z:,D:,");
+                    }
                 }
 
-                if (bytesRead == 0)
+                catch (InvalidRequestException e)
                 {
-                    //the client has disconnected from the server
-                    break;
+                    WriteMessage(writer, "ERROR CLOSING:" + e.Message);
+                    Logger.GetInstance().Error("SessionServer HandleClient error:" + e.Message + e.StackTrace);
                 }
 
-                //message has successfully been received
-                ASCIIEncoding encoder = new ASCIIEncoding();
-                Logger.GetInstance().Debug("Session Agent received:<" + encoder.GetString(message, 0, bytesRead) + ">");
+            }
+            catch (Exception e)
+            { 
+                Logger.GetInstance().Error("SessionServer HandleClient error:" + e.Message + e.StackTrace);
+            }
+            finally
+            {     
+                tcpClient.Close();            
+            }
+        }
+
+        private String ReadMessage(StreamReader reader)
+        {
+            String message = "";
+            try
+            {
+                message = reader.ReadLine().Trim();
+                Logger.GetInstance().Debug("ReadMessage <" + message + ">");
+            }
+            catch (Exception e)
+            {
+                Logger.GetInstance().Error("ReadMessage error: " + e.Message + e.StackTrace);
             }
 
-            tcpClient.Close();
+            return message;
+        }
+
+        private void WriteMessage(StreamWriter writer, String message)
+        {
+            try
+            {
+                Logger.GetInstance().Debug("WriteMessage <" + message + ">");
+                writer.WriteLine(message + "\n");
+                writer.Flush();
+            }
+            catch (Exception e)
+            {
+                Logger.GetInstance().Error("WriteMessage error: " + e.Message + e.StackTrace);
+            }
+        }
+
+        public class InvalidRequestException : Exception
+        {
+            public InvalidRequestException()
+                : base()
+            {
+            }
+            public InvalidRequestException(String message)
+                : base(message)
+            {
+            }
+            public InvalidRequestException(String message, Exception InnerException)
+                : base(message, InnerException)
+            {
+            }
         }
     }
 }

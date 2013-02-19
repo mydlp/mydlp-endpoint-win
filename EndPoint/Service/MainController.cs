@@ -142,7 +142,7 @@ namespace MyDLP.EndPoint.Service
                         ScreenShotContoller.Start();
                     }
 
-                    //SessionServer.GetInstance();
+                    SessionServer.GetInstance();
 
                     if (Configuration.PrinterMonitor)
                     {

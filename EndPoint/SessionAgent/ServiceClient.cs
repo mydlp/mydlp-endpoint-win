@@ -23,12 +23,14 @@ using System.Text;
 using System.Net.Sockets;
 using System.Net;
 using System.IO;
+using System.Windows.Forms;
+using System.Threading;
 
 namespace MyDLP.EndPoint.SessionAgent
 {
     public class ServiceClient
     {
-        static ServiceClient serviceClient = null;
+        //static ServiceClient serviceClient = null;
         int port = 9098;
         TcpClient client;
         NetworkStream stream;
@@ -37,33 +39,37 @@ namespace MyDLP.EndPoint.SessionAgent
         BinaryWriter binaryWriter;
 
         
-        public static bool ServiceConnectionTest()
+        //public static bool ServiceConnectionTest()
+        public bool ServiceConnectionTest()
         {
             try
             {
-                ServiceClient sClient = ServiceClient.GetInstance();
-                String response;                
-                response = sClient.sendMessage("BEGIN");
-
+                //ServiceClient sClient = ServiceClient.GetInstance();
+                //String response;                
+                //response = sClient.sendMessage("BEGIN");
+                sendMessage("BEGIN");
             }
 
             catch (Exception e)
             {
                 //Logger.GetInstance().Debug(e.Message);
+                MessageBox.Show(e.Message);
                 return false;
             }
             return true;
         }
 
-        private ServiceClient()
+        //private ServiceClient()
+        public ServiceClient()
         {
             try
             {
                 //Logger.GetInstance().Info("Initialize local service client port: " + port);
+                MessageBox.Show("Initialize local service client port: " + port);
                 client = new TcpClient("localhost", port);
                 stream = client.GetStream();
-                reader = new StreamReader(stream, System.Text.Encoding.ASCII);
-                writer = new StreamWriter(stream, System.Text.Encoding.ASCII);
+                reader = new StreamReader(stream, System.Text.Encoding.UTF8);
+                writer = new StreamWriter(stream, System.Text.Encoding.UTF8);
                 binaryWriter = new BinaryWriter(stream);
             }
             catch (Exception)
@@ -76,10 +82,11 @@ namespace MyDLP.EndPoint.SessionAgent
         {
             try
             {
+                MessageBox.Show("Reconnect seap client server");
                 //Logger.GetInstance().Debug("Reconnect seap client server: " + server + " port: " + port);
                 try
                 {
-                    client.Close();
+                    client.Close();                    
                 }
                 catch (Exception e)
                 {
@@ -92,13 +99,14 @@ namespace MyDLP.EndPoint.SessionAgent
                 writer = new StreamWriter(stream, System.Text.Encoding.ASCII);
                 binaryWriter = new BinaryWriter(stream);
             }
-            catch (Exception)
+            catch (Exception e)
             {
+                MessageBox.Show(e.Message + e.StackTrace);
                 throw;
             }
         }
 
-        public static ServiceClient GetInstance()
+        /*public static ServiceClient GetInstance()
         {
             try
             {
@@ -108,45 +116,49 @@ namespace MyDLP.EndPoint.SessionAgent
                 }
                 return serviceClient;
             }
-            catch (Exception)
+            catch (Exception e)
             {
-                throw;
+                MessageBox.Show(e.Message + e.StackTrace);
+                return null;
             }
-        }
+        }*/
 
-        public String sendMessage(String cmd, MemoryStream msg)
+        public String sendMessage(String cmd)
         {
             int tryCount = 0;
             int tryLimit = 3;
             Exception lastException = new Exception("Unknown exception");
-            String respMessage = "";
+            String respMessage = null;
 
-            lock (serviceClient)
+            //lock (serviceClient)
+            lock(this)
             {
                 while (tryCount < tryLimit)
                 {
                     try
                     {
                         //clean and discard data on sockect if any
-                        if (stream.DataAvailable == true)
-                            reader.ReadToEnd();
+                        //if (stream.DataAvailable == true)
+                        //    reader.ReadToEnd();
 
                         writer.WriteLine(cmd);
                         writer.Flush();
 
-                        if (msg != null)
+                        respMessage = null;
+                        while (respMessage == null || respMessage == "")
                         {
-                            binaryWriter.Write(msg.GetBuffer(), 0, (int)msg.Length);
-                            binaryWriter.Flush();
+                            respMessage = reader.ReadLine();
+                            Thread.Sleep(1000);
                         }
-
-                        respMessage = reader.ReadLine().Trim();
+                        respMessage.Trim();
 
                         tryCount = 0;
                         break;
                     }
                     catch (Exception e)
                     {
+                        MessageBox.Show("IO Exception tryCount:" + tryCount);
+                        MessageBox.Show(e.Message + e.StackTrace);
                         //Logger.GetInstance().Debug("IO Exception tryCount:" + tryCount);
                         lastException = e;
                         tryCount = handleStreamError(tryCount);
@@ -155,44 +167,30 @@ namespace MyDLP.EndPoint.SessionAgent
 
                 if (tryCount >= tryLimit)
                 {
+                    MessageBox.Show("lastException" + lastException.Message);
                     throw lastException;
                 }
             }
-
             //Logger.GetInstance().Debug("SeapClient read response:  <" + respMessage + ">");
             return respMessage;
         }
 
-        public String sendMessage(String msg)
+
+        private int handleStreamError(int tryCount)
         {
-            String respMessage = "";
-            try
-            {
-                respMessage = sendMessage(msg, null);
-            }
-            catch
-            {
-                throw;
-            }
-
-            return respMessage;
-        }
-
-
-        public int handleStreamError(int tryCount)
-        {
-            try
+            /*try
             {
                 //consume &discard error message if any
-                if (stream.DataAvailable)
-                {
-                    reader.ReadToEnd();
-                }
+                //if (stream.DataAvailable)
+                //{
+                //    reader.ReadToEnd();
+                //}
             }
             catch
             {
+                MessageBox.Show("SeapClient discard not possible");
                 //Logger.GetInstance().Debug("SeapClient discard not possible");
-            }
+            }*/
             try
             {
                 tryCount++;
@@ -200,6 +198,7 @@ namespace MyDLP.EndPoint.SessionAgent
             }
             catch
             {
+                MessageBox.Show("Reconnect failed");
                 //Logger.GetInstance().Debug("Reconnect failed");
             }
             return tryCount;
