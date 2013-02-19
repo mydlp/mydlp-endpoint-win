@@ -276,23 +276,6 @@ namespace MyDLP.EndPoint.Service
                     DiskCryptor.StopDcrypt();
                 }
 
-                if (Configuration.HasEncryptionKey)
-                {
-                    if (!SeapClient.HasKeyfile())
-                    {
-                        Configuration.HasEncryptionKey = false;
-                        DiskCryptor.AfterKeyLose();
-                    }
-                }
-                else
-                {
-                    if (SeapClient.HasKeyfile())
-                    {
-                        Configuration.HasEncryptionKey = true;
-                        DiskCryptor.AfterKeyReceive();
-                    }
-                }
-
                 if (Configuration.RemovableStorageEncryption && !oldRemStorEncryption)
                 {
                     DiskCryptor.StartDcrypt();
@@ -319,6 +302,23 @@ namespace MyDLP.EndPoint.Service
                 if (Configuration.BlockScreenShot)
                 {
                     ScreenShotContoller.Start();
+                }
+            }
+
+            if (oldHasEncryptionKey)
+            {
+                if (!SeapClient.HasKeyfile())
+                {
+                    Configuration.HasEncryptionKey = false;
+                    DiskCryptor.AfterKeyLose();
+                }
+            }
+            else
+            {
+                if (SeapClient.HasKeyfile())
+                {
+                    Configuration.HasEncryptionKey = true;
+                    DiskCryptor.AfterKeyReceive();
                 }
             }
         }

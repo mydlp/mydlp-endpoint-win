@@ -466,7 +466,7 @@ namespace MyDLP.EndPoint.Core
             }
             catch (Exception e)
             {
-                Logger.GetInstance().Error(e.Message);
+                Logger.GetInstance().Error(e.Message + e.StackTrace);
                 //todo: Default Acion
                 return false;
             }
@@ -495,7 +495,7 @@ namespace MyDLP.EndPoint.Core
             }
             catch (Exception e)
             {
-                Logger.GetInstance().Error(e.Message);
+                Logger.GetInstance().Error(e.Message + e.StackTrace);
                 return null;
             }
             //todo: Default Acion
@@ -530,7 +530,7 @@ namespace MyDLP.EndPoint.Core
             }
             catch (Exception e)
             {
-                Logger.GetInstance().Error(e.Message);
+                Logger.GetInstance().Error(e.Message + e.StackTrace);
                 //todo: Default Acion
                 return false;
             }

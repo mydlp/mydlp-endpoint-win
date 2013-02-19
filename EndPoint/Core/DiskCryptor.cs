@@ -237,6 +237,7 @@ namespace MyDLP.EndPoint.Core
             unmountAllEncryptedPartitions();
         }
 
+        // should not contain semicolon eg. E
         public static bool DoesDriveLetterNeedsFormatting(string driveLetter)
         {
             mountAllEncryptedPartitions();

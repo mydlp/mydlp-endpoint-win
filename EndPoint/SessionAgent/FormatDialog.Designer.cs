@@ -113,6 +113,7 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(548, 153);
+            this.ControlBox = false;
             this.Controls.Add(this.ntfsRadioButton);
             this.Controls.Add(this.exFatRadioButton);
             this.Controls.Add(this.fat32RadioButton);
@@ -121,8 +122,10 @@
             this.Controls.Add(this.cancelButton);
             this.Controls.Add(this.okButton);
             this.Name = "FormatDialog";
+            this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "FormatDialog";
+            this.TopMost = true;
             this.ResumeLayout(false);
             this.PerformLayout();
 

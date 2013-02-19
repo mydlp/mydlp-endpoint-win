@@ -58,6 +58,7 @@
             this.Controls.Add(this.description);
             this.Controls.Add(this.encryptionProgressBar);
             this.Name = "ProgressDialog";
+            this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "MyDLP Drive Encryption";
             this.TopMost = true;

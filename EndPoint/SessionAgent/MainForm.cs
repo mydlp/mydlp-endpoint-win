@@ -19,9 +19,8 @@ namespace MyDLP.EndPoint.SessionAgent
         public static ProgressDialog pDialog;
         public static ServiceClient mainClient;
         public static ServiceClient notificationClient;
-        private FormatDialog formatDialog;
+        public static String format; 
         private Thread listenVolumeThread;
-        private bool noMainWindow;
 
         public MainForm()
         {
@@ -40,13 +39,9 @@ namespace MyDLP.EndPoint.SessionAgent
             this.WindowState = FormWindowState.Normal;
         }
 
-        public DialogResult GetFormat()
+        public DialogResult GetFormat(String driveName)
         {
-            /*= MessageBox.Show("Attached drive " + driveName + " is insecure and can not be used." +
-                       "It needs to be formatted and secured before usage. This will delete all information" +
-                       "on disk and it will not be used on outside this organisation.", "MyDLP New Drive Encryption Alert", MessageBoxButtons.YesNo);
-             * */
-            return new FormatDialog().ShowDialog();
+            return new FormatDialog(driveName).ShowDialog();
         }
 
         protected override void OnFormClosing(FormClosingEventArgs e)
@@ -111,7 +106,7 @@ namespace MyDLP.EndPoint.SessionAgent
             }
             catch (Exception e)
             {
-                MessageBox.Show(e.Message + e.StackTrace);
+                MessageBox.Show(e.Message + e.StackTrace,"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -129,7 +124,7 @@ namespace MyDLP.EndPoint.SessionAgent
             }
             catch (Exception e)
             {
-                MessageBox.Show(e.Message + e.StackTrace);
+                MessageBox.Show(e.Message + e.StackTrace, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -138,10 +133,7 @@ namespace MyDLP.EndPoint.SessionAgent
             String driveName;
             public void Arrived(object sender, EventArrivedEventArgs e)
             {
-                String resp = "";
-                //Thread backgroundThread = new Thread(HandleNewVolume);
-                driveName = e.NewEvent["DriveName"].ToString();
-                //backgroundThread.Start();
+                driveName = e.NewEvent["DriveName"].ToString().Replace(":","");
                 HandleNewVolume();
             }
 
@@ -153,34 +145,31 @@ namespace MyDLP.EndPoint.SessionAgent
                     resp = mainClient.sendMessage("NEWVOLUME " + driveName);
                     if (!resp.StartsWith("NEEDFORMAT"))
                     {
-                        //volume is ok driveName nothing
                         return;
                     }
 
-                    DialogResult dResult = Program.form.GetFormat();
-
-
+                    DialogResult dResult = Program.form.GetFormat(driveName);
+                    
                     if (dResult == DialogResult.Cancel)
                     {
-                        MessageBox.Show("Drive " + driveName + " will not be formatted and can not be used.");
+                        MessageBox.Show("Drive " + driveName + " will not be formatted and can not be used.", "Notification", MessageBoxButtons.OK, MessageBoxIcon.Information);
                         return;
                     }
 
                     Program.form.BeginInvoke(new Action(() => pDialog.Visible = true));
-                    resp = mainClient.sendMessage("FORMAT " + driveName);
+                    resp = mainClient.sendMessage("FORMAT " + driveName + " " + format); 
                     Program.form.BeginInvoke(new Action(() => pDialog.Visible = false));
 
                     if (!resp.StartsWith("FINISHED"))
                     {
-                        MessageBox.Show("Unable to format drive!");
+                        MessageBox.Show("Unable to format drive!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);                       
                         return;
                     }
-                    MessageBox.Show("Drive " + driveName + " formatted");
-
+                    MessageBox.Show("Drive " + driveName + " formatted","Format Completed", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show(ex.Message + ex.StackTrace);
+                    MessageBox.Show(ex.Message + ex.StackTrace, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);     
                 }
             }
         }
