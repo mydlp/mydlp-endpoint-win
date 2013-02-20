@@ -36,7 +36,6 @@ namespace MyDLP.EndPoint.SessionAgent
         NetworkStream stream;
         StreamReader reader;
         StreamWriter writer;
-        BinaryWriter binaryWriter;
 
         public ServiceClient()
         {
@@ -45,9 +44,8 @@ namespace MyDLP.EndPoint.SessionAgent
                 //Logger.GetInstance().Info("Initialize local service client port: " + port);               
                 client = new TcpClient("localhost", port);
                 stream = client.GetStream();
-                reader = new StreamReader(stream, System.Text.Encoding.UTF8);
-                writer = new StreamWriter(stream, System.Text.Encoding.UTF8);
-                binaryWriter = new BinaryWriter(stream);
+                reader = new StreamReader(stream, System.Text.Encoding.ASCII);
+                writer = new StreamWriter(stream, System.Text.Encoding.ASCII);
             }
             catch (Exception)
             {
@@ -84,7 +82,6 @@ namespace MyDLP.EndPoint.SessionAgent
                 stream = client.GetStream();
                 reader = new StreamReader(stream, System.Text.Encoding.ASCII);
                 writer = new StreamWriter(stream, System.Text.Encoding.ASCII);
-                binaryWriter = new BinaryWriter(stream);
             }
             catch (Exception e)
             {
@@ -105,11 +102,7 @@ namespace MyDLP.EndPoint.SessionAgent
                         writer.Flush();
 
                         respMessage = null;
-                        while (respMessage == null || respMessage == "")
-                        {
-                            respMessage = reader.ReadLine();
-                            Thread.Sleep(1000);
-                        }
+                        respMessage = reader.ReadLine();
                         respMessage.Trim();
                     }
                     catch (Exception e)

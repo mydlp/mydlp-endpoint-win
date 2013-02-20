@@ -122,46 +122,56 @@ namespace MyDLP.EndPoint.Core
 
                     else if (request.StartsWith("NEWVOLUME"))
                     {
-
-                        driveLetter = request.Split(' ')[1];
-
-                        if (!DiskCryptor.DoesDriveLetterNeedsFormatting(driveLetter))
+                        try
                         {
-                            WriteMessage(writer, "OK NOFORMAT");
-                            return;
+                            driveLetter = request.Split(' ')[1];
+
+                            if (!DiskCryptor.DoesDriveLetterNeedsFormatting(driveLetter))
+                            {
+                                WriteMessage(writer, "OK NOFORMAT");
+                                continue;
+                            }
+
+                            WriteMessage(writer, "OK NEEDFORMAT");
+                            request = ReadMessage(reader);
+
+                            if (!request.StartsWith("FORMAT"))
+                            {
+                                throw new InvalidRequestException("Expected FORMAT recv:" + request);
+                            }
+
+                            driveLetter = request.Split(' ')[1];
+                            format = request.Split(' ')[2];
+                            DiskCryptor.FormatDriveLetter(driveLetter, format);
+
+                            Thread.Sleep(21000);
+                            WriteMessage(writer, "OK FINISHED");
+                        }
+                        catch(Exception e)
+                        {
+                            Logger.GetInstance().Error("SessionServer HandleClient error:" + e.Message + e.StackTrace);
+                            throw new InvalidRequestException("Expected valid volume recv:" + request);
                         }
 
-                        WriteMessage(writer, "OK NEEDFORMAT");
-                        request = ReadMessage(reader);
-
-                        if (!request.StartsWith("FORMAT"))
-                        {
-                            tcpClient.Close();
-                            throw new InvalidRequestException("Expected FORMAT recv:" + request);
-                        }
-
-                        driveLetter = request.Split(' ')[1];
-                        format = request.Split(' ')[2];
-                        DiskCryptor.FormatDriveLetter(driveLetter, format);
-
-                        Thread.Sleep(21000);
-                        WriteMessage(writer, "OK FINISHED");
                     }
                     else 
                     {
-                        Logger.GetInstance().Error("Discarded buffer");
-                        reader.DiscardBufferedData();
+                        Logger.GetInstance().Error("SessionServer HandleClient invalid request" + request);
+                        throw new InvalidRequestException("Expected valid request received:" + request);                        
                     }
                 }
 
                 catch (InvalidRequestException e)
                 {
-                    WriteMessage(writer, "ERROR " + e.Message);
+                    WriteMessage(writer, "ERROR message:" + e.Message);
+                    reader.DiscardBufferedData();
                     Logger.GetInstance().Error("SessionServer HandleClient error:" + e.Message + e.StackTrace);
                 }
 
                 catch (Exception e)
                 {
+                    WriteMessage(writer, "ERROR CLOSING message:" + e.Message);
+                    reader.DiscardBufferedData();
                     Logger.GetInstance().Error("SessionServer HandleClient error:" + e.Message + e.StackTrace);
                     break;
                 }
@@ -185,7 +195,7 @@ namespace MyDLP.EndPoint.Core
             try
             {
                 Logger.GetInstance().Debug("WriteMessage <" + message + ">");
-                writer.WriteLine(message + "\n");
+                writer.WriteLine(message);
                 writer.Flush();
             }
             catch (Exception e)
