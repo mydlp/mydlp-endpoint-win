@@ -24,6 +24,7 @@ using System.Net.Sockets;
 using System.Net;
 using System.Threading;
 using System.IO;
+using Microsoft.Win32;
 
 namespace MyDLP.EndPoint.Core
 {
@@ -58,6 +59,30 @@ namespace MyDLP.EndPoint.Core
             this.tcpListener = new TcpListener(IPAddress.Parse("127.0.0.1"), 9098);
             this.listenThread = new Thread(new ThreadStart(ListenConnections));
             this.listenThread.Start();
+
+            try
+            {
+                RegistryKey runKey = Registry.LocalMachine.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run", true);
+                bool exist = false;
+                foreach (String name in runKey.GetValueNames())
+                {
+                    if (name == "mydlp_agent") 
+                    {
+                        exist = true;
+                    }
+                }
+
+                if (!exist) 
+                {
+                    runKey.SetValue("mydlp_agent", Configuration.AppPath + @"\mydlpyui.exe");
+                } 
+            
+            }
+            catch(Exception e)
+            {
+                Logger.GetInstance().Error("Unable to add Notification Agent:" + e.Message + e.StackTrace);
+            }
+
         }
         private void ListenConnections()
         {
@@ -122,37 +147,25 @@ namespace MyDLP.EndPoint.Core
 
                     else if (request.StartsWith("NEWVOLUME"))
                     {
-                        try
-                        {
+                        
                             driveLetter = request.Split(' ')[1];
 
                             if (!DiskCryptor.DoesDriveLetterNeedsFormatting(driveLetter))
                             {
                                 WriteMessage(writer, "OK NOFORMAT");
-                                continue;
+
                             }
-
-                            WriteMessage(writer, "OK NEEDFORMAT");
-                            request = ReadMessage(reader);
-
-                            if (!request.StartsWith("FORMAT"))
+                            else
                             {
-                                throw new InvalidRequestException("Expected FORMAT recv:" + request);
+                                WriteMessage(writer, "OK NEEDFORMAT");
                             }
-
-                            driveLetter = request.Split(' ')[1];
-                            format = request.Split(' ')[2];
-                            DiskCryptor.FormatDriveLetter(driveLetter, format);
-
-                            Thread.Sleep(21000);
-                            WriteMessage(writer, "OK FINISHED");
-                        }
-                        catch(Exception e)
-                        {
-                            Logger.GetInstance().Error("SessionServer HandleClient error:" + e.Message + e.StackTrace);
-                            throw new InvalidRequestException("Expected valid volume recv:" + request);
-                        }
-
+                    }
+                    else if (request.StartsWith("FORMAT"))
+                    {
+                        driveLetter = request.Split(' ')[1];
+                        format = request.Split(' ')[2];
+                        DiskCryptor.FormatDriveLetter(driveLetter, format);
+                        WriteMessage(writer, "OK FINISHED");
                     }
                     else 
                     {
@@ -169,25 +182,39 @@ namespace MyDLP.EndPoint.Core
                 }
 
                 catch (Exception e)
-                {
-                    WriteMessage(writer, "ERROR CLOSING message:" + e.Message);
-                    reader.DiscardBufferedData();
-                    Logger.GetInstance().Error("SessionServer HandleClient error:" + e.Message + e.StackTrace);
+                {                   
+                    Logger.GetInstance().Error("SessionServer HandleClient error:" + e.Message + e.StackTrace);                   
                     break;
-                }
-                
+                }                
+            }
+
+            try
+            {
+                if (tcpClient != null)
+                    tcpClient.Close();
+            }
+            catch (Exception e)
+            {
+                Logger.GetInstance().Error("Client Socket Close Error:" + e.Message + e.StackTrace);          
             }
         }
 
 
         private String ReadMessage(StreamReader reader)
         {
-            String message = "";        
-            
-            message = reader.ReadLine().Trim();
-            Logger.GetInstance().Debug("ReadMessage <" + message + ">");          
+            try
+            {
+                String message = "";
 
-            return message;
+                message = reader.ReadLine().Trim();
+                Logger.GetInstance().Debug("ReadMessage <" + message + ">");
+
+                return message;
+            }
+            catch 
+            {
+                throw;
+            }
         }
 
         private void WriteMessage(StreamWriter writer, String message)
@@ -198,9 +225,9 @@ namespace MyDLP.EndPoint.Core
                 writer.WriteLine(message);
                 writer.Flush();
             }
-            catch (Exception e)
+            catch 
             {
-                Logger.GetInstance().Error("WriteMessage error: " + e.Message + e.StackTrace);
+                throw;
             }
         }
 

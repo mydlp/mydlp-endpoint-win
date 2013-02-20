@@ -121,8 +121,11 @@
             this.Controls.Add(this.descriptionTextBox);
             this.Controls.Add(this.cancelButton);
             this.Controls.Add(this.okButton);
+            this.MaximumSize = new System.Drawing.Size(564, 191);
+            this.MinimizeBox = false;
+            this.MinimumSize = new System.Drawing.Size(564, 191);
             this.Name = "FormatDialog";
-            this.ShowInTaskbar = false;
+            this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Hide;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "FormatDialog";
             this.TopMost = true;

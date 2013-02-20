@@ -91,6 +91,11 @@
         <CreateFolder Directory="MNESIADIR" />
       </Component>
 
+      <Component Id="mydlpui.exe" Directory="INSTALLLOCATION" Guid="*">
+        <File Id="mydlpui.exe" Name="mydlpui.exe" KeyPath="yes" Vital="yes" DiskId="1" Source="..\..\SessionAgent\bin\Release\mydlpui.exe" />
+      </Component>
+
+
       <Component Id="MyDLP.EndPoint.Core.dll" Directory="INSTALLLOCATION" Guid="*">
         <File Id="MyDLP.EndPoint.Core.dll" Name="MyDLP.EndPoint.Core.dll" KeyPath="yes" Vital="yes" DiskId="1" Source="..\..\Service\bin\Release\MyDLP.EndPoint.Core.dll" />
       </Component>

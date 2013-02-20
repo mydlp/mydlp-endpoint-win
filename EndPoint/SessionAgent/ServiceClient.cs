@@ -58,7 +58,7 @@ namespace MyDLP.EndPoint.SessionAgent
             reader.Dispose();
             writer.Dispose();
             stream.Dispose();
-            client.Close();        
+            client.Close();
         }
 
         public void Reconnect()
@@ -71,11 +71,11 @@ namespace MyDLP.EndPoint.SessionAgent
                     reader.Dispose();
                     writer.Dispose();
                     stream.Dispose();
-                    client.Close();                      
+                    client.Close();
                 }
                 catch (Exception e)
                 {
-                   //todo
+                    //todo
                 }
 
                 client = new TcpClient("localhost", port);
@@ -91,26 +91,33 @@ namespace MyDLP.EndPoint.SessionAgent
         }
 
         public String sendMessage(String cmd)
-        {           
+        {
             String respMessage = null;
 
-            lock(this)
-            {             
+            lock (this)
+            {
+                int tryCount = 0;
+                while (true)
+                {
                     try
                     {
                         writer.WriteLine(cmd);
                         writer.Flush();
 
-                        respMessage = null;
                         respMessage = reader.ReadLine();
                         respMessage.Trim();
+                        break;
                     }
-                    catch (Exception e)
+                    catch
                     {
-                       throw;
+                        if (tryCount >= 5)
+                            throw;
+                        else
+                            tryCount++;
                     }
+                }
             }
-            return respMessage;       
-        }       
+            return respMessage;
+        }
     }
 }
