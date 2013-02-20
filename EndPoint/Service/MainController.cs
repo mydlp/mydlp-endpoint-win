@@ -179,6 +179,8 @@ namespace MyDLP.EndPoint.Service
                 if (confTimer != null)
                     confTimer.Enabled = false;
 
+                SessionServer.GetInstance().Stop();
+
                 if (Configuration.BlockScreenShot)
                 {
                     ScreenShotContoller.Stop();

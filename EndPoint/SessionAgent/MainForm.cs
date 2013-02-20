@@ -17,9 +17,9 @@ namespace MyDLP.EndPoint.SessionAgent
     public partial class MainForm : Form
     {
         public static ProgressDialog pDialog;
-        public static ServiceClient mainClient;
+        public static ServiceClient mainClient = null;
         public static ServiceClient notificationClient;
-        public static String format; 
+        public static String format;
         private Thread listenVolumeThread;
 
         public MainForm()
@@ -80,33 +80,75 @@ namespace MyDLP.EndPoint.SessionAgent
 
         private void ProcessNewVolumes()
         {
-            Program.form.BeginInvoke(new Action(() => Program.form.setStatus("Waiting for security service")));
-            try
-            {
-                bool testSuccess = false;
-                while (true)
-                {
-                    try
-                    {
-                        mainClient = new ServiceClient();
-                    }
-                    catch (Exception e)
-                    {
-                        System.Threading.Thread.Sleep(10000);
-                        continue;
-                    }
+            ConnectOrWait();
+            ListenUSBDisks();
+        }
 
-                    testSuccess = mainClient.ServiceConnectionTest();
-                    if (testSuccess)
-                        break;
-                    System.Threading.Thread.Sleep(10000);
+        public void ConnectOrWait()
+        {
+            String response;
+            while (true)
+            {              
+            tryagain: 
+                Program.form.BeginInvoke(new Action(() => Program.form.setStatus("Waiting for security service")));
+                try
+                {                 
+
+                    while (true)
+                    {
+                        try
+                        {
+                            if (mainClient == null)
+                            {
+                                mainClient = new ServiceClient();
+                            }
+                            else
+                            {
+                                mainClient.Reconnect();
+                            }
+                            
+                        }
+                        catch (Exception e)
+                        {
+                            System.Threading.Thread.Sleep(10000);
+                            continue;
+                        }
+
+                        response = mainClient.sendMessage("BEGIN");
+                        if (response.StartsWith("OK"))
+                        {
+                            break;
+                        }
+
+                        System.Threading.Thread.Sleep(10000);
+                    }
+                    Program.form.BeginInvoke(new Action(() => Program.form.setStatus("Connected, waiting server")));
+
+                    while (true)
+                    {
+                        response = mainClient.sendMessage("HASKEY");
+
+                        if (!response.StartsWith("OK"))
+                        {
+                            System.Threading.Thread.Sleep(10000);
+                            goto tryagain;
+                        }
+
+                        if (response.StartsWith("OK YES"))
+                        {
+                            break;
+                        }
+                        System.Threading.Thread.Sleep(10000);
+                    }
+                 
+                    Program.form.BeginInvoke(new Action(() => Program.form.setStatus("Running")));
+                    break;
                 }
-                Program.form.BeginInvoke(new Action(() => Program.form.setStatus("Connected")));
-                ListenUSBDisks();
-            }
-            catch (Exception e)
-            {
-                MessageBox.Show(e.Message + e.StackTrace,"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                catch (Exception e)
+                {
+                    MessageBox.Show(e.Message + e.StackTrace, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);                
+                    continue;
+                }                                               
             }
         }
 
@@ -133,7 +175,7 @@ namespace MyDLP.EndPoint.SessionAgent
             String driveName;
             public void Arrived(object sender, EventArrivedEventArgs e)
             {
-                driveName = e.NewEvent["DriveName"].ToString().Replace(":","");
+                driveName = e.NewEvent["DriveName"].ToString().Replace(":", "");
                 HandleNewVolume();
             }
 
@@ -143,13 +185,19 @@ namespace MyDLP.EndPoint.SessionAgent
                 try
                 {
                     resp = mainClient.sendMessage("NEWVOLUME " + driveName);
-                    if (!resp.StartsWith("NEEDFORMAT"))
+                    if (!resp.StartsWith("OK"))
+                    {
+                        mainClient.Reconnect();
+                        return;
+                    }
+
+                    if (!resp.StartsWith("OK NEEDFORMAT"))
                     {
                         return;
                     }
 
                     DialogResult dResult = Program.form.GetFormat(driveName);
-                    
+
                     if (dResult == DialogResult.Cancel)
                     {
                         MessageBox.Show("Drive " + driveName + " will not be formatted and can not be used.", "Notification", MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -157,19 +205,26 @@ namespace MyDLP.EndPoint.SessionAgent
                     }
 
                     Program.form.BeginInvoke(new Action(() => pDialog.Visible = true));
-                    resp = mainClient.sendMessage("FORMAT " + driveName + " " + format); 
+                    resp = mainClient.sendMessage("FORMAT " + driveName + " " + format);
                     Program.form.BeginInvoke(new Action(() => pDialog.Visible = false));
 
-                    if (!resp.StartsWith("FINISHED"))
+                    if (!resp.StartsWith("OK"))
                     {
-                        MessageBox.Show("Unable to format drive!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);                       
+                        mainClient.Reconnect();
                         return;
                     }
-                    MessageBox.Show("Drive " + driveName + " formatted","Format Completed", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                    if (!resp.StartsWith("OK FINISHED"))
+                    {
+                        MessageBox.Show("Unable to format drive!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        return;
+                    }
+                    MessageBox.Show("Drive " + driveName + " formatted", "Format Completed", MessageBoxButtons.OK, MessageBoxIcon.Information, MessageBoxDefaultButton.Button1);
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show(ex.Message + ex.StackTrace, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);     
+                    Program.form.ConnectOrWait();
+                    MessageBox.Show(ex.Message + ex.StackTrace, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
         }

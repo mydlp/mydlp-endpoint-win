@@ -29,6 +29,7 @@ namespace MyDLP.EndPoint.Core
 {
     public class SessionServer
     {
+        public static bool stopFlag = false;
         public static SessionServer GetInstance()
         {
             if (sessionServer == null)
@@ -43,6 +44,7 @@ namespace MyDLP.EndPoint.Core
         {
             //stop connection listener
             tcpListener.Stop();
+            stopFlag = true;
         }
 
         private TcpListener tcpListener;
@@ -59,15 +61,28 @@ namespace MyDLP.EndPoint.Core
         }
         private void ListenConnections()
         {
-            this.tcpListener.Start();
-
-            while (true)
+            try
             {
+                this.tcpListener.Start();
 
-                TcpClient client = this.tcpListener.AcceptTcpClient();
+                while (!stopFlag)
+                {
+                    try
+                    {
+                        TcpClient client = this.tcpListener.AcceptTcpClient();
 
-                Thread clientThread = new Thread(new ParameterizedThreadStart(HandleClient));
-                clientThread.Start(client);
+                        Thread clientThread = new Thread(new ParameterizedThreadStart(HandleClient));
+                        clientThread.Start(client);
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.GetInstance().Error("SessionServer ListenClient error:" + e.Message + e.StackTrace);
+                    }
+                }
+            }
+            catch(Exception e)
+            {
+                Logger.GetInstance().Error("SessionServer ListenClient, stop listener:" + e.Message + e.StackTrace);                
             }
         }
 
@@ -79,83 +94,88 @@ namespace MyDLP.EndPoint.Core
             StreamWriter writer = new StreamWriter(clientStream, System.Text.Encoding.ASCII);
 
             String request;
-            String response;
             String driveLetter;
-            int bytesRead;
+ 
+            String format;
 
-            bytesRead = 0;
-
-            try
+            while (!stopFlag)
             {
                 try
                 {
                     request = ReadMessage(reader);
-                    if (!request.StartsWith("BEGIN"))
+                    if (request.StartsWith("BEGIN"))
                     {
-                        throw new InvalidRequestException("Expected BEGIN");
+                        WriteMessage(writer, "OK");
                     }
-                    WriteMessage(writer, "OK");
 
-                    while (true)
+                    else if (request.StartsWith("HASKEY"))
                     {
-                        request = ReadMessage(reader);
-                        if (!request.StartsWith("NEWVOLUME"))
+                        if (Configuration.HasEncryptionKey)
                         {
-                            throw new InvalidRequestException("Expected NEWVOLUME");
+                            WriteMessage(writer, "OK YES");
                         }
+                        else
+                        {
+                            WriteMessage(writer, "OK NO");
+                        }
+                    }
+
+                    else if (request.StartsWith("NEWVOLUME"))
+                    {
 
                         driveLetter = request.Split(' ')[1];
 
-                        WriteMessage(writer, "NEEDFORMAT");
+                        if (!DiskCryptor.DoesDriveLetterNeedsFormatting(driveLetter))
+                        {
+                            WriteMessage(writer, "OK NOFORMAT");
+                            return;
+                        }
+
+                        WriteMessage(writer, "OK NEEDFORMAT");
                         request = ReadMessage(reader);
 
                         if (!request.StartsWith("FORMAT"))
                         {
                             tcpClient.Close();
-                            throw new InvalidRequestException("Expexted FORMAT");                            
+                            throw new InvalidRequestException("Expected FORMAT recv:" + request);
                         }
+
+                        driveLetter = request.Split(' ')[1];
+                        format = request.Split(' ')[2];
+                        DiskCryptor.FormatDriveLetter(driveLetter, format);
 
                         Thread.Sleep(21000);
-                        WriteMessage(writer, "FINISHED");
-
-                        request = ReadMessage(reader);
-                        if (!request.StartsWith("GETVOLUMES")) 
-                        {
-                            throw new InvalidRequestException("Expected GETVOLUMES");
-                        }
-                        WriteMessage(writer, "VOLUMES E:,Z:,D:,");
+                        WriteMessage(writer, "OK FINISHED");
+                    }
+                    else 
+                    {
+                        Logger.GetInstance().Error("Discarded buffer");
+                        reader.DiscardBufferedData();
                     }
                 }
 
                 catch (InvalidRequestException e)
                 {
-                    WriteMessage(writer, "ERROR CLOSING:" + e.Message);
+                    WriteMessage(writer, "ERROR " + e.Message);
                     Logger.GetInstance().Error("SessionServer HandleClient error:" + e.Message + e.StackTrace);
                 }
 
-            }
-            catch (Exception e)
-            { 
-                Logger.GetInstance().Error("SessionServer HandleClient error:" + e.Message + e.StackTrace);
-            }
-            finally
-            {     
-                tcpClient.Close();            
+                catch (Exception e)
+                {
+                    Logger.GetInstance().Error("SessionServer HandleClient error:" + e.Message + e.StackTrace);
+                    break;
+                }
+                
             }
         }
 
+
         private String ReadMessage(StreamReader reader)
         {
-            String message = "";
-            try
-            {
-                message = reader.ReadLine().Trim();
-                Logger.GetInstance().Debug("ReadMessage <" + message + ">");
-            }
-            catch (Exception e)
-            {
-                Logger.GetInstance().Error("ReadMessage error: " + e.Message + e.StackTrace);
-            }
+            String message = "";        
+            
+            message = reader.ReadLine().Trim();
+            Logger.GetInstance().Debug("ReadMessage <" + message + ">");          
 
             return message;
         }
