@@ -76,7 +76,7 @@ namespace MyDLP.EndPoint.Core
 
                     if (!exist)
                     {
-                        runKey.SetValue("mydlp_agent", "\"" + Configuration.AppPath + "mydlpyui.exe\"");
+                        runKey.SetValue("mydlp_agent", "\"" + Configuration.AppPath + "mydlpui.exe\"");
                     }
                 }
             

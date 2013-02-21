@@ -31,7 +31,7 @@ namespace MyDLP.EndPoint.SessionAgent
             {
                 mutex = new Mutex(true, user);
             }
-
+            
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             form = new MainForm();
