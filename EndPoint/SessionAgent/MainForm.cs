@@ -42,8 +42,8 @@ namespace MyDLP.EndPoint.SessionAgent
         public const Int32 WM_SYSCOMMAND = 0x0112;
         public const Int32 SC_CLOSE = 0xF060;
         
-        public static String connectLock;
-        public static String handleLock;
+        private static String connectLock;
+        private static String handleLock;
         public static bool connecting = false;
         public static bool handling = false;
 
@@ -53,7 +53,6 @@ namespace MyDLP.EndPoint.SessionAgent
         public MainForm()
         {
             InitializeComponent();
-            pDialog = new ProgressDialog();
         }
 
         public void setStatus(String message)
@@ -69,7 +68,9 @@ namespace MyDLP.EndPoint.SessionAgent
 
         public DialogResult GetFormat(String driveName)
         {
-            return new FormatDialog(driveName).ShowDialog();
+            FormatDialog dialog = new FormatDialog(driveName);
+            dialog.Owner = this;
+            return dialog.ShowDialog();
         }
 
         protected override void OnFormClosing(FormClosingEventArgs e)
@@ -82,6 +83,36 @@ namespace MyDLP.EndPoint.SessionAgent
         private void Form1_Resize(object sender, EventArgs e)
         {
             FormUpdate();
+        }
+
+       
+
+        private void ShowErrorDialog(String message)
+        {
+            this.BeginInvoke(new Action(() =>
+                MessageBox.Show(Program.form, message, "MyDLP Error", MessageBoxButtons.OK, MessageBoxIcon.Error)));
+        }
+
+        private void ShowInformationDialog(String message)
+        {
+            this.BeginInvoke(new Action(() => 
+             MessageBox.Show(Program.form, message, "MyDLP Information", MessageBoxButtons.OK, MessageBoxIcon.Information)));
+        }
+
+        private void ShowProgress() 
+        {
+            pDialog = new ProgressDialog();
+            pDialog.Visible = true;
+        }
+
+        private void BeginProgress() 
+        {
+             this.BeginInvoke(new Action(() => ShowProgress()));            
+        }
+
+        private void EndProgress()
+        { 
+             this.BeginInvoke(new Action(() => pDialog.Close()));        
         }
 
         private void FormUpdate()
@@ -101,8 +132,8 @@ namespace MyDLP.EndPoint.SessionAgent
         {
             try
             {
-                connectLock = "";
-                handleLock = "";
+                connectLock = "connect";
+                handleLock = "handle";
                 RegistryKey mydlpKey = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\MyDLP\");
                 int usbstor_encryption = (int)mydlpKey.GetValue("usbstor_encryption", 0);
                 if (usbstor_encryption == 0)
@@ -120,7 +151,7 @@ namespace MyDLP.EndPoint.SessionAgent
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + ex.StackTrace);
+                //MessageBox.Show(ex.Message + ex.StackTrace);
                 Application.Exit();                
                 //Unable to open registry nothing to do
             }
@@ -130,7 +161,13 @@ namespace MyDLP.EndPoint.SessionAgent
         {
             Thread listenUSBThread = new Thread(ListenUSBDisks);
             listenUSBThread.Start();
-            ConnectOrWait();
+            ConnectAsync();
+        }
+
+        public void ConnectAsync()
+        {
+            Thread listenUSBThread = new Thread(ConnectOrWait);
+            listenUSBThread.Start();        
         }
 
         public void ConnectOrWait()
@@ -200,7 +237,7 @@ namespace MyDLP.EndPoint.SessionAgent
                     }
                     catch (Exception e)
                     {
-                        MessageBox.Show(e.Message + e.StackTrace, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        //MessageBox.Show(Program.form, e.Message + e.StackTrace, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                         continue;
                     }
                     finally 
@@ -210,7 +247,7 @@ namespace MyDLP.EndPoint.SessionAgent
                 }
             }
         }
-
+        
         private void ListenUSBDisks()
         {
             try
@@ -224,7 +261,7 @@ namespace MyDLP.EndPoint.SessionAgent
             }
             catch (Exception e)
             {
-                MessageBox.Show(e.Message + e.StackTrace, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(Program.form, e.Message + e.StackTrace, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -274,9 +311,9 @@ namespace MyDLP.EndPoint.SessionAgent
                         closeThread.Start();
                         if (!MainForm.ready)
                         {
-                            MessageBox.Show("MyDLP Security Service is not ready. USB drives can not be used for now.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                            Program.form.ShowInformationDialog("MyDLP Security Service is not ready. USB drives can not be used for now.");
+                            return;
                         }
-
 
                         resp = mainClient.sendMessage("NEWVOLUME " + driveName);
                         if (!resp.StartsWith("OK"))
@@ -296,14 +333,14 @@ namespace MyDLP.EndPoint.SessionAgent
 
                         if (dResult == DialogResult.Cancel)
                         {
-                            MessageBox.Show("Drive " + driveName + " will not be formatted and can not be used.", "Notification", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            Program.form.ShowInformationDialog("Drive " + driveName + " will not be formatted and can not be used.");
                             handling = false;
                             return;
                         }
 
-                        Program.form.BeginInvoke(new Action(() => pDialog.Visible = true));
+                        Program.form.BeginProgress();
                         resp = mainClient.sendMessage("FORMAT " + driveName + " " + format);
-                        Program.form.BeginInvoke(new Action(() => pDialog.Visible = false));
+                        Program.form.EndProgress();
 
                         if (!resp.StartsWith("OK"))
                         {
@@ -314,16 +351,16 @@ namespace MyDLP.EndPoint.SessionAgent
 
                         if (!resp.StartsWith("OK FINISHED"))
                         {
-                            MessageBox.Show("Unable to format drive!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            Program.form.ShowErrorDialog("Unable to format drive!");
                             handling = false;
                             return;
                         }
-                        MessageBox.Show("Drive " + driveName + " formatted", "Format Completed", MessageBoxButtons.OK, MessageBoxIcon.Information, MessageBoxDefaultButton.Button1);
+                        Program.form.ShowInformationDialog("Drive " + driveName + " formatted");
                     }
                     catch (Exception ex)
                     {
                         ready = false;
-                        Program.form.ConnectOrWait();
+                        Program.form.ConnectAsync();
                         //MessageBox.Show(ex.Message + ex.StackTrace, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                     finally                     
