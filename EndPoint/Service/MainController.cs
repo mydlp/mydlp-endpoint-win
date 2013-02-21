@@ -278,15 +278,6 @@ namespace MyDLP.EndPoint.Service
                     DiskCryptor.StopDcrypt();
                 }
 
-                if (Configuration.RemovableStorageEncryption && !oldRemStorEncryption)
-                {
-                    DiskCryptor.StartDcrypt();
-                }
-                else if (!Configuration.RemovableStorageEncryption && oldRemStorEncryption)
-                {
-                    DiskCryptor.StopDcrypt();
-                }
-
                 if (oldArchiveInbound != Configuration.ArchiveInbound
                     || oldUSBSerialAC != Configuration.UsbSerialAccessControl)
                 {
