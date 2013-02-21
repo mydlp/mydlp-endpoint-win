@@ -135,10 +135,10 @@ namespace MyDLP.EndPoint.SessionAgent
 
         public void ConnectOrWait()
         {
-            /*if (connecting)
+            if (connecting)
                 return;
             lock (connectLock)
-            {*/
+            {
                 connecting = true;
                 String response;               
                 while (true)
@@ -207,7 +207,7 @@ namespace MyDLP.EndPoint.SessionAgent
                     {
                         connecting = false;
                     }
-               // }
+                }
             }
         }
 
@@ -260,12 +260,12 @@ namespace MyDLP.EndPoint.SessionAgent
 
             void HandleNewVolume()
             {
-                /*if (handling) 
+                if (handling) 
                 {
                     return;
                 }
                 lock (handleLock)
-                {*/
+                {
                     String resp;
                     try
                     {
@@ -330,7 +330,7 @@ namespace MyDLP.EndPoint.SessionAgent
                     {
                         handling = false;
                     }
-                //}
+                }
             }
         }
     }
