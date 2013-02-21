@@ -153,7 +153,7 @@ namespace MyDLP.EndPoint.Core
                         
                             driveLetter = request.Split(' ')[1];
 
-                            if (!DiskCryptor.DoesDriveLetterNeedsFormatting(driveLetter))
+                            if (!DiskCryptor.DoesDriveLetterNeedsFormatting(driveLetter) || !Configuration.RemovableStorageEncryption)
                             {
                                 WriteMessage(writer, "OK NOFORMAT");
 
