@@ -132,11 +132,21 @@ namespace MyDLP.EndPoint.SessionAgent
             {
                 connectLock = "connect";
                 handleLock = "handle";
+                int usbstor_encryption = 0;
                 RegistryKey mydlpKey = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\MyDLP\");
-                int usbstor_encryption = (int)mydlpKey.GetValue("usbstor_encryption", 0);
-                if (usbstor_encryption == 0)
+                try
                 {
-                    Application.Exit();
+                    usbstor_encryption = (int)mydlpKey.GetValue("usbstor_encryption", 0);
+                }
+                catch
+                {
+                    //todo
+                }
+
+                if (usbstor_encryption == 0)
+                {                    
+                    //Application.Exit();
+                    this.Dispose();
                     return;
                 }
 
@@ -152,7 +162,8 @@ namespace MyDLP.EndPoint.SessionAgent
             catch (Exception ex)
             {
                 //MessageBox.Show(ex.Message + ex.StackTrace);
-                Application.Exit();                
+                this.Dispose();
+                return;       
                 //Unable to open registry nothing to do
             }
         }

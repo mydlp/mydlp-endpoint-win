@@ -62,20 +62,23 @@ namespace MyDLP.EndPoint.Core
 
             try
             {
-                RegistryKey runKey = Registry.LocalMachine.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run", true);
-                bool exist = false;
-                foreach (String name in runKey.GetValueNames())
+                if (!Environment.UserInteractive)
                 {
-                    if (name == "mydlp_agent") 
+                    RegistryKey runKey = Registry.LocalMachine.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run", true);
+                    bool exist = false;
+                    foreach (String name in runKey.GetValueNames())
                     {
-                        exist = true;
+                        if (name == "mydlp_agent")
+                        {
+                            exist = true;
+                        }
+                    }
+
+                    if (!exist)
+                    {
+                        runKey.SetValue("mydlp_agent", "\"" + Configuration.AppPath + "mydlpyui.exe\"");
                     }
                 }
-
-                if (!exist) 
-                {
-                    runKey.SetValue("mydlp_agent", Configuration.AppPath + @"\mydlpyui.exe");
-                } 
             
             }
             catch(Exception e)
