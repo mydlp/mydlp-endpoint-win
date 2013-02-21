@@ -11,7 +11,8 @@ namespace MyDLP.EndPoint.SessionAgent
 {
     public partial class FormatDialog : Form
     {
-        public FormatDialog(String driveName)
+        public String driveName;
+        public FormatDialog()
         {
             InitializeComponent();
             fat32RadioButton.Checked = true;

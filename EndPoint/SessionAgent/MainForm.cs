@@ -46,6 +46,7 @@ namespace MyDLP.EndPoint.SessionAgent
         private static String handleLock;
         public static bool connecting = false;
         public static bool handling = false;
+        public static FormatDialog formatDialog;
 
 
         public static bool ready = false;
@@ -68,9 +69,8 @@ namespace MyDLP.EndPoint.SessionAgent
 
         public DialogResult GetFormat(String driveName)
         {
-            FormatDialog dialog = new FormatDialog(driveName);
-            dialog.Owner = this;
-            return dialog.ShowDialog();
+            formatDialog.driveName = driveName;
+            return formatDialog.ShowDialog();
         }
 
         protected override void OnFormClosing(FormClosingEventArgs e)
@@ -83,9 +83,7 @@ namespace MyDLP.EndPoint.SessionAgent
         private void Form1_Resize(object sender, EventArgs e)
         {
             FormUpdate();
-        }
-
-       
+        }       
 
         private void ShowErrorDialog(String message)
         {
@@ -146,6 +144,8 @@ namespace MyDLP.EndPoint.SessionAgent
                 listenVolumeThread.Start();
                 notifyIcon1.Visible = true;
                 this.Visible = false;
+                formatDialog = new FormatDialog();
+                //formatDialog.Owner = this;
                 aboutBox.Text = "MyDLP Endpoint Agent\r\nwww.mydlp.com";
                
             }
