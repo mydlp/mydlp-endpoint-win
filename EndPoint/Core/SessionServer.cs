@@ -23,12 +23,14 @@ using System.Text;
 using System.Net.Sockets;
 using System.Net;
 using System.Threading;
+using System.IO;
+using Microsoft.Win32;
 
 namespace MyDLP.EndPoint.Core
 {
     public class SessionServer
     {
-
+        public static bool stopFlag = false;
         public static SessionServer GetInstance()
         {
             if (sessionServer == null)
@@ -43,29 +45,69 @@ namespace MyDLP.EndPoint.Core
         {
             //stop connection listener
             tcpListener.Stop();
+            stopFlag = true;
         }
 
         private TcpListener tcpListener;
         private Thread listenThread;
         private static SessionServer sessionServer = null;
 
+
         private SessionServer()
         {
-            this.tcpListener = new TcpListener(IPAddress.Any, 9098);//IPAddress.Parse("127.0.0.1"), 9098);
+            Logger.GetInstance().Debug("Started Session Server");
+            this.tcpListener = new TcpListener(IPAddress.Parse("127.0.0.1"), 9098);
             this.listenThread = new Thread(new ThreadStart(ListenConnections));
-            // this.listenThread.Start();
+            this.listenThread.Start();
+
+            try
+            {
+                RegistryKey runKey = Registry.LocalMachine.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run", true);
+                bool exist = false;
+                foreach (String name in runKey.GetValueNames())
+                {
+                    if (name == "mydlp_agent") 
+                    {
+                        exist = true;
+                    }
+                }
+
+                if (!exist) 
+                {
+                    runKey.SetValue("mydlp_agent", Configuration.AppPath + @"\mydlpyui.exe");
+                } 
+            
+            }
+            catch(Exception e)
+            {
+                Logger.GetInstance().Error("Unable to add Notification Agent:" + e.Message + e.StackTrace);
+            }
+
         }
         private void ListenConnections()
         {
-            this.tcpListener.Start();
-
-            while (true)
+            try
             {
+                this.tcpListener.Start();
 
-                TcpClient client = this.tcpListener.AcceptTcpClient();
+                while (!stopFlag)
+                {
+                    try
+                    {
+                        TcpClient client = this.tcpListener.AcceptTcpClient();
 
-                Thread clientThread = new Thread(new ParameterizedThreadStart(HandleClient));
-                clientThread.Start();
+                        Thread clientThread = new Thread(new ParameterizedThreadStart(HandleClient));
+                        clientThread.Start(client);
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.GetInstance().Error("SessionServer ListenClient error:" + e.Message + e.StackTrace);
+                    }
+                }
+            }
+            catch(Exception e)
+            {
+                Logger.GetInstance().Error("SessionServer ListenClient, stop listener:" + e.Message + e.StackTrace);                
             }
         }
 
@@ -73,38 +115,136 @@ namespace MyDLP.EndPoint.Core
         {
             TcpClient tcpClient = (TcpClient)client;
             NetworkStream clientStream = tcpClient.GetStream();
+            StreamReader reader = new StreamReader(clientStream, System.Text.Encoding.ASCII);
+            StreamWriter writer = new StreamWriter(clientStream, System.Text.Encoding.ASCII);
 
-            byte[] message = new byte[4096];
-            int bytesRead;
+            String request;
+            String driveLetter;
+ 
+            String format;
 
-            while (true)
+            while (!stopFlag)
             {
-                bytesRead = 0;
-
                 try
                 {
-                    //blocks until a client sends a message
-                    bytesRead = clientStream.Read(message, 0, 4096);
-                    clientStream.Write(message, 0, 4096);
-                }
-                catch
-                {
-                    //a socket error has occured
-                    break;
+                    request = ReadMessage(reader);
+                    if (request.StartsWith("BEGIN"))
+                    {
+                        WriteMessage(writer, "OK");
+                    }
+
+                    else if (request.StartsWith("HASKEY"))
+                    {
+                        if (Configuration.HasEncryptionKey)
+                        {
+                            WriteMessage(writer, "OK YES");
+                        }
+                        else
+                        {
+                            WriteMessage(writer, "OK NO");
+                        }
+                    }
+
+                    else if (request.StartsWith("NEWVOLUME"))
+                    {
+                        
+                            driveLetter = request.Split(' ')[1];
+
+                            if (!DiskCryptor.DoesDriveLetterNeedsFormatting(driveLetter))
+                            {
+                                WriteMessage(writer, "OK NOFORMAT");
+
+                            }
+                            else
+                            {
+                                WriteMessage(writer, "OK NEEDFORMAT");
+                            }
+                    }
+                    else if (request.StartsWith("FORMAT"))
+                    {
+                        driveLetter = request.Split(' ')[1];
+                        format = request.Split(' ')[2];
+                        DiskCryptor.FormatDriveLetter(driveLetter, format);
+                        WriteMessage(writer, "OK FINISHED");
+                    }
+                    else 
+                    {
+                        Logger.GetInstance().Error("SessionServer HandleClient invalid request" + request);
+                        throw new InvalidRequestException("Expected valid request received:" + request);                        
+                    }
                 }
 
-                if (bytesRead == 0)
+                catch (InvalidRequestException e)
                 {
-                    //the client has disconnected from the server
-                    break;
+                    WriteMessage(writer, "ERROR message:" + e.Message);
+                    reader.DiscardBufferedData();
+                    Logger.GetInstance().Error("SessionServer HandleClient error:" + e.Message + e.StackTrace);
                 }
 
-                //message has successfully been received
-                ASCIIEncoding encoder = new ASCIIEncoding();
-                Logger.GetInstance().Debug("Session Agent received:<" + encoder.GetString(message, 0, bytesRead) + ">");
+                catch (Exception e)
+                {                   
+                    Logger.GetInstance().Error("SessionServer HandleClient error:" + e.Message + e.StackTrace);                   
+                    break;
+                }                
             }
 
-            tcpClient.Close();
+            try
+            {
+                if (tcpClient != null)
+                    tcpClient.Close();
+            }
+            catch (Exception e)
+            {
+                Logger.GetInstance().Error("Client Socket Close Error:" + e.Message + e.StackTrace);          
+            }
+        }
+
+
+        private String ReadMessage(StreamReader reader)
+        {
+            try
+            {
+                String message = "";
+
+                message = reader.ReadLine().Trim();
+                Logger.GetInstance().Debug("ReadMessage <" + message + ">");
+
+                return message;
+            }
+            catch 
+            {
+                throw;
+            }
+        }
+
+        private void WriteMessage(StreamWriter writer, String message)
+        {
+            try
+            {
+                Logger.GetInstance().Debug("WriteMessage <" + message + ">");
+                writer.WriteLine(message);
+                writer.Flush();
+            }
+            catch 
+            {
+                throw;
+            }
+        }
+
+        public class InvalidRequestException : Exception
+        {
+            public InvalidRequestException()
+                : base()
+            {
+            }
+            public InvalidRequestException(String message)
+                : base(message)
+            {
+            }
+            public InvalidRequestException(String message, Exception InnerException)
+                : base(message, InnerException)
+            {
+            }
         }
     }
 }

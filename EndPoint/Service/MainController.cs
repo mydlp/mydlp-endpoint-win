@@ -142,11 +142,16 @@ namespace MyDLP.EndPoint.Service
                         ScreenShotContoller.Start();
                     }
 
-                    //SessionServer.GetInstance();
+                    SessionServer.GetInstance();
 
                     if (Configuration.PrinterMonitor)
                     {
                         Service.PrinterController.getInstance().Start();
+                    }
+
+                    if (Configuration.RemovableStorageEncryption)
+                    {
+                        DiskCryptor.StartDcrypt();
                     }
 
                     if (Configuration.UsbSerialAccessControl)
@@ -174,6 +179,8 @@ namespace MyDLP.EndPoint.Service
                 if (confTimer != null)
                     confTimer.Enabled = false;
 
+                SessionServer.GetInstance().Stop();
+
                 if (Configuration.BlockScreenShot)
                 {
                     ScreenShotContoller.Stop();
@@ -193,6 +200,11 @@ namespace MyDLP.EndPoint.Service
                 if (Configuration.PrinterMonitor)
                 {
                     Service.PrinterController.getInstance().Stop();
+                }
+
+                if (Configuration.RemovableStorageEncryption)
+                {
+                    DiskCryptor.StopDcrypt();
                 }
 
                 Logger.GetInstance().Info("mydlpepwin service stopped");
@@ -224,6 +236,8 @@ namespace MyDLP.EndPoint.Service
             bool oldPrinterMonitor = Configuration.PrinterMonitor;
             bool oldArchiveInbound = Configuration.ArchiveInbound;
             bool oldBlockScreenShot = Configuration.BlockScreenShot;
+            bool oldRemStorEncryption = Configuration.RemovableStorageEncryption;
+            bool oldHasEncryptionKey = Configuration.HasEncryptionKey;
 
             if (SeapClient.HasNewConfiguration())
             {
@@ -255,6 +269,23 @@ namespace MyDLP.EndPoint.Service
                     Service.PrinterController.getInstance().Stop();
                 }
 
+                if (Configuration.RemovableStorageEncryption && !oldRemStorEncryption)
+                {
+                    DiskCryptor.StartDcrypt();
+                }
+                else if (!Configuration.RemovableStorageEncryption && oldRemStorEncryption)
+                {
+                    DiskCryptor.StopDcrypt();
+                }
+
+                if (Configuration.RemovableStorageEncryption && !oldRemStorEncryption)
+                {
+                    DiskCryptor.StartDcrypt();
+                }
+                else if (!Configuration.RemovableStorageEncryption && oldRemStorEncryption)
+                {
+                    DiskCryptor.StopDcrypt();
+                }
 
                 if (oldArchiveInbound != Configuration.ArchiveInbound
                     || oldUSBSerialAC != Configuration.UsbSerialAccessControl)
@@ -273,6 +304,23 @@ namespace MyDLP.EndPoint.Service
                 if (Configuration.BlockScreenShot)
                 {
                     ScreenShotContoller.Start();
+                }
+            }
+
+            if (oldHasEncryptionKey)
+            {
+                if (!SeapClient.HasKeyfile())
+                {
+                    Configuration.HasEncryptionKey = false;
+                    DiskCryptor.AfterKeyLose();
+                }
+            }
+            else
+            {
+                if (SeapClient.HasKeyfile())
+                {
+                    Configuration.HasEncryptionKey = true;
+                    DiskCryptor.AfterKeyReceive();
                 }
             }
         }

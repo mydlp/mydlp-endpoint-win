@@ -5,12 +5,12 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("MyDLP Endpoint Security")]
+[assembly: AssemblyTitle("WinEPManager")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("MyDLP")]
-[assembly: AssemblyProduct("MyDLP Endpoint Security")]
-[assembly: AssemblyCopyright("Copyright © MyDLP 2013")]
+[assembly: AssemblyCompany("Microsoft")]
+[assembly: AssemblyProduct("WinEPManager")]
+[assembly: AssemblyCopyright("Copyright © Microsoft 2012")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("c5b96c0a-9d47-420f-86b7-8a039d5f05df")]
+[assembly: Guid("642ba866-3b72-4874-a118-a4f64bf7c867")]
 
 // Version information for an assembly consists of the following four values:
 //

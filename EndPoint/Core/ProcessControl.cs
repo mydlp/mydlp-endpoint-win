@@ -51,6 +51,14 @@ namespace MyDLP.EndPoint.Core
             Prefix = prefix;
             Env = env;
         }
+
+        public ExecuteParameters(String command, String prefix)
+        {
+            Command = command;
+            Prefix = prefix;
+            Env = new EnvVar[] { };
+
+        }
     }
 
     public class ProcessControl
@@ -118,6 +126,49 @@ namespace MyDLP.EndPoint.Core
             {
                 Logger.GetInstance().Error(param.Prefix + " " + e.Message + " " + e.StackTrace);
             }
+        }
+
+        public static string CommandOutputSync(object parameters)
+        {
+            ExecuteParameters param = (ExecuteParameters)parameters;
+
+            try
+            {
+                System.Diagnostics.ProcessStartInfo procStartInfo =
+                    new System.Diagnostics.ProcessStartInfo("cmd", "/c " + param.Command);
+                procStartInfo.RedirectStandardOutput = true;
+                procStartInfo.RedirectStandardError = true;
+                procStartInfo.UseShellExecute = false;
+                procStartInfo.CreateNoWindow = true;
+                procStartInfo.ErrorDialog = false;
+
+                foreach (EnvVar var in param.Env)
+                {
+                    if (var.Name == "path")
+                        procStartInfo.EnvironmentVariables["path"] = procStartInfo.EnvironmentVariables["path"] + var.Value;
+                    else
+                        procStartInfo.EnvironmentVariables.Add(var.Name, var.Value);
+                    System.Console.WriteLine(param.Prefix + " EvnVar:" + var.Name + " = " + procStartInfo.EnvironmentVariables[var.Name]);
+
+                }
+
+                System.Diagnostics.Process proc = new System.Diagnostics.Process();
+                proc.StartInfo = procStartInfo;
+                System.Console.WriteLine(param.Prefix + " starting process: \"" + param.Command + "\"");
+                proc.EnableRaisingEvents = true;
+                proc.Start();
+
+                string stdoutx = proc.StandardOutput.ReadToEnd();
+                string stderrx = proc.StandardError.ReadToEnd();
+                proc.WaitForExit();
+                System.Console.WriteLine(param.Prefix + " process exited.");
+                return stderrx + stdoutx;
+            }
+            catch (Exception e)
+            {
+                Logger.GetInstance().Error(param.Prefix + " " + e.Message + " " + e.StackTrace);
+            }
+            return null;
         }
 
         private static void SuppressUnnecessaryError(String prefix, String data)
