@@ -25,12 +25,14 @@ using System.Net;
 using System.Threading;
 using System.IO;
 using Microsoft.Win32;
+using System.Collections;
 
 namespace MyDLP.EndPoint.Core
 {
     public class SessionServer
     {
         public static bool stopFlag = false;
+        public static Hashtable socketTable; 
         public static SessionServer GetInstance()
         {
             if (sessionServer == null)
@@ -44,14 +46,61 @@ namespace MyDLP.EndPoint.Core
         public void Stop()
         {
             //stop connection listener
-            tcpListener.Stop();
-            stopFlag = true;
+            try
+            {
+                tcpListener.Server.Close();
+                tcpListener.Stop();
+                stopFlag = true;
+                closeAllSockets();
+            }
+            catch 
+            {
+                //todo
+            }
         }
 
         private TcpListener tcpListener;
         private Thread listenThread;
         private static SessionServer sessionServer = null;
 
+        protected static void closeSocket(TcpClient client) 
+        {
+            if (client == null) return;
+            if (socketTable == null) return;
+            if (!socketTable.Contains(client)) return;
+
+            try
+            {
+                client.Close();
+            }
+            catch (Exception e)
+            {
+                Logger.GetInstance().Error("Error at client socket close:" + e.Message + e.StackTrace);
+            }
+            finally
+            {
+                socketTable.Remove(client);
+            }
+        }
+
+        protected static void closeAllSockets()
+        {
+            if (socketTable == null) return;
+
+            foreach (TcpClient client in socketTable.Keys)
+            {
+                try
+                {
+                    client.Close();
+                }
+                catch (Exception e)
+                {
+                    Logger.GetInstance().Error("Error at client socket close:" + e.Message + e.StackTrace);
+                }
+            }
+
+            socketTable = new Hashtable();
+        }
 
         private SessionServer()
         {
@@ -59,6 +108,7 @@ namespace MyDLP.EndPoint.Core
             this.tcpListener = new TcpListener(IPAddress.Parse("127.0.0.1"), 9098);
             this.listenThread = new Thread(new ThreadStart(ListenConnections));
             this.listenThread.Start();
+            socketTable = new Hashtable();
 
             try
             {
@@ -95,9 +145,13 @@ namespace MyDLP.EndPoint.Core
 
                 while (!stopFlag)
                 {
+                    TcpClient client = null;
                     try
                     {
-                        TcpClient client = this.tcpListener.AcceptTcpClient();
+                        client = this.tcpListener.AcceptTcpClient();
+                        socketTable.Add(client, null);
+                        Logger.GetInstance().Debug("Hashcode client:" + client.GetHashCode());
+                        
 
                         Thread clientThread = new Thread(new ParameterizedThreadStart(HandleClient));
                         clientThread.Start(client);
@@ -105,6 +159,7 @@ namespace MyDLP.EndPoint.Core
                     catch (Exception e)
                     {
                         Logger.GetInstance().Error("SessionServer ListenClient error:" + e.Message + e.StackTrace);
+                        closeSocket(client);
                     }
                 }
             }
@@ -186,20 +241,12 @@ namespace MyDLP.EndPoint.Core
 
                 catch (Exception e)
                 {                   
-                    Logger.GetInstance().Error("SessionServer HandleClient error:" + e.Message + e.StackTrace);                   
+                    Logger.GetInstance().Error("SessionServer HandleClient error:" + e.Message + e.StackTrace);
                     break;
                 }                
             }
-
-            try
-            {
-                if (tcpClient != null)
-                    tcpClient.Close();
-            }
-            catch (Exception e)
-            {
-                Logger.GetInstance().Error("Client Socket Close Error:" + e.Message + e.StackTrace);          
-            }
+            
+            SessionServer.closeSocket(tcpClient);
         }
 
 
