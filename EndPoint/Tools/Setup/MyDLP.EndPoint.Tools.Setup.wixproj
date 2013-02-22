@@ -51,9 +51,6 @@
     <Content Include="filter.xsl" />
     <Content Include="harvest.bat" />
     <Content Include="increment.js" />
-    <Content Include="MainForm.cs" />
-    <Content Include="MainForm.Designer.cs" />
-    <Content Include="MainForm.resx" />
     <Content Include="moveversion.js" />
     <Content Include="ProductVersion.wxi" />
   </ItemGroup>

@@ -75,9 +75,16 @@ namespace MyDLP.EndPoint.SessionAgent
 
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
-            e.Cancel = true;
-            this.WindowState = FormWindowState.Minimized;
-            FormUpdate();
+            if (e.CloseReason == CloseReason.UserClosing)
+            {
+                e.Cancel = true;
+                this.WindowState = FormWindowState.Minimized;
+                FormUpdate();
+            }
+            else 
+            {
+                base.OnFormClosing(e);
+            }
         }
 
         private void Form1_Resize(object sender, EventArgs e)
