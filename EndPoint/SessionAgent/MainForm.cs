@@ -35,13 +35,13 @@ namespace MyDLP.EndPoint.SessionAgent
         static extern IntPtr FindWindowByCaption(IntPtr ZeroOnly, string lpWindowName);
 
         // You can also call FindWindow(default(string), lpWindowName) or FindWindow((string)null, lpWindowName)
-        
+
         [DllImport("user32.dll", CharSet = CharSet.Auto)]
         public static extern IntPtr SendMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
 
         public const Int32 WM_SYSCOMMAND = 0x0112;
         public const Int32 SC_CLOSE = 0xF060;
-        
+
         private static String connectLock;
         private static String handleLock;
         public static bool connecting = false;
@@ -81,7 +81,7 @@ namespace MyDLP.EndPoint.SessionAgent
                 this.WindowState = FormWindowState.Minimized;
                 FormUpdate();
             }
-            else 
+            else
             {
                 base.OnFormClosing(e);
             }
@@ -90,7 +90,7 @@ namespace MyDLP.EndPoint.SessionAgent
         private void Form1_Resize(object sender, EventArgs e)
         {
             FormUpdate();
-        }       
+        }
 
         private void ShowErrorDialog(String message)
         {
@@ -100,24 +100,24 @@ namespace MyDLP.EndPoint.SessionAgent
 
         private void ShowInformationDialog(String message)
         {
-            this.BeginInvoke(new Action(() => 
+            this.BeginInvoke(new Action(() =>
              MessageBox.Show(Program.form, message, "MyDLP Information", MessageBoxButtons.OK, MessageBoxIcon.Information)));
         }
 
-        private void ShowProgress() 
+        private void ShowProgress()
         {
             pDialog = new ProgressDialog();
             pDialog.Visible = true;
         }
 
-        private void BeginProgress() 
+        private void BeginProgress()
         {
-             this.BeginInvoke(new Action(() => ShowProgress()));            
+            this.BeginInvoke(new Action(() => ShowProgress()));
         }
 
         private void EndProgress()
-        { 
-             this.BeginInvoke(new Action(() => pDialog.Close()));        
+        {
+            this.BeginInvoke(new Action(() => pDialog.Close()));
         }
 
         private void FormUpdate()
@@ -151,7 +151,7 @@ namespace MyDLP.EndPoint.SessionAgent
                 }
 
                 if (usbstor_encryption == 0)
-                {                    
+                {
                     //Application.Exit();
                     this.Dispose();
                     return;
@@ -164,13 +164,13 @@ namespace MyDLP.EndPoint.SessionAgent
                 formatDialog = new FormatDialog();
                 //formatDialog.Owner = this;
                 aboutBox.Text = "MyDLP Endpoint Agent\r\nwww.mydlp.com";
-               
+
             }
             catch (Exception ex)
             {
                 //MessageBox.Show(ex.Message + ex.StackTrace);
                 this.Dispose();
-                return;       
+                return;
                 //Unable to open registry nothing to do
             }
         }
@@ -185,7 +185,7 @@ namespace MyDLP.EndPoint.SessionAgent
         public void ConnectAsync()
         {
             Thread listenUSBThread = new Thread(ConnectOrWait);
-            listenUSBThread.Start();        
+            listenUSBThread.Start();
         }
 
         public void ConnectOrWait()
@@ -195,7 +195,7 @@ namespace MyDLP.EndPoint.SessionAgent
             lock (connectLock)
             {
                 connecting = true;
-                String response;               
+                String response;
                 while (true)
                 {
                 tryagain:
@@ -258,35 +258,62 @@ namespace MyDLP.EndPoint.SessionAgent
                         //MessageBox.Show(Program.form, e.Message + e.StackTrace, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                         continue;
                     }
-                    finally 
+                    finally
                     {
                         connecting = false;
                     }
                 }
             }
         }
-        
+
         private void ListenUSBDisks()
         {
             try
             {
-                ManagementEventWatcher watcher = new ManagementEventWatcher();
-                WqlEventQuery query = new WqlEventQuery("SELECT * FROM Win32_VolumeChangeEvent WHERE EventType = 2");
-                RemovableEventHandler handler = new RemovableEventHandler();
-                watcher.EventArrived += new EventArrivedEventHandler(handler.Arrived);
-                watcher.Query = query;
-                watcher.Start();
+                OperatingSystem os = Environment.OSVersion;
+                Version vs = os.Version;
+
+                if (os.Platform == PlatformID.Win32NT && vs.Major == 5 && vs.Minor != 0)
+                {
+                    //XP we need to poll
+
+                    ManagementEventWatcher watcher = new ManagementEventWatcher();
+                    WqlEventQuery query = new WqlEventQuery("SELECT * FROM __InstanceCreationEvent WITHIN 2 WHERE TargetInstance ISA 'Win32_LogicalDisk'");
+                    RemovableEventHandler handler = new RemovableEventHandler();
+                    watcher.EventArrived += new EventArrivedEventHandler(handler.PollingArrived);
+                    watcher.Query = query;
+                    watcher.Start();
+                }
+                else
+                {
+                    //Vista or later no need to poll
+                    ManagementEventWatcher watcher = new ManagementEventWatcher();
+                    WqlEventQuery query = new WqlEventQuery("SELECT * FROM Win32_VolumeChangeEvent WHERE EventType = 2");
+                    RemovableEventHandler handler = new RemovableEventHandler();
+                    watcher.EventArrived += new EventArrivedEventHandler(handler.AsyncArrived);
+                    watcher.Query = query;
+                    watcher.Start();
+                }
             }
             catch (Exception e)
             {
-                MessageBox.Show(Program.form, e.Message + e.StackTrace, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Program.form.ShowErrorDialog(e.Message + e.StackTrace);
             }
         }
 
         public class RemovableEventHandler
         {
             String driveName;
-            public void Arrived(object sender, EventArrivedEventArgs e)
+            public void PollingArrived(object sender, EventArrivedEventArgs e)
+            {
+                ManagementBaseObject targetInstance = (ManagementBaseObject)((ManagementBaseObject)e.NewEvent).GetPropertyValue("TargetInstance");
+                driveName = targetInstance.GetPropertyValue("Name").ToString().Replace(":", "");
+
+
+                HandleNewVolume();
+            }
+
+            public void AsyncArrived(object sender, EventArrivedEventArgs e)
             {
                 driveName = e.NewEvent["DriveName"].ToString().Replace(":", "");
                 HandleNewVolume();
@@ -315,7 +342,7 @@ namespace MyDLP.EndPoint.SessionAgent
 
             void HandleNewVolume()
             {
-                if (handling) 
+                if (handling)
                 {
                     return;
                 }
@@ -381,7 +408,7 @@ namespace MyDLP.EndPoint.SessionAgent
                         Program.form.ConnectAsync();
                         //MessageBox.Show(ex.Message + ex.StackTrace, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
-                    finally                     
+                    finally
                     {
                         handling = false;
                     }
