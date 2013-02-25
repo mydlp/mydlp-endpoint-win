@@ -52,10 +52,19 @@
     <Content Include="harvest.bat" />
     <Content Include="increment.js" />
     <Content Include="moveversion.js" />
+    <Content Include="mydlps.ico" />
+    <Content Include="mydlp_wix_banner.bmp" />
+    <Content Include="mydlp_wix_dialog.bmp" />
     <Content Include="ProductVersion.wxi" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="harvested" />
+  </ItemGroup>
+  <ItemGroup>
+    <WixExtension Include="WixUIExtension">
+      <HintPath>$(WixExtDir)\WixUIExtension.dll</HintPath>
+      <Name>WixUIExtension</Name>
+    </WixExtension>
   </ItemGroup>
   <Import Project="$(WixTargetsPath)" />
   <!--
