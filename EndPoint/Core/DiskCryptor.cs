@@ -192,6 +192,13 @@ namespace MyDLP.EndPoint.Core
             ProcessControl.CommandOutputSync(eparams);
         }
 
+        protected static void cleanupMemory()
+        {
+            string command = getDCCon() + @" -clean";
+            ExecuteParameters eparams = new ExecuteParameters(command, "DC clean");
+            ProcessControl.CommandOutputSync(eparams);
+        }
+
         protected static void mountAllEncryptedPartitions()
         {
             string keyfile = Engine.GetShortPath(SeapClient.GetKeyfile());
@@ -223,6 +230,7 @@ namespace MyDLP.EndPoint.Core
         {
             deconfigureDC();
             unmountAllEncryptedPartitions();
+            cleanupMemory();
         }
 
         // should be called after reiving key. when hasKey state turns 0 to 1.
@@ -235,6 +243,7 @@ namespace MyDLP.EndPoint.Core
         public static void AfterKeyLose()
         {
             unmountAllEncryptedPartitions();
+            cleanupMemory();
         }
 
         // should not contain semicolon eg. E
