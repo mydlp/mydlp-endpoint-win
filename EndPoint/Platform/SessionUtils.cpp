@@ -20,30 +20,53 @@
 #include "SessionUtils.h"
 
 using namespace System::ComponentModel;
+using namespace System::Collections::Generic;
 
 namespace MyDLPEP
 {
-
-	/*int SessionUtils::GetActiveSessionId()
+	List<int>^ SessionUtils::EnumerateActiveSessionIds()
 	{
-	DWORD sessionId;
+		List<int>^ activeList = gcnew List<int>();
+		WTS_SESSION_INFO* ppSessionInfo = NULL;
+		DWORD count;
+		WTSEnumerateSessions(WTS_CURRENT_SERVER_HANDLE,
+			0,1,
+			&ppSessionInfo,
+			&count);
 
-	sessionId = WTSGetActiveConsoleSessionId();
+		for (int i = 0; i < count; i++)
+		{
+			if (ppSessionInfo[i].State == WTSActive)
+			{
+				activeList->Add(ppSessionInfo[i].SessionId);
+			}
+		}
+		return activeList;
+	}
 
-	return sessionId;
-
-	}*/
-
-	InteractiveSession^ SessionUtils::GetActiveSession()
+	LogonSession^ SessionUtils::GetActiveSession()
 	{
 		DWORD sessionId;
 		ULONG sessionCount;
 		PLUID sessionList;
 		NTSTATUS retval;
-		InteractiveSession^ session = nullptr;
+		LogonSession^ session = nullptr;
+		List<int>^ activeSessionIds;
 		int i;
 
-		sessionId = WTSGetActiveConsoleSessionId();
+		activeSessionIds = EnumerateActiveSessionIds();
+
+		if (activeSessionIds->Count == 0)
+		{
+			Logger::GetInstance()->Debug("EnumerateActiveSessionIds returns no id");
+			return nullptr;
+		}
+		else if (activeSessionIds->Count > 1)
+		{
+			Logger::GetInstance()->Debug("EnumerateActiveSessionIds returns multiple id, using first one");
+		}
+
+		sessionId = activeSessionIds[0];
 
 		Logger::GetInstance()->Debug("WTSGetActiveConsoleSessionId sessionId:" + sessionId);
 
@@ -54,19 +77,23 @@ namespace MyDLPEP
 			return nullptr;
 		}
 
-
 		for (i = 0;i < (int) sessionCount; i++) {
-
-			InteractiveSession^ newSession = nullptr;
+			LogonSession^ newSession = nullptr;
 			newSession = GetSessionData (&sessionList[i]);
 
 			if (newSession == nullptr)
 			{
-				//Logger::GetInstance()->Error("New session data is empty, session id:" + i);
+				Logger::GetInstance()->Error("New session data is empty, session id:" + i);
 				continue;
 			}
 
 			if (newSession->sessionId != sessionId)
+			{
+				continue;
+			}
+
+			if (newSession->type != Interactive
+				&& newSession->type != RemoteInteractive)
 			{
 				continue;
 			}
@@ -77,7 +104,7 @@ namespace MyDLPEP
 			}
 			else if (session->logonTime < newSession->logonTime)
 			{
-				//Logger::GetInstance()->Debug("Session data is old setting new session");
+				Logger::GetInstance()->Debug("Session data is old setting new session");
 				session = newSession;
 			}
 		}
@@ -86,61 +113,7 @@ namespace MyDLPEP
 	}
 
 
-	/*ArrayList^ SessionUtils::EnumerateLogonSessions()
-	{
-	ULONG sessionCount;
-	PLUID sessionList;
-	NTSTATUS retval;
-	int i, j, listCount;
-	ArrayList^ list = gcnew ArrayList();
-
-	Logger::GetInstance()->Debug("EnumerateSessionData");
-
-	retval = LsaEnumerateLogonSessions( &sessionCount, &sessionList);
-	if (retval != STATUS_SUCCESS)
-	{
-	Logger::GetInstance()->Error("LsaEnumerateLogonSessions failed :" + LsaNtStatusToWinError(retval));
-	return list;
-	}
-
-	for (i = 0;i < (int) sessionCount; i++) {
-
-	InteractiveSession^ newSession;
-	newSession = GetSessionData (&sessionList[i]);
-	if (newSession == nullptr) continue;
-
-	listCount = list->Count;
-
-	bool sessionCollision = false;
-
-	for (j = 0; j < listCount; j++)
-	{
-	InteractiveSession ^ session = (InteractiveSession ^) list[j];
-	if (newSession->sessionId == session->sessionId)
-	{
-	sessionCollision = true;
-	if(newSession->logonTime > session->logonTime)
-	{
-	list->RemoveAt(j);
-	j--;
-	list->Add(newSession);
-	}
-	}
-	}
-
-	if (!sessionCollision)
-	{
-	list->Add(newSession);
-	}
-	}
-
-	LsaFreeReturnBuffer(sessionList);
-	return list;
-	}
-	*/
-
-
-	InteractiveSession^ SessionUtils::GetSessionData(PLUID session)
+	LogonSession^ SessionUtils::GetSessionData(PLUID session)
 	{
 		PSECURITY_LOGON_SESSION_DATA sessionData = NULL;
 		NTSTATUS retval;
@@ -148,7 +121,7 @@ namespace MyDLPEP
 		WCHAR *usBuffer;
 		int usLength;
 
-		InteractiveSession^ iSession = gcnew InteractiveSession();
+		LogonSession^ iSession = gcnew LogonSession();
 
 		if (!session )
 		{
@@ -172,20 +145,6 @@ namespace MyDLPEP
 			LsaFreeReturnBuffer(sessionData);
 			return nullptr;
 		}
-
-		if ((SECURITY_LOGON_TYPE) sessionData->LogonType != Interactive &&
-			(SECURITY_LOGON_TYPE) sessionData->LogonType != CachedInteractive &&
-			(SECURITY_LOGON_TYPE) sessionData->LogonType != RemoteInteractive &&
-			(SECURITY_LOGON_TYPE) sessionData->LogonType != CachedRemoteInteractive &&
-			(SECURITY_LOGON_TYPE) sessionData->LogonType != Unlock &&
-			(SECURITY_LOGON_TYPE) sessionData->LogonType != CachedUnlock
-			)
-		{
-			//Logger::GetInstance()->Debug("Logon type non interactive:" + sessionData->LogonType);
-			LsaFreeReturnBuffer(sessionData);
-			return nullptr;
-		}
-
 		if (sessionData->Upn.Buffer != NULL) {
 
 			usBuffer = (sessionData->Upn).Buffer;
@@ -201,15 +160,13 @@ namespace MyDLPEP
 			{
 				Logger::GetInstance()->Error("Upn too long");
 				LsaFreeReturnBuffer(sessionData);
-				return nullptr;
+				iSession->upn = gcnew String("");
 			}
-
 		}
 		else
 		{
-			Logger::GetInstance()->Error("Missing upn");
 			LsaFreeReturnBuffer(sessionData);
-			return nullptr;
+			iSession->upn = gcnew String("");
 		}
 
 		if (sessionData->UserName.Buffer != NULL) {
@@ -222,26 +179,23 @@ namespace MyDLPEP
 				wcsncpy_s(buffer, 256, usBuffer, usLength);
 				wcscat_s(buffer, 256, L"");
 				iSession->name = gcnew String(buffer);
-				//Logger::GetInstance()->Debug(iSession->name);
 			}
 			else
 			{
 				Logger::GetInstance()->Error("name too long");
 				LsaFreeReturnBuffer(sessionData);
-				return nullptr;
+				iSession->name = gcnew String("");
 			}
 
 		} else
 		{
-			Logger::GetInstance()->Error("Missing name");
 			LsaFreeReturnBuffer(sessionData);
-			return nullptr;
+			iSession->name = gcnew String("");
 		}
 
 
 		if (sessionData->LogonDomain.Buffer != NULL)
 		{
-
 			usBuffer = (sessionData->LogonDomain).Buffer;
 			usLength = (sessionData->LogonDomain).Length;
 
@@ -250,75 +204,41 @@ namespace MyDLPEP
 				wcsncpy_s(buffer, 256, usBuffer, usLength);
 				wcscat_s(buffer, 256, L"");
 				iSession->domain = gcnew String(buffer);
-				//Logger::GetInstance()->Debug(iSession->domain);
 			}
 			else
 			{
 				Logger::GetInstance()->Error("domain too long");
 				LsaFreeReturnBuffer(sessionData);
-				return nullptr;
+				iSession->domain = gcnew String("");
 			}
 		}
 		else
 		{
-			Logger::GetInstance()->Debug("Missing domain");
 			LsaFreeReturnBuffer(sessionData);
-			return nullptr;
-		}
-
-		if (sessionData->AuthenticationPackage.Buffer != NULL) {
-			// Get the authentication package name.
-			usBuffer = (sessionData->AuthenticationPackage).Buffer;
-			usLength = (sessionData->AuthenticationPackage).Length;
-			if(usLength < 256)
-			{
-				wcsncpy_s (buffer, 256, usBuffer, usLength);
-				wcscat_s (buffer, 256, L"");
-				//Logger::GetInstance()->Debug(gcnew String(buffer));
-			}
-			else
-			{
-				Logger::GetInstance()->Error("Authentication package too long for buffer");
-				LsaFreeReturnBuffer(sessionData);
-				return nullptr;
-
-			}
-		}
-		else
-		{
-			Logger::GetInstance()->Error("Missing authentication package.");
-			LsaFreeReturnBuffer(sessionData);
-			return nullptr;
+			iSession->domain = gcnew String("");
 		}
 
 		LPTSTR stringSid;
-
 		if (ConvertSidToStringSid(sessionData->Sid, &stringSid))
 		{
 			iSession->sid = gcnew String(stringSid);
 		}
 		else
 		{
+			iSession->sid = gcnew String("");
 			//Logger::GetInstance()->Error("SID error");
-			//LocalFree(stringSid);
-			return nullptr;
 		}
 
-		//LocalFree(stringSid);
-
 		iSession->sessionId = sessionData->Session;
-		//Logger::GetInstance()->Debug("Session ID:" + iSession->sessionId);
-
 		iSession->logonTime = sessionData->LogonTime.QuadPart;
-		//Logger::GetInstance()->Debug("LogonTime" + iSession->logonTime);
-
+		iSession->type = (SECURITY_LOGON_TYPE) sessionData->LogonType;
 		LsaFreeReturnBuffer(sessionData);
 		return iSession;
 	}
 
+
 	bool SessionUtils::ImpersonateActiveUser()
 	{
-
 		if (System::Environment::UserInteractive)
 			return true;
 
@@ -342,6 +262,7 @@ namespace MyDLPEP
 		return true;
 	}
 
+
 	bool SessionUtils::StopImpersonation()
 	{
 		if (System::Environment::UserInteractive)
@@ -350,14 +271,14 @@ namespace MyDLPEP
 		return RevertToSelf();
 	}
 
+
 	int SessionUtils::GetPhysicalMemory()
-	{	
+	{
 		MEMORYSTATUSEX statex;
 		statex.dwLength = sizeof (statex);
 
 		GlobalMemoryStatusEx (&statex);
 
-		//return total memory in MB
 		return statex.ullTotalPhys / (1024 * 1024);
 
 	}

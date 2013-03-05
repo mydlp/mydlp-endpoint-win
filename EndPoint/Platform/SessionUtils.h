@@ -28,11 +28,12 @@
 using namespace System;
 using namespace MyDLP::EndPoint::Core;
 using System::Collections::ArrayList;
+using namespace System::Collections::Generic;
 
 namespace MyDLPEP
 {
 
-	public ref class InteractiveSession
+	public ref class LogonSession
 	{
 	public:
 		String^ upn;
@@ -41,8 +42,10 @@ namespace MyDLPEP
 		String^ sid;
 		int sessionId;
 		Int64 logonTime;
+		SECURITY_LOGON_TYPE type;
 
-		InteractiveSession(const InteractiveSession^ iSession)
+
+		LogonSession(const LogonSession^ iSession)
 		{
 			this->upn = iSession->upn;
 			this->sid = iSession->sid;
@@ -50,9 +53,10 @@ namespace MyDLPEP
 			this->domain = iSession ->domain;
 			this->sessionId = iSession->sessionId;
 			this->logonTime = iSession->logonTime;
+			this->type = iSession->type;
 		}
 
-		InteractiveSession()
+		LogonSession()
 		{
 			this->upn = "";
 			this->sid = "";
@@ -60,6 +64,7 @@ namespace MyDLPEP
 			this->domain = "";
 			this->sessionId = 0;
 			this->logonTime = 0;
+			this->type = SECURITY_LOGON_TYPE::UndefinedLogonType;
 		}
 	};
 
@@ -67,12 +72,11 @@ namespace MyDLPEP
 	{
 
 	public:
-		//static ArrayList^ EnumerateLogonSessions();
-		static InteractiveSession^ GetSessionData(PLUID);
-		//static int GetActiveSessionId();
-		static InteractiveSession^ GetActiveSession();
+		static LogonSession^ GetSessionData(PLUID);
+		static LogonSession^ GetActiveSession();
 		static bool ImpersonateActiveUser();
 		static bool StopImpersonation();
 		static int GetPhysicalMemory();
+		static List<int>^ EnumerateActiveSessionIds();
 	};
 }
