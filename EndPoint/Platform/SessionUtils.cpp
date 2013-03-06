@@ -29,18 +29,27 @@ namespace MyDLPEP
 		List<int>^ activeList = gcnew List<int>();
 		WTS_SESSION_INFO* ppSessionInfo = NULL;
 		DWORD count;
-		WTSEnumerateSessions(WTS_CURRENT_SERVER_HANDLE,
+		BOOL retval; 
+		retval = WTSEnumerateSessions(WTS_CURRENT_SERVER_HANDLE,
 			0,1,
 			&ppSessionInfo,
 			&count);
 
-		for (int i = 0; i < count; i++)
+		if (retval)
 		{
-			if (ppSessionInfo[i].State == WTSActive)
+			for (int i = 0; i < count; i++)
 			{
-				activeList->Add(ppSessionInfo[i].SessionId);
+				if (ppSessionInfo[i].State == WTSActive)
+				{
+					activeList->Add(ppSessionInfo[i].SessionId);
+				}
 			}
 		}
+		if (ppSessionInfo != NULL)
+		{
+			WTSFreeMemory(ppSessionInfo);
+		}
+
 		return activeList;
 	}
 
