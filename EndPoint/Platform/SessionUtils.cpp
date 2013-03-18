@@ -77,7 +77,7 @@ namespace MyDLPEP
 
 		sessionId = activeSessionIds[0];
 
-		Logger::GetInstance()->Debug("WTSGetActiveConsoleSessionId sessionId:" + sessionId);
+		Logger::GetInstance()->Debug("EnumerateActiveSessionIds[0] sessionId:" + sessionId);
 
 		retval = LsaEnumerateLogonSessions( &sessionCount, &sessionList);
 		if (retval != STATUS_SUCCESS)
@@ -251,7 +251,8 @@ namespace MyDLPEP
 		if (System::Environment::UserInteractive)
 			return true;
 
-		DWORD dwSessionId = WTSGetActiveConsoleSessionId();
+		LogonSession^ session = GetActiveSession();
+		DWORD dwSessionId = (DWORD)session->sessionId;
 
 		HANDLE hTokenNew = NULL, hTokenDup = NULL;
 
