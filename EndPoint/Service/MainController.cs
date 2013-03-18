@@ -298,20 +298,23 @@ namespace MyDLP.EndPoint.Service
                 }
             }
 
-            if (oldHasEncryptionKey)
+            if (Configuration.RemovableStorageEncryption)
             {
-                if (!SeapClient.HasKeyfile())
+                if (oldHasEncryptionKey)
                 {
-                    Configuration.HasEncryptionKey = false;
-                    DiskCryptor.AfterKeyLose();
+                    if (!SeapClient.HasKeyfile())
+                    {
+                        Configuration.HasEncryptionKey = false;
+                        DiskCryptor.AfterKeyLose();
+                    }
                 }
-            }
-            else
-            {
-                if (SeapClient.HasKeyfile())
+                else
                 {
-                    Configuration.HasEncryptionKey = true;
-                    DiskCryptor.AfterKeyReceive();
+                    if (SeapClient.HasKeyfile())
+                    {
+                        Configuration.HasEncryptionKey = true;
+                        DiskCryptor.AfterKeyReceive();
+                    }
                 }
             }
         }
