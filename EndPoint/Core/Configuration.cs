@@ -206,7 +206,7 @@ namespace MyDLP.EndPoint.Core
                 while (!File.Exists(path) && tryCount < tryLimit)
                 {
                     System.Threading.Thread.Sleep(3000);
-                   // dt = File.GetLastWriteTime(path);                    
+                    // dt = File.GetLastWriteTime(path);                    
                     tryCount++;
                 }
                 string text = System.IO.File.ReadAllText(path);
