@@ -132,7 +132,7 @@ namespace MyDLP.EndPoint.Core
                     }
                     catch (Exception e)
                     {
-                        mydlpKey.SetValue("log_level", 1, RegistryValueKind.DWord);
+                        mydlpKey.SetValue("log_level", Logger.LogLevel.DEBUG, RegistryValueKind.DWord);
                         logLevel = Logger.LogLevel.INFO;
                     }
                 }
