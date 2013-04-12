@@ -32,20 +32,54 @@ namespace MyDLP.EndPoint.Core
     public class SessionServer
     {
         public static bool stopFlag = false;
-        public static Hashtable socketTable; 
-        public static SessionServer GetInstance()
-        {
-            if (sessionServer == null)
-            {
-                sessionServer = new SessionServer();
-            }
+        public static Hashtable socketTable;
+        
+        private static TcpListener tcpListener;
+        private static Thread listenThread;
 
-            return sessionServer;
+        public static void Start()
+        {
+            try
+            {
+                Logger.GetInstance().Debug("Started Session Server");               
+                listenThread = new Thread(new ThreadStart(ListenConnections));
+                listenThread.Start();
+                socketTable = new Hashtable();
+
+                try
+                {
+                    if (!Environment.UserInteractive)
+                    {
+                        RegistryKey runKey = Registry.LocalMachine.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run", true);
+                        bool exist = false;
+                        foreach (String name in runKey.GetValueNames())
+                        {
+                            if (name == "mydlp_agent")
+                            {
+                                exist = true;
+                            }
+                        }
+
+                        if (!exist)
+                        {
+                            runKey.SetValue("mydlp_agent", "\"" + Configuration.AppPath + "mydlpui.exe\"");
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    Logger.GetInstance().Error("Unable to add Notification Agent:" + e.Message + e.StackTrace);
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.GetInstance().Error("Unable to start session server :" + e.Message + e.StackTrace);
+            }
         }
 
-        public void Stop()
+
+        public static void Stop()
         {
-            //stop connection listener
             try
             {
                 tcpListener.Server.Close();
@@ -53,16 +87,13 @@ namespace MyDLP.EndPoint.Core
                 stopFlag = true;
                 closeAllSockets();
             }
-            catch 
+            catch (Exception e)
             {
-                //todo
+                Logger.GetInstance().Error("Error at SessionServer stop:" + e);
             }
         }
 
-        private TcpListener tcpListener;
-        private Thread listenThread;
-        private static SessionServer sessionServer = null;
-
+        
         protected static void closeSocket(TcpClient client) 
         {
             if (client == null) return;
@@ -102,74 +133,56 @@ namespace MyDLP.EndPoint.Core
             socketTable = new Hashtable();
         }
 
-        private SessionServer()
+        private static void ListenConnections()
         {
-            Logger.GetInstance().Debug("Started Session Server");
-            this.tcpListener = new TcpListener(IPAddress.Parse("127.0.0.1"), 9098);
-            this.listenThread = new Thread(new ThreadStart(ListenConnections));
-            this.listenThread.Start();
-            socketTable = new Hashtable();
-
-            try
+            int errorCount = 0;
+            while (!stopFlag && errorCount < 5)
             {
-                if (!Environment.UserInteractive)
+                try
                 {
-                    RegistryKey runKey = Registry.LocalMachine.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run", true);
-                    bool exist = false;
-                    foreach (String name in runKey.GetValueNames())
+                    tcpListener = new TcpListener(IPAddress.Parse("127.0.0.1"), 9098);
+                    tcpListener.Start();
+
+                    while (!stopFlag)
                     {
-                        if (name == "mydlp_agent")
+                        TcpClient client = null;
+                        try
                         {
-                            exist = true;
+                            client = tcpListener.AcceptTcpClient();
+                        }
+                        catch 
+                        {
+                            throw;
+                        }
+
+                        try
+                        {
+                            socketTable.Add(client, null);
+                            Logger.GetInstance().Debug("Hashcode client:" + client.GetHashCode());
+                            Thread clientThread = new Thread(new ParameterizedThreadStart(HandleClient));
+                            clientThread.Start(client);
+                        }
+                        catch (Exception e)
+                        {
+                            Logger.GetInstance().Error("SessionServer ListenClient error:" + e);
+                            closeSocket(client);
                         }
                     }
-
-                    if (!exist)
-                    {
-                        runKey.SetValue("mydlp_agent", "\"" + Configuration.AppPath + "mydlpui.exe\"");
-                    }
                 }
-            
-            }
-            catch(Exception e)
-            {
-                Logger.GetInstance().Error("Unable to add Notification Agent:" + e.Message + e.StackTrace);
-            }
-
-        }
-        private void ListenConnections()
-        {
-            try
-            {
-                this.tcpListener.Start();
-
-                while (!stopFlag)
+                catch (Exception e)
                 {
-                    TcpClient client = null;
-                    try
-                    {
-                        client = this.tcpListener.AcceptTcpClient();
-                        socketTable.Add(client, null);
-                        Logger.GetInstance().Debug("Hashcode client:" + client.GetHashCode());
-                        
-
-                        Thread clientThread = new Thread(new ParameterizedThreadStart(HandleClient));
-                        clientThread.Start(client);
-                    }
-                    catch (Exception e)
-                    {
-                        Logger.GetInstance().Error("SessionServer ListenClient error:" + e.Message + e.StackTrace);
-                        closeSocket(client);
-                    }
+                    errorCount++;
+                    closeAllSockets();
+                    Logger.GetInstance().Error("SessionServer ListenClient, restart listener:" + e);
                 }
             }
-            catch(Exception e)
+            if (errorCount > 5) 
             {
-                Logger.GetInstance().Error("SessionServer ListenClient, stop listener:" + e.Message + e.StackTrace);                
+                Logger.GetInstance().Error("SessionServer ListenClient, stopped listener due to too much error"); 
             }
         }
 
-        private void HandleClient(object client)
+        private static void HandleClient(object client)
         {
             TcpClient tcpClient = (TcpClient)client;
             NetworkStream clientStream = tcpClient.GetStream();
@@ -250,7 +263,7 @@ namespace MyDLP.EndPoint.Core
         }
 
 
-        private String ReadMessage(StreamReader reader)
+        private static String ReadMessage(StreamReader reader)
         {
             try
             {
@@ -267,7 +280,7 @@ namespace MyDLP.EndPoint.Core
             }
         }
 
-        private void WriteMessage(StreamWriter writer, String message)
+        private static void WriteMessage(StreamWriter writer, String message)
         {
             try
             {
