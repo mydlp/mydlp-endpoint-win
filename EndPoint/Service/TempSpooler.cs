@@ -198,6 +198,7 @@ namespace MyDLP.EndPoint.Service
                 return;
             listeningForRemotePrinting = true;
             remotePrintingListenerThread = new Thread(SharedPrinterListenerWorker);
+            remotePrintingListenerThread.Start();
         }
 
         private static void SharedPrinterListenerWorker()

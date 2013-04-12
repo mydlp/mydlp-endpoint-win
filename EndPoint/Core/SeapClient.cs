@@ -867,7 +867,7 @@ namespace MyDLP.EndPoint.Core
 
             Logger.GetInstance().Debug("SeapClient send message: <" + cmd + ">");
 
-            lock (seapClient)
+            lock (this)
             {
                 while (tryCount < tryLimit)
                 {
