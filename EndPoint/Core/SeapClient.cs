@@ -84,6 +84,14 @@ namespace MyDLP.EndPoint.Core
                     return FileOperation.Action.ALLOW;
                 }
 
+                response = sClient.sendMessage("SETPROP " + id +
+                    " fullpath=" + qpEncode(filePath));
+                splitResp = response.Split(' ');
+                if (!splitResp[0].Equals("OK"))
+                {
+                    return FileOperation.Action.ALLOW;
+                }
+
                 response = sClient.sendMessage("SETPROP " + id + " burn_after_reading=true");
                 splitResp = response.Split(' ');
                 if (!splitResp[0].Equals("OK"))
@@ -178,6 +186,14 @@ namespace MyDLP.EndPoint.Core
 
                 response = sClient.sendMessage("SETPROP " + id +
                         " filename=" + qpEncode(Path.GetFileName(filePath)));
+                splitResp = response.Split(' ');
+                if (!splitResp[0].Equals("OK"))
+                {
+                    return FileOperation.Action.ALLOW;
+                }
+
+                response = sClient.sendMessage("SETPROP " + id +
+                      " fullpath=" + qpEncode(filePath));
                 splitResp = response.Split(' ');
                 if (!splitResp[0].Equals("OK"))
                 {
@@ -285,6 +301,14 @@ namespace MyDLP.EndPoint.Core
                 //response = sClient.sendMessage("SETPROP " + id + " filename=" + shortFilePath);
                 response = sClient.sendMessage("SETPROP " + id +
                     " filename=" + qpEncode(Path.GetFileName(filePath)));
+                splitResp = response.Split(' ');
+                if (!splitResp[0].Equals("OK"))
+                {
+                    return FileOperation.Action.ALLOW;
+                }
+
+                response = sClient.sendMessage("SETPROP " + id +
+                    " fullpath=" + qpEncode(filePath));
                 splitResp = response.Split(' ');
                 if (!splitResp[0].Equals("OK"))
                 {
