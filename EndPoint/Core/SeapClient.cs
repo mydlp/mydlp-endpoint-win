@@ -30,6 +30,7 @@ namespace MyDLP.EndPoint.Core
     public class SeapClient
     {
         static SeapClient seapClient = null;
+        static SeapClient trapClient = null;
         int port = Configuration.SeapPort;
         String server = Configuration.SeapServer;
         TcpClient client;
@@ -690,16 +691,19 @@ namespace MyDLP.EndPoint.Core
                     " path: " + path);
                 String shortFilePath = Engine.GetShortPath(path);             
                 String response;
-
-                response = sClient.sendMessage("IECP " + server + qpEncode(shortFilePath)
+                String request = "IECP " + server + " " + qpEncode(shortFilePath)
                     + " command=print" 
                     + " user=" + Configuration.GetLoggedOnUser()
                     + " printerName=" + qpEncode(printerName)
-                    + " jobId=" + qpEncode(jobId));                      
+                    + " jobId=" + qpEncode(jobId);
+                Logger.GetInstance().Debug("request:<" + request + ">");
+
+                response = sClient.sendMessage(request);
+                Logger.GetInstance().Debug("response:<" + response + ">");             
             }
             catch (Exception e)
             {
-                Logger.GetInstance().Error(e.Message);
+                Logger.GetInstance().Error(e.ToString());
             }
         }
         
@@ -714,7 +718,7 @@ namespace MyDLP.EndPoint.Core
             
             try
             {
-                SeapClient sClient = SeapClient.GetInstance();
+                SeapClient sClient = SeapClient.GetTrapInstance();
                 Logger.GetInstance().Debug("TRAP");
                 String response;
                 String[] splitResp;
@@ -831,6 +835,22 @@ namespace MyDLP.EndPoint.Core
                     seapClient = new SeapClient();
                 }
                 return seapClient;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        public static SeapClient GetTrapInstance()
+        {
+            try
+            {
+                if (trapClient == null)
+                {
+                    trapClient = new SeapClient();
+                }
+                return trapClient;
             }
             catch (Exception)
             {

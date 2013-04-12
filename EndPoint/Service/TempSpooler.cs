@@ -325,7 +325,7 @@ namespace MyDLP.EndPoint.Service
             
                     Logger.GetInstance().Debug("Initiating remote print remoteprinter: " +
                         normalizedRemotePrinterName + " on server:" + connection.server + "of File:" + localXpsPath);
-                    SeapClient.InitiateRemotePrint(sharedJobId, normalizedRemotePrinterName, addresslist[0].ToString(), localXpsPath);                    
+                    SeapClient.InitiateRemotePrint(localJobId, normalizedRemotePrinterName, addresslist[0].ToString(), localXpsPath);                    
                 }
                 else
                 {
