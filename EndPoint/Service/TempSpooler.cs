@@ -317,16 +317,14 @@ namespace MyDLP.EndPoint.Service
                     //It will be printerd remotely
                     //It is a network printer connection on local computer
                     
-                    String normalizedRemotePrinterName; 
                     PrinterController.PrinterConnection connection = controller.GetPrinterConnection(localPrinterName);             
-                    normalizedRemotePrinterName =  PrinterController.NormalizePrinterName(connection.server);
 
                     IPAddress[] addresslist = Dns.GetHostAddresses(connection.server);
                     
             
                     Logger.GetInstance().Debug("Initiating remote print remoteprinter: " +
-                        normalizedRemotePrinterName + " on server:" + connection.server + "of File:" + localXpsPath);
-                    SeapClient.InitiateRemotePrint(localJobId, normalizedRemotePrinterName, addresslist[0].ToString(), localXpsPath);                    
+                        connection.name + " on server:" + connection.server + "of File:" + localXpsPath);
+                    SeapClient.InitiateRemotePrint(localJobId, connection.name, addresslist[0].ToString(), localXpsPath);                    
                 }
                 else
                 {
