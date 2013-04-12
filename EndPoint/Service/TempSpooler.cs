@@ -28,33 +28,36 @@ using System.Printing;
 using System.Management;
 using System.Collections;
 using System.Security.Principal;
+using System.Net;
 
 namespace MyDLP.EndPoint.Service
 {
     public class TempSpooler
     {
-        static string jobId;
-        static string xpsPath;
+        static string localJobId;
+        static string sharedJobId;
+        static string localXpsPath;
+        static string sharedXpsPath;
         static string metaPath;
-        static string printerName;
+        static string localPrinterName;
+        static Thread remotePrintingListenerThread;
+        static string sharedPrinterName;
         static ArrayList sharedLocalPrinters;
         static bool started = false;
+        static bool listeningForRemotePrinting = false;
         static bool hasSharedPrinter = false;
-        static bool checkingPrinters = false;
-        static string spoolShareDirName = "SpoolShare";
+        static volatile bool checkingPrinters = false;
+        //static string spoolShareDirName = "SpoolShare";
 
         static ManagementEventWatcher shareWatcher = null;
         static FileSystemWatcher spoolWatcher;
-        static FileSystemWatcher shareSpoolWatcher;
-
-        static String shareSpoolPerm = "O:BAG:DUD:PAI(A;OICI;0x100116;;;AU)(A;OICI;FA;;;SY)";
-        static String shareSpoolPermInteractive = "O:BAG:DUD:PAI(A;OICI;FA;;;BA)(A;OICI;0x100116;;;AU)(A;OICI;FA;;;SY)";
-
-
+        //static FileSystemWatcher shareSpoolWatcher;
+        //static String shareSpoolPerm = "O:BAG:DUD:PAI(A;OICI;0x100116;;;AU)(A;OICI;FA;;;SY)";
+        //static String shareSpoolPermInteractive = "O:BAG:DUD:PAI(A;OICI;FA;;;BA)(A;OICI;0x100116;;;AU)(A;OICI;FA;;;SY)";
+        
         public static bool Start()
         {
             spoolWatcher = new FileSystemWatcher();
-
             //clean spool files create empty directory
             if (System.IO.Directory.Exists(Configuration.PrintSpoolPath))
             {
@@ -68,17 +71,14 @@ namespace MyDLP.EndPoint.Service
                     Logger.GetInstance().Error(e.Message);
                 }
             }
-
             try
             {
                 System.IO.Directory.CreateDirectory(Configuration.PrintSpoolPath);
             }
-
             catch (System.IO.IOException e)
             {
                 Logger.GetInstance().Error(e.Message);
             }
-
             try
             {
                 spoolWatcher.Path = Configuration.PrintSpoolPath;
@@ -90,9 +90,7 @@ namespace MyDLP.EndPoint.Service
                 //spoolWatcher.Changed += new FileSystemEventHandler(OnCreate);
                 spoolWatcher.EnableRaisingEvents = true;
                 spoolWatcher.Error += new ErrorEventHandler(SpoolWatcherError);
-
                 Logger.GetInstance().Debug("TempSpooler watch started on path:" + spoolWatcher.Path);
-
                 StartShareEventListener();
                 started = true;
                 return true;
@@ -113,6 +111,7 @@ namespace MyDLP.EndPoint.Service
                 if (started)
                 {
                     StopShareEventListener();
+                    StopSharedPrinterServerListener();
                     spoolWatcher.EnableRaisingEvents = false;
                     started = false;
                 }
@@ -127,7 +126,6 @@ namespace MyDLP.EndPoint.Service
         private static void StartShareEventListener()
         {
             Logger.GetInstance().Debug("StartShareEventListener");
-
             CheckForSharedPrinters();
             WqlEventQuery q = new WqlEventQuery();
             q.EventClassName = "__InstanceOperationEvent";
@@ -137,88 +135,6 @@ namespace MyDLP.EndPoint.Service
             shareWatcher.EventArrived += new EventArrivedEventHandler(HandleEvent);
             shareWatcher.Start();
             Logger.GetInstance().Debug("Start StartShareEventListener Finished");
-        }
-
-        private static void StopShareEventListener()
-        {
-            Logger.GetInstance().Debug("StopShareEventListener");
-            if (shareWatcher != null)
-                shareWatcher.Stop();
-
-            shareWatcher = null;
-            //remove share if any
-            StopShareSpoolListener();
-
-        }
-
-        private static bool StartShareSpoolListener()
-        {
-            try
-            {
-                Logger.GetInstance().Debug("StartShareSpoolListener");
-
-                Directory.CreateDirectory(Configuration.SharedSpoolPath);
-                ShareDirectory(Configuration.SharedSpoolPath, spoolShareDirName, "None");
-
-                //Set NTFS permissions for share spool
-                if (System.Environment.UserInteractive)
-                {
-                    MyDLPEP.PrinterUtils.SetFolderSecurityDescriptor(Configuration.SharedSpoolPath, shareSpoolPerm);
-                }
-                else
-                {
-                    MyDLPEP.PrinterUtils.SetFolderSecurityDescriptor(Configuration.SharedSpoolPath, shareSpoolPermInteractive);
-                }
-
-                //Set share permissions for share spool
-
-                shareSpoolWatcher = new FileSystemWatcher();
-                shareSpoolWatcher.Path = Configuration.SharedSpoolPath;
-                shareSpoolWatcher.IncludeSubdirectories = true;
-                shareSpoolWatcher.Filter = "*.meta";
-                //shareSpoolWatcher.NotifyFilter = NotifyFilters.LastAccess | NotifyFilters.LastWrite
-                //| NotifyFilters.FileName | NotifyFilters.DirectoryName;
-                shareSpoolWatcher.Created += new FileSystemEventHandler(OnCreate);
-                shareSpoolWatcher.EnableRaisingEvents = true;
-                shareSpoolWatcher.Error += new ErrorEventHandler(SharedSpoolWatcherError);
-
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Logger.GetInstance().Error("Unable to start shared spool listener:" + ex.Message + " " + ex.StackTrace);
-                return false;
-            }
-
-        }
-
-        private static bool StopShareSpoolListener()
-        {
-            try
-            {
-                Logger.GetInstance().Debug("StopShareSpoolListener");
-
-                if (shareSpoolWatcher != null)
-                    shareSpoolWatcher.EnableRaisingEvents = false;
-
-                UnshareDirectory(Configuration.SharedSpoolPath);
-
-                //no shared printer
-                if (Directory.Exists(Configuration.SharedSpoolPath))
-                {
-                    Directory.Delete(Configuration.SharedSpoolPath, true);
-                }
-
-              
-
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Logger.GetInstance().Error("Unable to stop shared spool listener" + ex.Message + " " + ex.StackTrace);
-                return false;
-            }
-
         }
 
         private static void HandleEvent(object sender, EventArrivedEventArgs e)
@@ -248,37 +164,22 @@ namespace MyDLP.EndPoint.Service
                             sharedLocalPrinters.Add(queue.Name);
                         }
                     }
-
-
                     if (sharedLocalPrinters.Count > 0)
                     {
                         if (!hasSharedPrinter)
                         {
-
-                            if (System.IO.Directory.Exists(Configuration.SharedSpoolPath))
-                            {
-                                try
-                                {
-
-                                    Directory.Delete(Configuration.SharedSpoolPath, true);
-                                }
-
-                                catch (System.IO.IOException e)
-                                {
-                                    Logger.GetInstance().Error(e.Message);
-                                }
-                            }
-
-                            StartShareSpoolListener();
+                            //has shared printer
                             hasSharedPrinter = true;
+                            StartSharedPrinterServerListener();
                         }
                     }
                     else
                     {
                         if (hasSharedPrinter)
                         {
-                            StopShareSpoolListener();
+                            //has no shared printer
                             hasSharedPrinter = false;
+                            StopSharedPrinterServerListener();
                         }
                     }
                     checkingPrinters = false;
@@ -291,37 +192,85 @@ namespace MyDLP.EndPoint.Service
             }
         }
 
+        private static void StartSharedPrinterServerListener()
+        {
+            if (listeningForRemotePrinting == true)
+                return;
+            listeningForRemotePrinting = true;
+            remotePrintingListenerThread = new Thread(SharedPrinterListenerWorker);
+        }
+
+        private static void SharedPrinterListenerWorker()
+        {
+            while (listeningForRemotePrinting)
+            {
+                SeapClient.ListenRemotePrintBlocking(OnRemotePrintingRequest);
+            }
+        }
+
+        private static void StopSharedPrinterServerListener()
+        {
+            listeningForRemotePrinting = false;        
+        }
+
+        private static void StopShareEventListener()
+        {
+            Logger.GetInstance().Debug("StopShareEventListener");
+            if (shareWatcher != null)
+                shareWatcher.Stop();
+            shareWatcher = null;
+            //remove share if any
+            //has no shared printer;
+
+        }
+
+
+        private static void OnRemotePrintingRequest(String jobId, String printJobPath, String printerName)
+        {
+            Logger.GetInstance().Debug("Printing shared job : " + printJobPath + " with " + printerName);
+            sharedPrinterName = printerName;
+            sharedXpsPath = printJobPath;
+            sharedJobId = jobId;
+            try
+            {
+                var thread = new Thread(WorkerMethodShared);
+                thread.SetApartmentState(ApartmentState.STA);
+                thread.Start();
+            }
+            catch (Exception ex)
+            {
+                Logger.GetInstance().Error(ex.Message + ex.StackTrace);
+                if (ex.InnerException != null)
+                {
+                    Logger.GetInstance().Error(ex.InnerException.Message + ex.InnerException.StackTrace);
+                }
+            }
+        }
+
         private static void OnCreate(object source, FileSystemEventArgs e)
         {
-            Logger.GetInstance().Debug("File: " + e.FullPath + " " + e.ChangeType);
-
+            Logger.GetInstance().Debug("Local Printing: " + e.FullPath);
             String printerDir;
             String docName;
-
             metaPath = e.FullPath;
-            jobId = Path.GetFileNameWithoutExtension(metaPath);
-
+            localJobId = Path.GetFileNameWithoutExtension(metaPath);
             printerDir = Path.GetDirectoryName(metaPath);
             docName = "";
-
-            printerName = printerDir.Substring(
+            localPrinterName = printerDir.Substring(
                printerDir.LastIndexOf(Path.DirectorySeparatorChar) + 1,
                printerDir.Length - (printerDir.LastIndexOf(Path.DirectorySeparatorChar) + 1));
-
-            xpsPath = metaPath.Replace(".meta", ".xps");
-
+            localXpsPath = metaPath.Replace(".meta", ".xps");
             try
             {
                 if (WaitForFile(metaPath))
                 {
                     string[] metaText = System.IO.File.ReadAllLines(metaPath, System.Text.Encoding.Unicode);
-
                     if (metaText.Length > 0)
                     {
                         docName = metaText[0].Replace("docname:", "").Trim();
                     }
                 }
-                else 
+                else
                 {
                     Logger.GetInstance().Error("OnCreate: WaitForFile failed for meta file");
                 }
@@ -331,17 +280,13 @@ namespace MyDLP.EndPoint.Service
                 Logger.GetInstance().Error("OnCreate:" + ex.Message + ex.StackTrace);
             }
 
-
-            if (metaPath.ToLower().Contains("sharedspool"))
+            if (SeapClient.NotitfyPrintOperation(docName, localPrinterName, localXpsPath) == FileOperation.Action.ALLOW)
             {
-                //remote operation
                 try
                 {
                     var thread = new Thread(WorkerMethodLocal);
                     thread.SetApartmentState(ApartmentState.STA);
                     thread.Start();
-
-
                 }
                 catch (Exception ex)
                 {
@@ -353,115 +298,114 @@ namespace MyDLP.EndPoint.Service
                 }
             }
             else
-            { //local operation
-
-                if (SeapClient.NotitfyPrintOperation(docName, printerName, xpsPath) == FileOperation.Action.ALLOW)
-                {
-                    try
-                    {
-                        var thread = new Thread(WorkerMethodLocal);
-                        thread.SetApartmentState(ApartmentState.STA);
-                        thread.Start();
-
-
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.GetInstance().Error(ex.Message + ex.StackTrace);
-                        if (ex.InnerException != null)
-                        {
-                            Logger.GetInstance().Error(ex.InnerException.Message + ex.InnerException.StackTrace);
-                        }
-                    }
-                }
-                else
-                {
-                    Logger.GetInstance().Debug("blocked print:" + docName + " " + xpsPath);
-                    //Do nothing block item  
-                }
+            {
+                Logger.GetInstance().Debug("blocked print:" + docName + " " + localXpsPath);
+                //Do nothing block item  
             }
         }
 
         private static void WorkerMethodLocal(object state)
         {
-            Logger.GetInstance().Debug("Started Printing for MyDLP printer: " + printerName);
+            Logger.GetInstance().Debug("Started Printing for MyDLP printer: " + localPrinterName);
             PrintQueue pQueue = null;
             try
             {
                 PrinterController controller = PrinterController.getInstance();
-
-                if (controller.IsPrinterConnection(printerName))
+                if (controller.IsPrinterConnection(localPrinterName))
                 {
-                    //It is a network printer connection
-                    PrinterController.PrinterConnection connection = controller.GetPrinterConnection(printerName);
+                    //It will be printerd remotely
+                    //It is a network printer connection on local computer
+                    
+                    String normalizedRemotePrinterName; 
+                    PrinterController.PrinterConnection connection = controller.GetPrinterConnection(localPrinterName);             
+                    normalizedRemotePrinterName =  PrinterController.NormalizePrinterName(connection.server);
 
-                    //remove XP printer share format on machine before sending if any
-                    string normalizedPrinterName = printerName.Replace("_on_" + PrinterController.NormalizePrinterName(connection.server), "");
-
-                    //Impersonate, Local System can not reach shared resources. 
-                    MyDLPEP.SessionUtils.ImpersonateActiveUser();
-                    string remotepath = @"\\" + connection.server + "\\" + spoolShareDirName + "\\" + normalizedPrinterName + "\\";
-                    try
-                    {
-                        Directory.CreateDirectory(remotepath);
-                        File.Copy(xpsPath, remotepath + Path.GetFileName(xpsPath), true);
-                        File.Copy(metaPath, remotepath + Path.GetFileName(metaPath), true);
-                        MyDLPEP.SessionUtils.StopImpersonation();
-                    }
-                    catch (IOException ex)
-                    {
-                        MyDLPEP.SessionUtils.StopImpersonation();
-                        Logger.GetInstance().Error("Remote machine is not available on path:" + remotepath + " Unable to print file" + xpsPath);
-                    }
-
-                    catch (Exception ex)
-                    {
-                        MyDLPEP.SessionUtils.StopImpersonation();
-                        Logger.GetInstance().Error("Unable to print file: " + xpsPath + " on connection: " + connection
-                            + " exception:" + ex.Message + " " + ex.StackTrace);
-                    }
+                    IPAddress[] addresslist = Dns.GetHostAddresses(connection.server);
+                    
+            
+                    Logger.GetInstance().Debug("Initiating remote print remoteprinter: " +
+                        normalizedRemotePrinterName + " on server:" + connection.server + "of File:" + localXpsPath);
+                    SeapClient.InitiateRemotePrint(sharedJobId, normalizedRemotePrinterName, addresslist[0].ToString(), localXpsPath);                    
                 }
                 else
                 {
-
                     //It is a local printer
                     LocalPrintServer pServer = new LocalPrintServer();
-
                     PrintQueueCollection qCollection = pServer.GetPrintQueues();
                     foreach (PrintQueue q in qCollection)
                     {
                         //Find mathing non secure printer
-                        if (PrinterController.GetSecurePrinterName(q.Name) == printerName)
+                        if (PrinterController.GetSecurePrinterName(q.Name) == localPrinterName)
                         {
                             pQueue = q;
                         }
                     }
                     if (pQueue == null)
-                        throw new Exception("Unable to find a matching non secure printer for mydlp printer: " + printerName);
+                        throw new Exception("Unable to find a matching non secure printer for mydlp printer: " + localPrinterName);
                     Logger.GetInstance().Debug("Adding print job on real printer: " + pQueue.Name +
-                        ", path:" + xpsPath + ", jobID:" + jobId);
-
-                    if (WaitForFile(xpsPath))
+                        ", path:" + localXpsPath + ", jobID:" + localJobId);
+                    if (WaitForFile(localXpsPath))
                     {
-
-                        pQueue.AddJob(jobId, xpsPath, false);
+                        pQueue.AddJob(localJobId, localXpsPath, false);
                         Thread.Sleep(1000);
-
-                        Logger.GetInstance().Debug("Removing:" + xpsPath);
-                        File.Delete(xpsPath);
+                        Logger.GetInstance().Debug("Removing:" + localXpsPath);
+                        File.Delete(localXpsPath);
                         File.Delete(metaPath);
                         Logger.GetInstance().Debug("Finished Printing");
                     }
-                    else 
+                    else
                     {
-                        Logger.GetInstance().Debug("WorkerMethodLocal WaitForFile failed for xps file");             
-                    } 
+                        Logger.GetInstance().Debug("WorkerMethodLocal WaitForFile failed for xps file");
+                    }
                 }
-
             }
             catch (Exception e)
             {
                 Logger.GetInstance().Error("WorkerMethod Exception" + e.Message + e.StackTrace);
+                if (e.InnerException != null)
+                {
+                    Logger.GetInstance().Error(e.InnerException.Message + e.InnerException.StackTrace);
+                }
+            }
+        }
+
+        private static void WorkerMethodShared(object state)
+        {
+            Logger.GetInstance().Debug("Started Printing for MyDLP printer: " + sharedPrinterName);
+            PrintQueue pQueue = null;
+            try
+            {
+                PrinterController controller = PrinterController.getInstance();     
+                LocalPrintServer pServer = new LocalPrintServer();
+                PrintQueueCollection qCollection = pServer.GetPrintQueues();
+                foreach (PrintQueue q in qCollection)
+                {
+                    //Find mathing non secure printer
+                    if (PrinterController.GetSecurePrinterName(q.Name) == sharedPrinterName)
+                    {
+                        pQueue = q;
+                    }
+                }
+                if (pQueue == null)
+                    throw new Exception("Unable to find a matching non secure printer for mydlp printer: " + sharedPrinterName);
+                Logger.GetInstance().Debug("Adding print job on real printer: " + pQueue.Name +
+                    ", path:" + sharedXpsPath + ", sharedJobID:" + sharedJobId);
+                if (WaitForFile(sharedXpsPath))
+                {
+                    pQueue.AddJob(sharedJobId, sharedXpsPath, false);
+                    Thread.Sleep(1000);
+                    Logger.GetInstance().Debug("Removing:" + sharedXpsPath);
+                    File.Delete(sharedXpsPath);
+                    Logger.GetInstance().Debug("Finished Printing");
+                }
+                else
+                {
+                    Logger.GetInstance().Debug("WorkerMethodShared WaitForFile failed for xps file");
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.GetInstance().Error("WorkerMethodShared Exception" + e.Message + e.StackTrace);
                 if (e.InnerException != null)
                 {
                     Logger.GetInstance().Error(e.InnerException.Message + e.InnerException.StackTrace);
@@ -474,7 +418,6 @@ namespace MyDLP.EndPoint.Service
             try
             {
                 Logger.GetInstance().Error("Filewatcher error: " + e.GetException().Message + " restartting TempSpooler");
-
                 Stop();
                 Start();
             }
@@ -484,6 +427,40 @@ namespace MyDLP.EndPoint.Service
             }
         }
 
+        static bool WaitForFile(string fullPath)
+        {
+            int numTries = 0;
+            while (true)
+            {
+                ++numTries;
+                try
+                {
+                    using (FileStream fs = new FileStream(fullPath,
+                        FileMode.Open, FileAccess.ReadWrite,
+                        FileShare.None, 100))
+                    {
+                        fs.ReadByte();
+                        break;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    if (numTries > 10)
+                    {
+                        Logger.GetInstance().Error("WaitForFile giving up after 10 tries path: " + fullPath);
+                        return false;
+                    }
+
+                    System.Threading.Thread.Sleep(500);
+                }
+            }
+            return true;
+        }
+    }
+
+    /* Old methods
+     * 
+     * 
         private static void SharedSpoolWatcherError(Object sender, ErrorEventArgs e)
         {
             try
@@ -497,11 +474,104 @@ namespace MyDLP.EndPoint.Service
                 Logger.GetInstance().Error("SharedSpoolWatcherError Error:" + ex.Message + ex.StackTrace);
             }
         }
+        private static bool StartShareSpoolListener()
+        {      
+            try
+            {
+                Logger.GetInstance().Debug("StartShareSpoolListener");
+                Directory.CreateDirectory(Configuration.SharedSpoolPath);
+                ShareDirectory(Configuration.SharedSpoolPath, spoolShareDirName, "None");
 
+                //Set NTFS permissions for share spool
+                if (System.Environment.UserInteractive)
+                {
+                    MyDLPEP.PrinterUtils.SetFolderSecurityDescriptor(Configuration.SharedSpoolPath, shareSpoolPerm);
+                }
+                else
+                {
+                    MyDLPEP.PrinterUtils.SetFolderSecurityDescriptor(Configuration.SharedSpoolPath, shareSpoolPermInteractive);
+                }
+                //Set share permissions for share spool
+                shareSpoolWatcher = new FileSystemWatcher();
+                shareSpoolWatcher.Path = Configuration.SharedSpoolPath;
+                shareSpoolWatcher.IncludeSubdirectories = true;
+                shareSpoolWatcher.Filter = "*.meta";
+                //shareSpoolWatcher.NotifyFilter = NotifyFilters.LastAccess | NotifyFilters.LastWrite
+                //| NotifyFilters.FileName | NotifyFilters.DirectoryName;
+                shareSpoolWatcher.Created += new FileSystemEventHandler(OnCreate);
+                shareSpoolWatcher.EnableRaisingEvents = true;
+                shareSpoolWatcher.Error += new ErrorEventHandler(SharedSpoolWatcherError);
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger.GetInstance().Error("Unable to start shared spool listener:" + ex.Message + " " + ex.StackTrace);
+                return false;
+            }
+
+        }
+
+        private static bool StopShareSpoolListener()
+        {
+            try
+            {
+                Logger.GetInstance().Debug("StopShareSpoolListener");
+                if (shareSpoolWatcher != null)
+                    shareSpoolWatcher.EnableRaisingEvents = false;
+                UnshareDirectory(Configuration.SharedSpoolPath);
+                //no shared printer
+                if (Directory.Exists(Configuration.SharedSpoolPath))
+                {
+                    Directory.Delete(Configuration.SharedSpoolPath, true);
+                }
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger.GetInstance().Error("Unable to stop shared spool listener" + ex.Message + " " + ex.StackTrace);
+                return false;
+            }
+        }
+      
+       private static bool UnshareDirectory(String path)
+        {
+            Logger.GetInstance().Debug("Unshare directory: " + path);
+
+            try
+            {
+                ManagementObjectSearcher searcher = new ManagementObjectSearcher("select * from win32_share");
+                ManagementClass managementClass = new ManagementClass("Win32_Share");
+                ManagementObjectCollection shares = searcher.Get();
+                /*for (int i; i < shares.Count; i++)
+                {
+                    ManagementObject share = shares.get;
+                    if (share.Properties[Path] == path)
+                    {
+                        share.InvokeMethod("Delete");
+                        i--;
+                        return true;
+                    }
+                }
+                foreach (ManagementObject share in shares)
+                {
+                    if (((String)share["Path"]) == path)
+                    {
+                        share.InvokeMethod("Delete", null);
+                        return true;
+                    }
+                }
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger.GetInstance().Error("ShareDirectory exception " + ex.Message + ex.Source);
+                return false;
+            }
+        }
         private static bool ShareDirectory(String path, String shareName, String description)
         {
             Logger.GetInstance().Debug("Sharing directory: " + path);
-
             try
             {
                 ManagementClass managementClass = new ManagementClass("Win32_Share");
@@ -551,78 +621,6 @@ namespace MyDLP.EndPoint.Service
                 Logger.GetInstance().Error("ShareDirectory exception " + ex.Message + ex.Source);
                 return false;
             }
-        }
-
-        private static bool UnshareDirectory(String path)
-        {
-            Logger.GetInstance().Debug("Unshare directory: " + path);
-
-            try
-            {
-                ManagementObjectSearcher searcher = new ManagementObjectSearcher("select * from win32_share");
-
-                ManagementClass managementClass = new ManagementClass("Win32_Share");
-                ManagementObjectCollection shares = searcher.Get();
-
-
-                /*for (int i; i < shares.Count; i++)
-                {
-                    ManagementObject share = shares.get;
-                    if (share.Properties[Path] == path)
-                    {
-                        share.InvokeMethod("Delete");
-                        i--;
-                        return true;
-                    }
-                }*/
-
-                foreach (ManagementObject share in shares)
-                {
-                    if (((String)share["Path"]) == path)
-                    {
-                        share.InvokeMethod("Delete", null);
-                        return true;
-                    }
-                }
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Logger.GetInstance().Error("ShareDirectory exception " + ex.Message + ex.Source);
-                return false;
-            }
-        }
-
-
-        static bool WaitForFile(string fullPath)
-        {
-            int numTries = 0;
-            while (true)
-            {
-                ++numTries;
-                try
-                {
-                    using (FileStream fs = new FileStream(fullPath,
-                        FileMode.Open, FileAccess.ReadWrite,
-                        FileShare.None, 100))
-                    {
-                        fs.ReadByte();
-                        break;
-                    }
-                }
-                catch (Exception ex)
-                {                    
-                    if (numTries > 10)
-                    {
-                        Logger.GetInstance().Error("WaitForFile giving up after 10 tries path: " +  fullPath);
-                        return false;
-                    }
-
-                    System.Threading.Thread.Sleep(500);
-                }
-            }
-
-            return true;
-        }
-    }
+     *}
+ */
 }
