@@ -142,7 +142,7 @@ namespace MyDLP.EndPoint.Service
                         ScreenShotContoller.Start();
                     }
 
-                    SessionServer.GetInstance();
+                    SessionServer.Start();
 
                     if (Configuration.PrinterMonitor)
                     {
@@ -178,9 +178,7 @@ namespace MyDLP.EndPoint.Service
             {
                 if (confTimer != null)
                     confTimer.Enabled = false;
-
-                SessionServer.GetInstance().Stop();
-
+                              
                 if (Configuration.BlockScreenShot)
                 {
                     ScreenShotContoller.Stop();
@@ -190,7 +188,7 @@ namespace MyDLP.EndPoint.Service
 
                 Engine.Stop();
 
-                //SessionServer.GetInstance().Stop();
+                SessionServer.Stop();
 
                 if (Configuration.UsbSerialAccessControl)
                 {
