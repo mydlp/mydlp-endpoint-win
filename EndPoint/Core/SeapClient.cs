@@ -738,12 +738,14 @@ namespace MyDLP.EndPoint.Core
                     path = splitResp[2];
                     for(int i = 3; i < splitResp.Length; i++) 
                     {
-                        String[] keyValue = splitResp[i].Split('=');
-                        keyValue[1] = qpDecode(keyValue[1]);
-                        if (keyValue[0] == "user") user = keyValue[1];
-                        else if (keyValue[0] == "user") user = keyValue[1];
-                        else if (keyValue[0] == "printerName") printerName = keyValue[1];
-                        else if (keyValue[0] == "jobId") jobId = keyValue[1];
+                        int idx = splitResp[i].IndexOf('=');
+                        String key = splitResp[i].Substring(0, idx);
+                        String val = splitResp[i].Substring(idx+1);
+                        val = qpDecode(val);
+                        if (key == "user") user = val;
+                        else if (key == "user") user = val;
+                        else if (key == "printerName") printerName = val;
+                        else if (key == "jobId") jobId = val;
                     }
                     Logger.GetInstance().Info("Handling remte print on server for remote user:" + user +
                         " printerName: " + printerName + " jobId: " + jobId + " path: " + path);

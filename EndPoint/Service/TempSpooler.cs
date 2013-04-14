@@ -374,7 +374,7 @@ namespace MyDLP.EndPoint.Service
                 foreach (PrintQueue q in qCollection)
                 {
                     //Find mathing non secure printer
-                    if (PrinterController.GetSecurePrinterName(q.Name) == sharedPrinterName)
+                    if (q.Name == sharedPrinterName)
                     {
                         pQueue = q;
                     }
