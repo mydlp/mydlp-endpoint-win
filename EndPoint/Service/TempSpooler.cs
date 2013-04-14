@@ -47,14 +47,12 @@ namespace MyDLP.EndPoint.Service
         static bool listeningForRemotePrinting = false;
         static bool hasSharedPrinter = false;
         static volatile bool checkingPrinters = false;
-        //static string spoolShareDirName = "SpoolShare";
 
         static ManagementEventWatcher shareWatcher = null;
         static FileSystemWatcher spoolWatcher;
-        //static FileSystemWatcher shareSpoolWatcher;
         //static String shareSpoolPerm = "O:BAG:DUD:PAI(A;OICI;0x100116;;;AU)(A;OICI;FA;;;SY)";
         //static String shareSpoolPermInteractive = "O:BAG:DUD:PAI(A;OICI;FA;;;BA)(A;OICI;0x100116;;;AU)(A;OICI;FA;;;SY)";
-        
+
         public static bool Start()
         {
             spoolWatcher = new FileSystemWatcher();
@@ -211,7 +209,7 @@ namespace MyDLP.EndPoint.Service
 
         private static void StopSharedPrinterServerListener()
         {
-            listeningForRemotePrinting = false;        
+            listeningForRemotePrinting = false;
         }
 
         private static void StopShareEventListener()
@@ -316,15 +314,11 @@ namespace MyDLP.EndPoint.Service
                 {
                     //It will be printerd remotely
                     //It is a network printer connection on local computer
-                    
-                    PrinterController.PrinterConnection connection = controller.GetPrinterConnection(localPrinterName);             
-
+                    PrinterController.PrinterConnection connection = controller.GetPrinterConnection(localPrinterName);
                     IPAddress[] addresslist = Dns.GetHostAddresses(connection.server);
-                    
-            
                     Logger.GetInstance().Debug("Initiating remote print remoteprinter: " +
                         connection.name + " on server:" + connection.server + "of File:" + localXpsPath);
-                    SeapClient.InitiateRemotePrint(localJobId, connection.name, addresslist[0].ToString(), localXpsPath);                    
+                    SeapClient.InitiateRemotePrint(localJobId, connection.name, addresslist[0].ToString(), localXpsPath);
                 }
                 else
                 {
@@ -374,7 +368,7 @@ namespace MyDLP.EndPoint.Service
             PrintQueue pQueue = null;
             try
             {
-                PrinterController controller = PrinterController.getInstance();     
+                PrinterController controller = PrinterController.getInstance();
                 LocalPrintServer pServer = new LocalPrintServer();
                 PrintQueueCollection qCollection = pServer.GetPrintQueues();
                 foreach (PrintQueue q in qCollection)

@@ -41,42 +41,31 @@ namespace MyDLP.EndPoint.Service
         private static extern void PrintUIEntryW(IntPtr hwnd,
             IntPtr hinst, string lpszCmdLine, int nCmdShow);
         [DllImport("kernel32.dll")]
-        static extern void SetLastError(uint dwErrCode);
 
+        static extern void SetLastError(uint dwErrCode);
         //Singleton instance
         static PrinterController instance = null;
-
         //SID of current user to get/listen shared printer connections        
         static String currentSid;
-
         //Status of PrintController isntance 
         static bool started = false;
-
         //Windows OS permissions <queue.Name, permissionACLstring>
         Dictionary<string, string> printerPermissions;
-
         //Shared Printer Connections items: "name,server"
         ArrayList printerConnections;
-
         //Spooled printers list to be reverted back(only for Windows XP)
         static ArrayList spooledNativePrinters;
-
         bool handlingConnectionChange = false;
         bool changingLocalPrinters = false;
-
         //Resgistry watcher for shared printers
         ManagementEventWatcher watcher;
 
         //Prefix for secure printers
-        //TODO: make this configurable
-        const String PrinterPrefix = "(MyDLP)";
-
+        static String PrinterPrefix = "(MyDLP)";
         //MyDLP driver name - fixed 
         const String MyDLPDriver = "MyDLP XPS Printer Driver";
-
         const String SystemPrinterSecurityDescriptor =
             "O:SYG:SYD:(A;;LCSWSDRCWDWO;;;SY)(A;OIIO;RPWPSDRCWDWO;;;SY)";
-
         const String BuiltinAdminsPrinterSecurityDescriptor =
             "O:SYG:SYD:(A;;LCSWSDRCWDWO;;;SY)(A;OIIO;RPWPSDRCWDWO;;;SY)(A;;LCSWSDRCWDWO;;;BA)(A;OIIO;RPWPSDRCWDWO;;;BA)";
 
@@ -99,7 +88,7 @@ namespace MyDLP.EndPoint.Service
             {
                 return;
             }
-
+            PrinterPrefix = Configuration.PrinterPrefix;
             printerPermissions = new Dictionary<string, string>();
             spooledNativePrinters = new ArrayList();
 
@@ -242,7 +231,7 @@ namespace MyDLP.EndPoint.Service
         public static String GetSecurePrinterName(String qName)
         {
 
-            qName = PrinterPrefix + NormalizePrinterName(qName);                             
+            qName = PrinterPrefix + NormalizePrinterName(qName);
             return qName;
         }
 
@@ -256,7 +245,7 @@ namespace MyDLP.EndPoint.Service
                 .Replace(">", "_")
                 .Replace("*", "_")
                 .Replace(".", "_");
-            
+
         }
 
         public void ListenPrinterConnections(String sid)
@@ -477,7 +466,7 @@ namespace MyDLP.EndPoint.Service
                         if (!exists)
                         {
                             Logger.GetInstance().Debug(
-                                "Not a secure printer installing installing secure version:" + queue.Name + "(MyDLP)");
+                                "Not a secure printer installing installing secure version:" + queue.Name + PrinterPrefix);
                             try
                             {
                                 String mydlpQueueName = GetSecurePrinterName(queue.Name);
@@ -534,7 +523,7 @@ namespace MyDLP.EndPoint.Service
             }
             catch (Exception e)
             {
-                Logger.GetInstance().Error("InstallSecurePrinters failed: " + e.Message + " " + e.StackTrace );
+                Logger.GetInstance().Error("InstallSecurePrinters failed: " + e.Message + " " + e.StackTrace);
             }
             finally
             {

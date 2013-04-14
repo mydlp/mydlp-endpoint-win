@@ -58,8 +58,8 @@ namespace MyDLP.EndPoint.Core
         //static Timer userNameTimer;
         static String printingDirPath;
         static String printSpoolPath;
-        static String sharedSpoolPath;
         static String version = "";
+        static String printerPrefix;
 
         //user conf
         static Logger.LogLevel logLevel = Logger.LogLevel.DEBUG;
@@ -92,7 +92,6 @@ namespace MyDLP.EndPoint.Core
                 try
                 {
                     RegistryKey mydlpKey = Registry.LocalMachine.OpenSubKey("Software").OpenSubKey("MyDLP");
-
                     //Get path
                     try
                     {
@@ -121,9 +120,7 @@ namespace MyDLP.EndPoint.Core
                 }
                 else
                 {
-
                     RegistryKey mydlpKey = Registry.LocalMachine.OpenSubKey("Software").OpenSubKey("MyDLP", true);
-
                     //Get loglevel
                     try
                     {
@@ -136,7 +133,6 @@ namespace MyDLP.EndPoint.Core
                         logLevel = Logger.LogLevel.INFO;
                     }
                 }
-
             }
             catch (Exception e)
             {
@@ -170,7 +166,6 @@ namespace MyDLP.EndPoint.Core
                 StreamReader reader = new StreamReader(mydlpConfPath);
                 string content = reader.ReadToEnd();
                 reader.Close();
-
                 if (content.Contains("management_server_address"))
                 {
                     content = Regex.Replace(content, "^[#\t\\ ]*management_server_address\\s+([0-9\\.]+)?[\t\\ ]*(\r)?$", "management_server_address\t" + managementServer + @"$2", RegexOptions.Multiline);
@@ -179,7 +174,6 @@ namespace MyDLP.EndPoint.Core
                 {
                     content = content + "\nmanagement_server_address\t" + managementServer;
                 }
-
                 StreamWriter writer = new StreamWriter(mydlpConfPath);
                 writer.Write(content);
                 writer.Close();
@@ -197,7 +191,6 @@ namespace MyDLP.EndPoint.Core
         {
             int tryLimit = 30;
             int tryCount = 0;
-
             String path = appPath + @"\run\mydlp.pid";
             try
             {
@@ -267,12 +260,8 @@ namespace MyDLP.EndPoint.Core
                 erlangHome = @"C:\workspace\mydlp-development-env\erl5.8.5";
                 javaBinPaths = @"C:\workspace\mydlp-development-env\jre7\bin";
                 appPath = @"C:\workspace\mydlp-development-env";
-                seapServer = "127.0.0.1";
-                seapPort = 9099;
                 mydlpConfPath = Configuration.ErlangPath + "mydlp-ep.conf";
                 printSpoolPath = @"C:\windows\temp\mydlp\spool";
-                sharedSpoolPath = @"C:\windows\temp\mydlp\sharedspool";
-
             }
             else
             {
@@ -280,7 +269,6 @@ namespace MyDLP.EndPoint.Core
                 try
                 {
                     RegistryKey mydlpKey = Registry.LocalMachine.OpenSubKey("Software").OpenSubKey("MyDLP", true);
-
                     //Get path
                     try
                     {
@@ -305,7 +293,6 @@ namespace MyDLP.EndPoint.Core
                         javaBinPaths = appPath + "jre7\\bin\\";
                         mydlpConfPath = Configuration.AppPath + @"\mydlp.conf";
                         printSpoolPath = Path.Combine(Path.GetTempPath(), "mydlp\\spool");
-                        sharedSpoolPath = Path.Combine(Path.GetTempPath(), "mydlp\\sharedspool");
                     }
                     catch (Exception e)
                     {
@@ -313,17 +300,6 @@ namespace MyDLP.EndPoint.Core
                             + e.Message + " " + e.StackTrace);
                         return false;
                     }
-
-                    //Get seapServer
-                    seapServer = (String)getRegistryConfSafe(mydlpKey, "seap_server", "127.0.0.1", RegistryValueKind.String);
-
-                    //Get managementServer
-                    managementServer = (String)getRegistryConfSafe(mydlpKey, "management_server", "127.0.0.1", RegistryValueKind.String);
-
-
-                    //Get seapPort
-                    seapPort = (int)getRegistryConfSafe(mydlpKey, "seap_port", 9099, RegistryValueKind.DWord);
-
                 }
                 catch (Exception e)
                 {
@@ -337,7 +313,6 @@ namespace MyDLP.EndPoint.Core
             Logger.GetInstance().Info("MyDLP SeapServer: " + seapServer + ":" + seapPort);
             Logger.GetInstance().Info("MyDLP AppPath: " + appPath);
             Logger.GetInstance().Info("MyDLP ConfPath: " + mydlpConfPath);
-
             return true;
         }
 
@@ -348,7 +323,6 @@ namespace MyDLP.EndPoint.Core
             try
             {
                 RegistryKey mydlpKey = Registry.LocalMachine.OpenSubKey("Software", true).CreateSubKey("MyDLP");
-
                 //Get screenShotConfiguration
                 if ((int)(getRegistryConfSafe(mydlpKey, "prtscr_block", 0, RegistryValueKind.DWord)) == 0)
                 {
@@ -359,7 +333,6 @@ namespace MyDLP.EndPoint.Core
                     blockScreenShot = true;
                     screentShotProcesses = (String)getRegistryConfSafe(mydlpKey, "prtscr_processes", 0, RegistryValueKind.String);
                 }
-
                 //Get archiveInbound
                 if ((int)(getRegistryConfSafe(mydlpKey, "archive_inbound", 0, RegistryValueKind.DWord)) == 0)
                 {
@@ -369,7 +342,6 @@ namespace MyDLP.EndPoint.Core
                 {
                     archiveInbound = true;
                 }
-
                 //Get usbSerialAccessControl
                 if ((int)(getRegistryConfSafe(mydlpKey, "usb_serial_access_control", 0, RegistryValueKind.DWord)) == 0)
                 {
@@ -379,7 +351,6 @@ namespace MyDLP.EndPoint.Core
                 {
                     usbSerialAccessControl = true;
                 }
-
                 //Get printMonitor
                 if ((int)(getRegistryConfSafe(mydlpKey, "print_monitor", 0, RegistryValueKind.DWord)) == 0)
                 {
@@ -389,6 +360,8 @@ namespace MyDLP.EndPoint.Core
                 {
                     printerMonitor = true;
                 }
+                //Get printerPrefix
+                printerPrefix = (String)getRegistryConfSafe(mydlpKey, "printer_prefix", "(MyDLP)", RegistryValueKind.String);
 
                 //Get remStorEncryption
                 if ((int)(getRegistryConfSafe(mydlpKey, "usbstor_encryption", 0, RegistryValueKind.DWord)) == 0)
@@ -400,34 +373,32 @@ namespace MyDLP.EndPoint.Core
                     remStorEncryption = true;
                 }
 
+                //Get seapServer
+                seapServer = (String)getRegistryConfSafe(mydlpKey, "seap_server", "127.0.0.1", RegistryValueKind.String);
                 //Get managementServer
                 managementServer = (String)getRegistryConfSafe(mydlpKey, "management_server", "127.0.0.1", RegistryValueKind.String);
+                //Get seapPort
+                seapPort = (int)getRegistryConfSafe(mydlpKey, "seap_port", 9099, RegistryValueKind.DWord);
 
                 //Try to use old management server if local host found for management server
                 if (managementServer == "127.0.0.1")
                 {
                     managementServer = (String)getRegistryConfSafe(mydlpKey, "ManagementServer", "127.0.0.1", RegistryValueKind.String, false);
-
                     //set new key
                     mydlpKey.SetValue("management_server", managementServer, RegistryValueKind.String);
                 }
-
                 //try to delete old key anyway
                 mydlpKey.DeleteValue("ManagementServer", false);
-
                 //Get logLimit
                 logLimit = (int)getRegistryConfSafe(mydlpKey, "log_limit", 10485760, RegistryValueKind.DWord);
-
                 //Get maximumObjectSize
                 maximumObjectSize = (int)getRegistryConfSafe(mydlpKey, "maximum_object_size", 10485760, RegistryValueKind.DWord);
-
                 if (!Environment.UserInteractive)
                 {
                     //Get loglevel
                     logLevel = (Logger.LogLevel)getRegistryConfSafe(mydlpKey, "log_level", 1, RegistryValueKind.DWord);
                     if (logLevel > Logger.LogLevel.DEBUG) logLevel = Logger.LogLevel.DEBUG;
                 }
-
             }
             catch (Exception e)
             {
@@ -435,8 +406,6 @@ namespace MyDLP.EndPoint.Core
                     + e.Message + " " + e.StackTrace);
                 return false;
             }
-
-
             Logger.GetInstance().Info("MyDLP LogLevel: " + logLevel.ToString());
             Logger.GetInstance().Info("MyDLP ManagementServer: " + managementServer);
             Logger.GetInstance().Info("MyDLP ArchiveInbound: " + archiveInbound);
@@ -444,71 +413,9 @@ namespace MyDLP.EndPoint.Core
             Logger.GetInstance().Info("MyDLP PrinterMonitor: " + printerMonitor);
             Logger.GetInstance().Info("MyDLP LogLimit: " + logLimit);
             Logger.GetInstance().Info("MyDLP MaximumObjectSize: " + maximumObjectSize);
-
+            Logger.GetInstance().Info("MyDLP PrinterPrefix: " + printerPrefix);
             return true;
         }
-
-        /*public static void ResetLoggedOnUser()
-        {
-            Logger.GetInstance().Debug("ResetLoggedOnUser");
-            userName = "";
-        }*/
-
-        /*public static string GetLoggedOnUser()
-        {
-            if (userName != "")
-                return userName;
-            else
-            {
-                try
-                {
-                    //TODO: use loggedonuser wmi class
-                    String processName = "explorer.exe";
-                    string query = "Select * from Win32_Process Where Name = \"" + processName + "\"";
-                    ManagementObjectSearcher searcher = new ManagementObjectSearcher(query);
-                    ManagementObjectCollection processList = searcher.Get();
-
-                    foreach (ManagementObject obj in processList)
-                    {
-                        string[] argList = new string[] { string.Empty, string.Empty };
-                        int returnVal = Convert.ToInt32(obj.InvokeMethod("GetOwner", argList));
-                        if (returnVal == 0)
-                        {
-                            // return user@domain
-                            string owner = argList[0] + "@" + argList[1];
-                            userName = owner;
-                            return userName;
-                        }
-                    }
-                }
-                catch 
-                {
-                    Logger.GetInstance().Error("Failed to get current user"); 
-                }
-
-                userName = "NO OWNER";
-
-                */
-        /*ManagementObjectSearcher searcher =
-         new ManagementObjectSearcher("root\\CIMV2",
-             "SELECT * FROM Win32_ComputerSystem");
-      foreach (ManagementObject queryObj in searcher.Get())
-      {
-          userName = queryObj["UserName"] + "@" + queryObj["Domain"];
-          Logger.GetInstance().Debug("Wmi says logged on user:" + userName);
-      }*/
-        /*
-
-     Logger.GetInstance().Info("Current logged on user:" + userName);
- }
- return userName;
-}*/
-
-        /*public static void LoggedOnUserChangeHandler(object sender, SessionSwitchEventArgs e) 
-        {
-            Logger.GetInstance().Info("Session switch logged on user:" + userName);
-            userName = "";         
-        }*/
 
         public static object getRegistryConfSafe(RegistryKey key, String valueName, Object defaultValue, RegistryValueKind kind)
         {
@@ -558,12 +465,23 @@ namespace MyDLP.EndPoint.Core
             return retVal;
         }
 
+        public static void setRegistryConfSafe(RegistryKey key, String valueName, Object newValue, RegistryValueKind kind)
+        {
+            try
+            {
+                key.SetValue(valueName, newValue, kind);
+            }
+            catch (Exception e)
+            {
+                Logger.GetInstance().Error("Unable to set registry value: " + key.ToString() + " " + valueName + " to:" + newValue);
+            }
+        }
+
         [DllImport("kernel32", SetLastError = true, CallingConvention = CallingConvention.Winapi)]
         public extern static IntPtr LoadLibrary(string libraryName);
 
         [DllImport("kernel32", SetLastError = true, CallingConvention = CallingConvention.Winapi)]
         public extern static IntPtr GetProcAddress(IntPtr hwnd, string procedureName);
-
 
         public static OsVersion GetOs()
         {
@@ -594,8 +512,9 @@ namespace MyDLP.EndPoint.Core
         public static String GetMyDLPVersion()
         {
             if (version != "")
+            {
                 return version;
-
+            }
             try
             {
                 RegistryKey uninstallKey = Registry.LocalMachine.OpenSubKey("Software").OpenSubKey(@"Microsoft\Windows\CurrentVersion\Uninstall");
@@ -622,7 +541,6 @@ namespace MyDLP.EndPoint.Core
             {
                 version = "N\\A";
             }
-
             return version;
         }
 
@@ -641,7 +559,6 @@ namespace MyDLP.EndPoint.Core
                     return (IsWow64ProcessDelegate)Marshal.GetDelegateForFunctionPointer((IntPtr)fnPtr, typeof(IsWow64ProcessDelegate));
                 }
             }
-
             return null;
         }
 
@@ -660,12 +577,10 @@ namespace MyDLP.EndPoint.Core
         private static bool Is32BitProcessOn64BitProcessor()
         {
             IsWow64ProcessDelegate fnDelegate = GetIsWow64ProcessDelegate();
-
             if (fnDelegate == null)
             {
                 return false;
             }
-
             bool isWow64;
             bool retVal = fnDelegate.Invoke(Process.GetCurrentProcess().Handle, out isWow64);
 
@@ -673,7 +588,6 @@ namespace MyDLP.EndPoint.Core
             {
                 return false;
             }
-
             return isWow64;
         }
 
@@ -883,14 +797,6 @@ namespace MyDLP.EndPoint.Core
             }
         }
 
-        public static String SharedSpoolPath
-        {
-            get
-            {
-                return sharedSpoolPath;
-            }
-        }
-
         public static bool BlockScreenShot
         {
             get
@@ -919,6 +825,27 @@ namespace MyDLP.EndPoint.Core
             }
         }
 
+        public static String PrinterPrefix
+        {
+            get
+            {
+                String safePrefix = NormalizePrefix(printerPrefix);
+                return safePrefix;
+            }
+        }
+
+        //Prefix will be a part of device path name and spool pathname so it should be normalized
+        public static String NormalizePrefix(String prefix)
+        {
+            return prefix.Replace(":", "_")
+                .Replace("\\", "_")
+                .Replace("/", "_")
+                .Replace("|", "_")
+                .Replace("<", "_")
+                .Replace(">", "_")
+                .Replace("*", "_")
+                .Replace(".", "_");
+        }
     }
 }
 
