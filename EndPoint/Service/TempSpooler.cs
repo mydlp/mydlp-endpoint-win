@@ -47,6 +47,8 @@ namespace MyDLP.EndPoint.Service
         static bool listeningForRemotePrinting = false;
         static bool hasSharedPrinter = false;
         static volatile bool checkingPrinters = false;
+        //Used by engine for remote printing
+        static int IECPPort = 9100;
 
         static ManagementEventWatcher shareWatcher = null;
         static FileSystemWatcher spoolWatcher;
@@ -190,10 +192,34 @@ namespace MyDLP.EndPoint.Service
             }
         }
 
+        private static string WinXPIECPFirewallEnable =
+            "netsh firewall add portopening TCP " + IECPPort + " \"MyDLP IECP\"";
+
+        private static string WinXPIECPFirewallDisable =
+            "netsh firewall delete portopening protocol=TCP port=" + IECPPort;
+
+        private static string Win7IECPFirewallEnable = 
+            "netsh advfirewall firewall add rule name=\"MyDLP IECP\" " + 
+            "dir=in action=allow protocol=TCP localport=" + IECPPort;
+
+        private static string Win7IECPFirewallDisable = 
+            "netsh advfirewall firewall delete rule name=\"MyDLP IECP\" "+
+            "protocol=TCP localport=" + IECPPort;
+
         private static void StartSharedPrinterServerListener()
         {
             if (listeningForRemotePrinting == true)
                 return;
+
+            if (Configuration.OsVersion.XP == Configuration.GetOs())
+            {
+                ProcessControl.ExecuteCommandAsync(WinXPIECPFirewallEnable, "Firewall");
+            }
+            else 
+            {
+                ProcessControl.ExecuteCommandAsync(Win7IECPFirewallEnable, "Firewall");
+            }
+               
             listeningForRemotePrinting = true;
             remotePrintingListenerThread = new Thread(SharedPrinterListenerWorker);
             remotePrintingListenerThread.Start();
@@ -210,6 +236,14 @@ namespace MyDLP.EndPoint.Service
         private static void StopSharedPrinterServerListener()
         {
             listeningForRemotePrinting = false;
+            if (Configuration.OsVersion.XP == Configuration.GetOs())
+            {
+                ProcessControl.ExecuteCommandAsync(WinXPIECPFirewallDisable, "Firewall");
+            }
+            else
+            {
+                ProcessControl.ExecuteCommandAsync(Win7IECPFirewallDisable, "Firewall");
+            }
         }
 
         private static void StopShareEventListener()

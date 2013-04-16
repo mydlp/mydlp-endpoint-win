@@ -63,6 +63,11 @@ namespace MyDLP.EndPoint.Core
 
     public class ProcessControl
     {
+        public static void ExecuteCommandAsync(string command, string prefix)
+        {
+            ExecuteCommandAsync(command,  prefix, new EnvVar[]{});
+        }
+
         public static void ExecuteCommandAsync(string command, string prefix, EnvVar[] env)
         {
             try
@@ -154,14 +159,12 @@ namespace MyDLP.EndPoint.Core
 
                 System.Diagnostics.Process proc = new System.Diagnostics.Process();
                 proc.StartInfo = procStartInfo;
-                System.Console.WriteLine(param.Prefix + " starting process: \"" + param.Command + "\"");
                 proc.EnableRaisingEvents = true;
                 proc.Start();
 
                 string stdoutx = proc.StandardOutput.ReadToEnd();
                 string stderrx = proc.StandardError.ReadToEnd();
                 proc.WaitForExit();
-                System.Console.WriteLine(param.Prefix + " process exited.");
                 return stderrx + stdoutx;
             }
             catch (Exception e)
@@ -181,7 +184,6 @@ namespace MyDLP.EndPoint.Core
             }
 
         }
-
 
         private static void SuppressUnnecessaryDebug(String prefix, String data)
         {
