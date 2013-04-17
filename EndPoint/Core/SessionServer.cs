@@ -34,7 +34,7 @@ namespace MyDLP.EndPoint.Core
         public static bool stopFlag = false;
         public static Hashtable socketTable;
         
-        private static TcpListener tcpListener;
+        private static TcpListener tcpListener = null;
         private static Thread listenThread;
 
         public static void Start()
@@ -140,6 +140,19 @@ namespace MyDLP.EndPoint.Core
             {
                 try
                 {
+                    try
+                    {
+                        if (tcpListener != null) 
+                        {
+                            tcpListener.Server.Close();
+                            tcpListener.Stop(); 
+                            closeAllSockets();                                                    
+                        }
+                    }
+                    catch (Exception e){
+                        Logger.GetInstance().Error("Try to close previous listener error:" + e);
+                    }
+
                     tcpListener = new TcpListener(IPAddress.Parse("127.0.0.1"), 9098);
                     tcpListener.Start();
 
@@ -148,9 +161,9 @@ namespace MyDLP.EndPoint.Core
                         TcpClient client = null;
                         try
                         {
-                            client = tcpListener.AcceptTcpClient();
+                            client = tcpListener.AcceptTcpClient();                            
                         }
-                        catch 
+                        catch
                         {
                             throw;
                         }
