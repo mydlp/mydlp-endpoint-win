@@ -102,7 +102,9 @@ namespace MyDLPEP
 			}
 
 			if (newSession->type != Interactive
-				&& newSession->type != RemoteInteractive)
+				&& newSession->type != RemoteInteractive
+				&& newSession->type != CachedInteractive
+				&& newSession->type != CachedRemoteInteractive)
 			{
 				continue;
 			}

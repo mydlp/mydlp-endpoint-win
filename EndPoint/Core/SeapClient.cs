@@ -145,7 +145,7 @@ namespace MyDLP.EndPoint.Core
             }
             catch (Exception e)
             {
-                Logger.GetInstance().Error(e.Message);
+                Logger.GetInstance().Error(e);
                 //todo: Default Acion
                 return FileOperation.Action.ALLOW;
             }
@@ -248,7 +248,7 @@ namespace MyDLP.EndPoint.Core
             }
             catch (Exception e)
             {
-                Logger.GetInstance().Error(e.Message);
+                Logger.GetInstance().Error(e);
                 //todo: Default Acion
                 return FileOperation.Action.ALLOW;
             }
@@ -360,7 +360,7 @@ namespace MyDLP.EndPoint.Core
             }
             catch (Exception e)
             {
-                Logger.GetInstance().Error(e.Message);
+                Logger.GetInstance().Error(e);
                 //todo: Default Acion
                 return FileOperation.Action.ALLOW;
             }
@@ -450,7 +450,7 @@ namespace MyDLP.EndPoint.Core
             }
             catch (Exception e)
             {
-                Logger.GetInstance().Error(e.Message);
+                Logger.GetInstance().Error(e);
                 //todo: Default Acion
                 return FileOperation.Action.ALLOW;
             }
@@ -492,7 +492,7 @@ namespace MyDLP.EndPoint.Core
             }
             catch (Exception e)
             {
-                Logger.GetInstance().Error(e.Message + e.StackTrace);
+                Logger.GetInstance().Error(e);
                 //todo: Default Acion
                 return false;
             }
@@ -521,7 +521,7 @@ namespace MyDLP.EndPoint.Core
             }
             catch (Exception e)
             {
-                Logger.GetInstance().Error(e.Message + e.StackTrace);
+                Logger.GetInstance().Error(e);
                 return null;
             }
             //todo: Default Acion
@@ -556,7 +556,7 @@ namespace MyDLP.EndPoint.Core
             }
             catch (Exception e)
             {
-                Logger.GetInstance().Error(e.Message + e.StackTrace);
+                Logger.GetInstance().Error(e);
                 //todo: Default Acion
                 return false;
             }
@@ -676,7 +676,7 @@ namespace MyDLP.EndPoint.Core
             }
             catch (Exception e)
             {
-                Logger.GetInstance().Error(e.Message);
+                Logger.GetInstance().Error(e);
                 return FileOperation.Action.ALLOW;
             }
             return FileOperation.Action.ALLOW;
@@ -754,7 +754,7 @@ namespace MyDLP.EndPoint.Core
             }
             catch (Exception e)
             {
-                Logger.GetInstance().Error(e.Message);
+                Logger.GetInstance().Error(e);
             }
         }
 
@@ -773,7 +773,7 @@ namespace MyDLP.EndPoint.Core
             }
             catch (Exception e)
             {
-                Logger.GetInstance().Debug(e.Message);
+                Logger.GetInstance().Debug(e);
                 return false;
             }
             return true;
@@ -811,7 +811,7 @@ namespace MyDLP.EndPoint.Core
                 }
                 catch (Exception e)
                 {
-                    Logger.GetInstance().Error("Reconnect unable to close client: " + e.Message + " " + e.StackTrace);
+                    Logger.GetInstance().Error("Reconnect unable to close client: " + e);
                 }
 
                 client = new TcpClient(server, port);

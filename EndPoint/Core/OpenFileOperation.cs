@@ -57,7 +57,7 @@ namespace MyDLP.EndPoint.Core
             }
             catch (Exception e)
             {
-                Logger.GetInstance().Error("Exception" + e.Message + e.StackTrace);
+                Logger.GetInstance().Error("Exception" + e);
 
                 return Action.ALLOW;
             }

@@ -37,14 +37,14 @@ namespace SvcRestart
 
                 catch (Exception e)
                 {
-                    Console.WriteLine(e.Message);
+                    Console.WriteLine(e);
                     return;
                 }
 
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.Message);               
+                Console.WriteLine(e);               
                 return;
             }
         }

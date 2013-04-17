@@ -40,7 +40,7 @@ namespace MyDLP.EndPoint.Core
             }
             catch (Exception e)
             {
-                Logger.GetInstance().Error("Unable to start sevice: " + serviceName + " error: " + e.Message);
+                Logger.GetInstance().Error("Unable to start sevice: " + serviceName + " error: " + e);
             }
         }
 
@@ -54,15 +54,15 @@ namespace MyDLP.EndPoint.Core
             }
             catch (ThreadStartException e)
             {
-                Logger.GetInstance().Error(e.Message + " " + e.StackTrace);
+                Logger.GetInstance().Error(e);
             }
             catch (ThreadAbortException e)
             {
-                Logger.GetInstance().Error(e.Message + " " + e.StackTrace);
+                Logger.GetInstance().Error(e);
             }
             catch (Exception e)
             {
-                Logger.GetInstance().Error(e.Message + " " + e.StackTrace);
+                Logger.GetInstance().Error(e);
             }
         }
 
@@ -78,7 +78,7 @@ namespace MyDLP.EndPoint.Core
             }
             catch (Exception e)
             {
-                Logger.GetInstance().Error("Unable to stop sevice: " + serviceName + " error: " + e.Message);
+                Logger.GetInstance().Error("Unable to stop sevice: " + serviceName + " error: " + e);
             }
         }
 

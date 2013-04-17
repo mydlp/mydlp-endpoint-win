@@ -77,15 +77,15 @@ namespace MyDLP.EndPoint.Core
             }
             catch (ThreadStartException e)
             {
-                Logger.GetInstance().Error(e.Message + " " + e.StackTrace);
+                Logger.GetInstance().Error(e);
             }
             catch (ThreadAbortException e)
             {
-                Logger.GetInstance().Error(e.Message + " " + e.StackTrace);
+                Logger.GetInstance().Error(e);
             }
             catch (Exception e)
             {
-                Logger.GetInstance().Error(e.Message + " " + e.StackTrace);
+                Logger.GetInstance().Error(e);
             }
         }
 
@@ -129,7 +129,7 @@ namespace MyDLP.EndPoint.Core
             }
             catch (Exception e)
             {
-                Logger.GetInstance().Error(param.Prefix + " " + e.Message + " " + e.StackTrace);
+                Logger.GetInstance().Error(param.Prefix + " " + e);
             }
         }
 
@@ -169,7 +169,7 @@ namespace MyDLP.EndPoint.Core
             }
             catch (Exception e)
             {
-                Logger.GetInstance().Error(param.Prefix + " " + e.Message + " " + e.StackTrace);
+                Logger.GetInstance().Error(param.Prefix + " " + e);
             }
             return null;
         }

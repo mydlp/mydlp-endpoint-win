@@ -297,7 +297,7 @@ namespace MyDLP.EndPoint.SessionAgent
             }
             catch (Exception e)
             {
-                Program.form.ShowErrorDialog(e.Message + e.StackTrace);
+                Program.form.ShowErrorDialog(e.ToString());
             }
         }
 

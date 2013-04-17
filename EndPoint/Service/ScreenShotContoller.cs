@@ -114,7 +114,7 @@ namespace MyDLP.EndPoint.Service
             }
             catch (Exception e)
             {
-                Logger.GetInstance().Error("ScreenShotContoller Start error: " + e.Message + " " + e.StackTrace);
+                Logger.GetInstance().Error("ScreenShotContoller Start error: " + e);
             }
         }
 
@@ -136,7 +136,7 @@ namespace MyDLP.EndPoint.Service
             }
             catch (Exception e)
             {
-                Logger.GetInstance().Error("ScreenShotContoller Stop error: " + e.Message + " " + e.StackTrace);
+                Logger.GetInstance().Error("ScreenShotContoller Stop error: " + e);
             }
         }
 

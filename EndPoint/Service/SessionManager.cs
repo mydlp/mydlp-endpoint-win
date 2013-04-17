@@ -27,10 +27,7 @@ namespace MyDLP.EndPoint.Service
 
         public static String GetCurrentUser()
         {
-            MyDLPEP.LogonSession session = MyDLPEP.SessionUtils.GetActiveSession();
-
-            
-
+            MyDLPEP.LogonSession session = MyDLPEP.SessionUtils.GetActiveSession();                      
             if (session != null)
             {
                 Logger.GetInstance().Debug("Sid:" + session.sid);

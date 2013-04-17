@@ -260,12 +260,12 @@ namespace MyDLP.EndPoint.Core
             {
                 //If not access denied
                 if (e.NativeErrorCode != 5)
-                    Logger.GetInstance().Error(e.ToString() + " " + e.Message + " " + e.StackTrace);
+                    Logger.GetInstance().Error(e.ToString() + " " + e);
 
             }
             catch (Exception e)
             {
-                Logger.GetInstance().Error(e.ToString() + " " + e.Message + " " + e.StackTrace);
+                Logger.GetInstance().Error(e.ToString() + " " + e);
             }
         }
     }

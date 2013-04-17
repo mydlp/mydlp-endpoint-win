@@ -87,6 +87,11 @@ namespace MyDLP.EndPoint.Core
             }
         }
 
+        public void Debug(Exception e)
+        {
+            Error("Ignorable Exception:" + e.ToString());
+        }
+
         public void Debug(String entry)
         {
             String logEntry = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + " DEBUG " + entry;
@@ -137,6 +142,11 @@ namespace MyDLP.EndPoint.Core
                     //TODO:windows event log
                 }
             }
+        }
+
+        public void Error(Exception e) 
+        {
+            Error("Exception:" + e.ToString());        
         }
 
         public void Error(String entry)

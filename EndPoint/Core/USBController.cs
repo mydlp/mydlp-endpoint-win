@@ -106,14 +106,14 @@ namespace MyDLP.EndPoint.Core
 
                             catch (Exception e)
                             {
-                                Logger.GetInstance().Error(e.Message + e.StackTrace);
+                                Logger.GetInstance().Error(e);
                             }
                         }
                     }
                 }
                 catch (Exception e)
                 {
-                    Logger.GetInstance().Error(e.Message + e.StackTrace);
+                    Logger.GetInstance().Error(e);
                     USBSerialCache = new Hashtable();
                     globalUsbLockFlag = false;
                 }

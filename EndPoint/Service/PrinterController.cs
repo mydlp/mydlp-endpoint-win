@@ -507,7 +507,7 @@ namespace MyDLP.EndPoint.Service
                             catch (Exception e)
                             {
                                 Logger.GetInstance().Debug("Unable to process non-secure printer " + queue.Name
-                                    + " error:" + e.Message + " " + e.StackTrace);
+                                    + " error:" + e);
                             }
                         }
                     }
@@ -523,7 +523,7 @@ namespace MyDLP.EndPoint.Service
             }
             catch (Exception e)
             {
-                Logger.GetInstance().Error("InstallSecurePrinters failed: " + e.Message + " " + e.StackTrace);
+                Logger.GetInstance().Error("InstallSecurePrinters failed: " + e);
             }
             finally
             {
@@ -648,7 +648,7 @@ namespace MyDLP.EndPoint.Service
             }
             catch (Exception e)
             {
-                Logger.GetInstance().Error("Remove secure pritners failed: " + e.Message);
+                Logger.GetInstance().Error("Remove secure printers failed: " + e);
             }
             finally
             {
@@ -753,7 +753,7 @@ namespace MyDLP.EndPoint.Service
                 }
                 catch (Exception e)
                 {
-                    Logger.GetInstance().Error("Error in install port monitor:" + e.Message);
+                    Logger.GetInstance().Error("Error in install port monitor:" + e);
                     return false;
                 }
             }
@@ -793,7 +793,7 @@ namespace MyDLP.EndPoint.Service
             }
             catch (Exception e)
             {
-                Logger.GetInstance().Error("Error install printer driver:" + e.Message);
+                Logger.GetInstance().Error("Error install printer driver:" + e);
                 return false;
             }
         }

@@ -68,12 +68,12 @@ namespace MyDLP.EndPoint.Core
                 }
                 catch (Exception e)
                 {
-                    Logger.GetInstance().Error("Unable to add Notification Agent:" + e.Message + e.StackTrace);
+                    Logger.GetInstance().Error("Unable to add Notification Agent:" + e);
                 }
             }
             catch (Exception e)
             {
-                Logger.GetInstance().Error("Unable to start session server :" + e.Message + e.StackTrace);
+                Logger.GetInstance().Error("Unable to start session server :" + e);
             }
         }
 
@@ -106,7 +106,7 @@ namespace MyDLP.EndPoint.Core
             }
             catch (Exception e)
             {
-                Logger.GetInstance().Error("Error at client socket close:" + e.Message + e.StackTrace);
+                Logger.GetInstance().Error("Error at client socket close:" + e);
             }
             finally
             {
@@ -126,7 +126,7 @@ namespace MyDLP.EndPoint.Core
                 }
                 catch (Exception e)
                 {
-                    Logger.GetInstance().Error("Error at client socket close:" + e.Message + e.StackTrace);
+                    Logger.GetInstance().Error("Error at client socket close:" + e);
                 }
             }
 
@@ -260,14 +260,14 @@ namespace MyDLP.EndPoint.Core
 
                 catch (InvalidRequestException e)
                 {
-                    WriteMessage(writer, "ERROR message:" + e.Message);
+                    WriteMessage(writer, "ERROR message:" + e);
                     reader.DiscardBufferedData();
-                    Logger.GetInstance().Error("SessionServer HandleClient error:" + e.Message + e.StackTrace);
+                    Logger.GetInstance().Error("SessionServer HandleClient error:" + e);
                 }
 
                 catch (Exception e)
                 {                   
-                    Logger.GetInstance().Error("SessionServer HandleClient error:" + e.Message + e.StackTrace);
+                    Logger.GetInstance().Error("SessionServer HandleClient error:" + e);
                     break;
                 }                
             }

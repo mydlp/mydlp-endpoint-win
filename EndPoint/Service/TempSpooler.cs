@@ -68,7 +68,7 @@ namespace MyDLP.EndPoint.Service
 
                 catch (System.IO.IOException e)
                 {
-                    Logger.GetInstance().Error(e.Message);
+                    Logger.GetInstance().Error(e);
                 }
             }
             try
@@ -77,7 +77,7 @@ namespace MyDLP.EndPoint.Service
             }
             catch (System.IO.IOException e)
             {
-                Logger.GetInstance().Error(e.Message);
+                Logger.GetInstance().Error(e);
             }
             try
             {
@@ -97,7 +97,7 @@ namespace MyDLP.EndPoint.Service
             }
             catch (Exception ex)
             {
-                Logger.GetInstance().Error("Unable to start TempSpooler:" + ex.Message + " " + ex.StackTrace);
+                Logger.GetInstance().Error("Unable to start TempSpooler:" + ex);
                 StopShareEventListener();
                 started = false;
                 return false;
@@ -118,7 +118,7 @@ namespace MyDLP.EndPoint.Service
             }
             catch (Exception ex)
             {
-                Logger.GetInstance().Error("TempSpooler watch cannot be stopped on path:" + spoolWatcher.Path + " " + ex.StackTrace + " " + ex.Message);
+                Logger.GetInstance().Error("TempSpooler watch cannot be stopped on path:" + spoolWatcher.Path + " " + ex);
             }
             return true;
         }
@@ -187,7 +187,7 @@ namespace MyDLP.EndPoint.Service
                 catch (Exception ex)
                 {
                     checkingPrinters = false;
-                    Logger.GetInstance().Error("CheckForSharedPrinters exception:" + ex.Message + " " + ex.StackTrace);
+                    Logger.GetInstance().Error("CheckForSharedPrinters exception:" + ex);
                 }
             }
         }
@@ -272,7 +272,7 @@ namespace MyDLP.EndPoint.Service
             }
             catch (Exception ex)
             {
-                Logger.GetInstance().Error(ex.Message + ex.StackTrace);
+                Logger.GetInstance().Error(ex);
                 if (ex.InnerException != null)
                 {
                     Logger.GetInstance().Error(ex.InnerException.Message + ex.InnerException.StackTrace);
@@ -310,7 +310,7 @@ namespace MyDLP.EndPoint.Service
             }
             catch (Exception ex)
             {
-                Logger.GetInstance().Error("OnCreate:" + ex.Message + ex.StackTrace);
+                Logger.GetInstance().Error("OnCreate:" + ex);
             }
 
             if (SeapClient.NotitfyPrintOperation(docName, localPrinterName, localXpsPath) == FileOperation.Action.ALLOW)
@@ -323,7 +323,7 @@ namespace MyDLP.EndPoint.Service
                 }
                 catch (Exception ex)
                 {
-                    Logger.GetInstance().Error(ex.Message + ex.StackTrace);
+                    Logger.GetInstance().Error(ex);
                     if (ex.InnerException != null)
                     {
                         Logger.GetInstance().Error(ex.InnerException.Message + ex.InnerException.StackTrace);
@@ -388,7 +388,7 @@ namespace MyDLP.EndPoint.Service
             }
             catch (Exception e)
             {
-                Logger.GetInstance().Error("WorkerMethod Exception" + e.Message + e.StackTrace);
+                Logger.GetInstance().Error("WorkerMethod Exception" + e);
                 if (e.InnerException != null)
                 {
                     Logger.GetInstance().Error(e.InnerException.Message + e.InnerException.StackTrace);
@@ -432,7 +432,7 @@ namespace MyDLP.EndPoint.Service
             }
             catch (Exception e)
             {
-                Logger.GetInstance().Error("WorkerMethodShared Exception" + e.Message + e.StackTrace);
+                Logger.GetInstance().Error("WorkerMethodShared Exception" + e);
                 if (e.InnerException != null)
                 {
                     Logger.GetInstance().Error(e.InnerException.Message + e.InnerException.StackTrace);
@@ -450,7 +450,7 @@ namespace MyDLP.EndPoint.Service
             }
             catch (Exception ex)
             {
-                Logger.GetInstance().Error("SpoolWatcherError Error:" + ex.Message + ex.StackTrace);
+                Logger.GetInstance().Error("SpoolWatcherError Error:" + ex);
             }
         }
 
@@ -484,170 +484,4 @@ namespace MyDLP.EndPoint.Service
             return true;
         }
     }
-
-    /* Old methods
-     * 
-     * 
-        private static void SharedSpoolWatcherError(Object sender, ErrorEventArgs e)
-        {
-            try
-            {
-                Logger.GetInstance().Error("Shared filewatcher error: " + e.GetException().Message + " restartting sharedspooler");
-                StopShareSpoolListener();
-                StartShareSpoolListener();
-            }
-            catch (Exception ex)
-            {
-                Logger.GetInstance().Error("SharedSpoolWatcherError Error:" + ex.Message + ex.StackTrace);
-            }
-        }
-        private static bool StartShareSpoolListener()
-        {      
-            try
-            {
-                Logger.GetInstance().Debug("StartShareSpoolListener");
-                Directory.CreateDirectory(Configuration.SharedSpoolPath);
-                ShareDirectory(Configuration.SharedSpoolPath, spoolShareDirName, "None");
-
-                //Set NTFS permissions for share spool
-                if (System.Environment.UserInteractive)
-                {
-                    MyDLPEP.PrinterUtils.SetFolderSecurityDescriptor(Configuration.SharedSpoolPath, shareSpoolPerm);
-                }
-                else
-                {
-                    MyDLPEP.PrinterUtils.SetFolderSecurityDescriptor(Configuration.SharedSpoolPath, shareSpoolPermInteractive);
-                }
-                //Set share permissions for share spool
-                shareSpoolWatcher = new FileSystemWatcher();
-                shareSpoolWatcher.Path = Configuration.SharedSpoolPath;
-                shareSpoolWatcher.IncludeSubdirectories = true;
-                shareSpoolWatcher.Filter = "*.meta";
-                //shareSpoolWatcher.NotifyFilter = NotifyFilters.LastAccess | NotifyFilters.LastWrite
-                //| NotifyFilters.FileName | NotifyFilters.DirectoryName;
-                shareSpoolWatcher.Created += new FileSystemEventHandler(OnCreate);
-                shareSpoolWatcher.EnableRaisingEvents = true;
-                shareSpoolWatcher.Error += new ErrorEventHandler(SharedSpoolWatcherError);
-
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Logger.GetInstance().Error("Unable to start shared spool listener:" + ex.Message + " " + ex.StackTrace);
-                return false;
-            }
-
-        }
-
-        private static bool StopShareSpoolListener()
-        {
-            try
-            {
-                Logger.GetInstance().Debug("StopShareSpoolListener");
-                if (shareSpoolWatcher != null)
-                    shareSpoolWatcher.EnableRaisingEvents = false;
-                UnshareDirectory(Configuration.SharedSpoolPath);
-                //no shared printer
-                if (Directory.Exists(Configuration.SharedSpoolPath))
-                {
-                    Directory.Delete(Configuration.SharedSpoolPath, true);
-                }
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Logger.GetInstance().Error("Unable to stop shared spool listener" + ex.Message + " " + ex.StackTrace);
-                return false;
-            }
-        }
-      
-       private static bool UnshareDirectory(String path)
-        {
-            Logger.GetInstance().Debug("Unshare directory: " + path);
-
-            try
-            {
-                ManagementObjectSearcher searcher = new ManagementObjectSearcher("select * from win32_share");
-                ManagementClass managementClass = new ManagementClass("Win32_Share");
-                ManagementObjectCollection shares = searcher.Get();
-                /*for (int i; i < shares.Count; i++)
-                {
-                    ManagementObject share = shares.get;
-                    if (share.Properties[Path] == path)
-                    {
-                        share.InvokeMethod("Delete");
-                        i--;
-                        return true;
-                    }
-                }
-                foreach (ManagementObject share in shares)
-                {
-                    if (((String)share["Path"]) == path)
-                    {
-                        share.InvokeMethod("Delete", null);
-                        return true;
-                    }
-                }
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Logger.GetInstance().Error("ShareDirectory exception " + ex.Message + ex.Source);
-                return false;
-            }
-        }
-        private static bool ShareDirectory(String path, String shareName, String description)
-        {
-            Logger.GetInstance().Debug("Sharing directory: " + path);
-            try
-            {
-                ManagementClass managementClass = new ManagementClass("Win32_Share");
-                ManagementBaseObject inParams = managementClass.GetMethodParameters("Create");
-                ManagementBaseObject outParams;
-
-                //Authenticated Users Trusteee
-                SecurityIdentifier sid = new SecurityIdentifier("S-1-5-11");
-                ManagementObject Trustee = new ManagementClass(new ManagementPath("Win32_Trustee"), null);
-                byte[] sidArray = new byte[sid.BinaryLength];
-                sid.GetBinaryForm(sidArray, 0);
-                Trustee["SID"] = sidArray;
-
-                ManagementObject UserACE = new ManagementClass(new ManagementScope("\\\\localhost\\root\\CIMV2"),
-                    new ManagementPath("Win32_Ace"), null);
-                //todo make constants http://msdn.microsoft.com/en-us/library/windows/desktop/aa822867(v=vs.85).aspx
-                UserACE["AccessMask"] = 1245631;
-
-                //todo http://msdn.microsoft.com/en-us/library/windows/desktop/aa392711(v=vs.85).aspx
-                UserACE["AceFlags"] = 3;
-
-                UserACE["AceType"] = 0; //Allow
-                UserACE["Trustee"] = Trustee;
-
-                ManagementObject secDescriptor = new ManagementClass(new ManagementScope("\\\\localhost\\root\\CIMV2"),
-                    new ManagementPath("Win32_SecurityDescriptor"), null);
-                secDescriptor["ControlFlags"] = 4;
-                secDescriptor["DACL"] = new object[] { UserACE };
-
-                inParams["Description"] = description;
-                inParams["Name"] = shareName;
-                inParams["Path"] = path;
-                inParams["Type"] = 0x0; // directory
-                inParams["Access"] = secDescriptor;
-
-                outParams = managementClass.InvokeMethod("Create", inParams, null);
-                uint retval = (uint)outParams.Properties["ReturnValue"].Value;
-                if (retval != 0)
-                {
-                    Logger.GetInstance().Error("Unable to share directory: " + path + " error:" + retval);
-                    return false;
-                }
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Logger.GetInstance().Error("ShareDirectory exception " + ex.Message + ex.Source);
-                return false;
-            }
-     *}
- */
 }

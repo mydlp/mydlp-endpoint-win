@@ -85,7 +85,7 @@ namespace MyDLP.EndPoint.Service
                     }
                     catch (Exception e)
                     {
-                        Logger.GetInstance().Error("Unable to start watchdog" + e.Message);
+                        Logger.GetInstance().Error("Unable to start watchdog" + e);
                     }
                     //enable watchdog check
 

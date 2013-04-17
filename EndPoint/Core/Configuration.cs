@@ -137,7 +137,7 @@ namespace MyDLP.EndPoint.Core
             catch (Exception e)
             {
                 Logger.GetInstance().Error("Unable to get registry key HKLM/Software/MyDLP "
-                     + e.Message + " " + e.StackTrace);
+                     + e);
                 logLevel = Logger.LogLevel.DEBUG;
             }
         }
@@ -181,7 +181,7 @@ namespace MyDLP.EndPoint.Core
             }
             catch (Exception e)
             {
-                Logger.GetInstance().Error("SetErlConf " + e.Message + "\n" + e.StackTrace);
+                Logger.GetInstance().Error("SetErlConf " + e);
                 return false;
             }
         }
@@ -297,14 +297,14 @@ namespace MyDLP.EndPoint.Core
                     catch (Exception e)
                     {
                         Logger.GetInstance().Error("Unable to get registry value  HKLM/Software/MyDLP:AppPath "
-                            + e.Message + " " + e.StackTrace);
+                            + e);
                         return false;
                     }
                 }
                 catch (Exception e)
                 {
                     Logger.GetInstance().Error("Unable to open registry key HKLM/Software/MyDLP "
-                        + e.Message + " " + e.StackTrace);
+                        + e);
                     return false;
                 }
             }
@@ -403,7 +403,7 @@ namespace MyDLP.EndPoint.Core
             catch (Exception e)
             {
                 Logger.GetInstance().Error("Unable to open registry key HKLM/Software/MyDLP "
-                    + e.Message + " " + e.StackTrace);
+                    + e);
                 return false;
             }
             Logger.GetInstance().Info("MyDLP LogLevel: " + logLevel.ToString());

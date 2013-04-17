@@ -52,7 +52,7 @@ namespace MyDLP.EndPoint.Service
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine(e.Message + " " + e.StackTrace);
+                    Console.WriteLine(e);
                 }
             }
             else
