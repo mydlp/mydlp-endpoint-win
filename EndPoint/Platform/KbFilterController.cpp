@@ -161,7 +161,7 @@ namespace MyDLPEP
 
 			if ( devices[i] == INVALID_HANDLE_VALUE )
 			{
-				Logger::GetInstance()->Error ("CreateFile Failed " + GetLastError());				
+				Logger::GetInstance()->Info ("CreateFile Failed, device not exists " + GetLastError());				
 			}
 			else 
 			{
