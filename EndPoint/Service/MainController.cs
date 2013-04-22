@@ -236,6 +236,7 @@ namespace MyDLP.EndPoint.Service
             bool oldBlockScreenShot = Configuration.BlockScreenShot;
             bool oldRemStorEncryption = Configuration.RemovableStorageEncryption;
             bool oldHasEncryptionKey = Configuration.HasEncryptionKey;
+            String oldPrinterPrefix = Configuration.PrinterPrefix;
 
             if (SeapClient.HasNewConfiguration())
             {
@@ -250,14 +251,14 @@ namespace MyDLP.EndPoint.Service
                 else if (!Configuration.UsbSerialAccessControl && oldUSBSerialAC)
                 {
                     Core.USBController.Deactive();
-                }
+                }                
 
                 if (Configuration.UsbSerialAccessControl)
                 {
                     USBController.InvalidateCache();
                     Core.USBController.GetUSBStorages();
                 }
-
+                                
                 if (Configuration.PrinterMonitor && !oldPrinterMonitor)
                 {
                     Service.PrinterController.getInstance().Start();
@@ -265,6 +266,11 @@ namespace MyDLP.EndPoint.Service
                 else if (!Configuration.PrinterMonitor && oldPrinterMonitor)
                 {
                     Service.PrinterController.getInstance().Stop();
+                }
+                else if (Configuration.PrinterMonitor && (Configuration.PrinterPrefix != oldPrinterPrefix)) 
+                {
+                    Service.PrinterController.getInstance().Stop();
+                    Service.PrinterController.getInstance().Start();                
                 }
 
                 if (Configuration.RemovableStorageEncryption && !oldRemStorEncryption)
