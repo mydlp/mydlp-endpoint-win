@@ -474,7 +474,8 @@ namespace MyDLP.EndPoint.Core
 
                 response = sClient.sendMessage("CONFUPDATE " 
                     + "version=" + qpEncode(version) + " " 
-                    + "user=" + qpEncode(loggedOnUser));
+                    + "user=" + qpEncode(loggedOnUser)
+                    + "hostname=" + qpEncode(System.Environment.MachineName));
                 splitResp = response.Split(' ');
                 if (!splitResp[0].Equals("OK"))
                 {
