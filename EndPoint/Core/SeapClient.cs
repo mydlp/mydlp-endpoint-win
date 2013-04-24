@@ -466,15 +466,15 @@ namespace MyDLP.EndPoint.Core
                 SeapClient sClient = SeapClient.GetInstance();
                 String response;
                 String[] splitResp;
-                
+
                 String loggedOnUser = Configuration.GetLoggedOnUser();
                 String version = Configuration.GetMyDLPVersion();
                 if (version == null || version.Length == 0)
                     version = "No version";
 
-                response = sClient.sendMessage("CONFUPDATE " 
-                    + "version=" + qpEncode(version) + " " 
-                    + "user=" + qpEncode(loggedOnUser)
+                response = sClient.sendMessage("CONFUPDATE "
+                    + "version=" + qpEncode(version) + " "
+                    + "user=" + qpEncode(loggedOnUser) + " "
                     + "hostname=" + qpEncode(System.Environment.MachineName));
                 splitResp = response.Split(' ');
                 if (!splitResp[0].Equals("OK"))
@@ -683,52 +683,52 @@ namespace MyDLP.EndPoint.Core
             return FileOperation.Action.ALLOW;
         }
 
-        public static void InitiateRemotePrint(String jobId, String printerName, String server,  String path)
+        public static void InitiateRemotePrint(String jobId, String printerName, String server, String path)
         {
             try
             {
                 SeapClient sClient = SeapClient.GetInstance();
                 Logger.GetInstance().Debug("InitiatedRemotePrint " + " printerName: " + printerName + " server:" + server +
                     " path: " + path);
-                String shortFilePath = Engine.GetShortPath(path);             
+                String shortFilePath = Engine.GetShortPath(path);
                 String response;
                 String request = "IECP " + server + " " + qpEncode(shortFilePath)
-                    + " command=print" 
+                    + " command=print"
                     + " user=" + Configuration.GetLoggedOnUser()
                     + " printerName=" + qpEncode(printerName)
                     + " jobId=" + qpEncode(jobId);
                 Logger.GetInstance().Debug("request:<" + request + ">");
 
                 response = sClient.sendMessage(request);
-                Logger.GetInstance().Debug("response:<" + response + ">");             
+                Logger.GetInstance().Debug("response:<" + response + ">");
             }
             catch (Exception e)
             {
                 Logger.GetInstance().Error(e.ToString());
             }
         }
-        
+
         public delegate void RemotePrinterHandlerDelegate(String jobId, String printJobPath, String printerName);
-        
-        public static void  ListenRemotePrintBlocking(RemotePrinterHandlerDelegate processPrinting)
+
+        public static void ListenRemotePrintBlocking(RemotePrinterHandlerDelegate processPrinting)
         {
-            String user="";
-            String printerName="";
-            String jobId="";
-            String path="";
-            
+            String user = "";
+            String printerName = "";
+            String jobId = "";
+            String path = "";
+
             try
             {
                 SeapClient sClient = SeapClient.GetTrapInstance();
                 Logger.GetInstance().Debug("TRAP");
                 String response;
                 String[] splitResp;
-             
+
                 response = sClient.sendMessage("TRAP");
                 splitResp = response.Split(' ');
                 if (!splitResp[0].Equals("OK"))
                 {
-                    return; 
+                    return;
                 }
                 if (splitResp[1].StartsWith("retrap"))
                 {
@@ -737,11 +737,11 @@ namespace MyDLP.EndPoint.Core
                 else if (splitResp[1].StartsWith("print"))
                 {
                     path = splitResp[2];
-                    for(int i = 3; i < splitResp.Length; i++) 
+                    for (int i = 3; i < splitResp.Length; i++)
                     {
                         int idx = splitResp[i].IndexOf('=');
                         String key = splitResp[i].Substring(0, idx);
-                        String val = splitResp[i].Substring(idx+1);
+                        String val = splitResp[i].Substring(idx + 1);
                         val = qpDecode(val);
                         if (key == "user") user = val;
                         else if (key == "user") user = val;
@@ -904,9 +904,9 @@ namespace MyDLP.EndPoint.Core
 
                 if (tryCount >= tryLimit)
                 {
-                    Logger.GetInstance().Error("SeapClient connection error, engine unreachable:" + lastException.Message + " " + lastException.StackTrace );
+                    Logger.GetInstance().Error("SeapClient connection error, engine unreachable:" + lastException.Message + " " + lastException.StackTrace);
                     SvcController.StopMyDLP();
-                    return ""; 
+                    return "";
                 }
             }
 
@@ -935,9 +935,9 @@ namespace MyDLP.EndPoint.Core
             try
             {
                 //consume &discard error message if any
-               
-               
-                if (stream!= null && stream.DataAvailable)
+
+
+                if (stream != null && stream.DataAvailable)
                 {
                     reader.ReadToEnd();
                 }
@@ -984,7 +984,7 @@ namespace MyDLP.EndPoint.Core
             return ret;
         }
 
-        protected static String qpDecode(String str) 
+        protected static String qpDecode(String str)
         {
             Attachment a = Attachment.CreateAttachmentFromString("", "=?utf-8?Q?" + str + "?=");
             return a.Name;
