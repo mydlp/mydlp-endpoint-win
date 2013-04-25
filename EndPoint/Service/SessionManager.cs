@@ -5,6 +5,7 @@ using System.Text;
 using System.Management;
 using MyDLP.EndPoint.Core;
 using System.Collections;
+using System.Diagnostics;
 
 namespace MyDLP.EndPoint.Service
 {
@@ -17,9 +18,6 @@ namespace MyDLP.EndPoint.Service
         public static void Start()
         {
             sessionManager = new SessionManager();
-            //sessionManager.StartLogonListener();
-            //sessionManager.EnumerateSessions();
-
 
             //This is to resolve circular dependency
             Configuration.GetLoggedOnUser = new Configuration.GetLoggedOnUserDeleagate(GetCurrentUser);
@@ -27,14 +25,40 @@ namespace MyDLP.EndPoint.Service
 
         public static String GetCurrentUser()
         {
-            MyDLPEP.LogonSession session = MyDLPEP.SessionUtils.GetActiveSession();                      
-            if (session != null)
+            List<MyDLPEP.LogonSession>sessions = MyDLPEP.SessionUtils.GetActiveSessions();
+            Dictionary<int,int> sessionDic = new Dictionary<int,int>();
+            MyDLPEP.LogonSession activeSession = null;
+            
+            Process[] processlist = Process.GetProcesses();
+            foreach (Process process in processlist)
             {
-                Logger.GetInstance().Debug("Sid:" + session.sid);
+                if (sessionDic.ContainsKey(process.SessionId)){
+                    sessionDic[process.SessionId] = sessionDic[process.SessionId] + 1;                
+                }
+                else
+                {
+                    sessionDic.Add(process.SessionId, 1); 
+                }
+            } 
+                        
+            int sessionWithMostProcesses = 0;
+
+            foreach (MyDLPEP.LogonSession session in sessions)
+            {
+                if (sessionDic[session.sessionId] >= sessionDic[sessionWithMostProcesses])
+                {
+                    sessionWithMostProcesses = session.sessionId;
+                    activeSession = session;
+                }
+            }
+
+            if (activeSession != null)
+            {
+                Logger.GetInstance().Debug("Sid:" + activeSession.sid);
                 //Update secure printers for shared printers
                 if (Configuration.PrinterMonitor)
-                    PrinterController.getInstance().ListenPrinterConnections(session.sid);
-                return session.name + "@" + session.domain;
+                    PrinterController.getInstance().ListenPrinterConnections(activeSession.sid);
+                return activeSession.name + "@" + activeSession.domain;
             }
             else
             {
@@ -47,45 +71,10 @@ namespace MyDLP.EndPoint.Service
             sessionManager = null;
         }
 
-        /*public void EnumerateSessions()
-        {
-            sessions = MyDLPEP.SessionUtils.EnumerateLogonSessions();
-        }
-         */
-
-        private SessionManager()
+         private SessionManager()
         {
             sessions = new ArrayList();
 
         }
-
-        /*private void StartLogonListener()
-        {
-            try
-            {
-                Logger.GetInstance().Debug("Start StartLogonListener");
-                ManagementEventWatcher w = null;
-                WqlEventQuery q = new WqlEventQuery();
-                q.EventClassName = "__InstanceCreationEvent";
-                q.WithinInterval = new TimeSpan(0, 0, 30); // query interval
-                q.Condition = @"TargetInstance ISA 'Win32_LogonSession'";
-                w = new ManagementEventWatcher(q);
-                w.EventArrived += new EventArrivedEventHandler(LogonEventArrived);
-                w.Start();
-                Logger.GetInstance().Debug("Start StartLogonListener Finished");
-            }
-            catch(Exception ex)
-            {
-                Logger.GetInstance().Error(ex.StackTrace + " " + ex.Message);
-            }
-        }*/
-
-
-        /*private static void LogonEventArrived(object sender, EventArrivedEventArgs e)
-        {
-            Logger.GetInstance().Debug("LOGON OCCURED");
-            sessionManager.EnumerateSessions();
-        }*/
-
     }
 }

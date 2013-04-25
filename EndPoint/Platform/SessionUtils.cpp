@@ -24,8 +24,9 @@ using namespace System::Collections::Generic;
 
 namespace MyDLPEP
 {
+	/*
 	List<int>^ SessionUtils::EnumerateActiveSessionIds()
-	{
+	{		
 		List<int>^ activeList = gcnew List<int>();
 		WTS_SESSION_INFO* ppSessionInfo = NULL;
 		DWORD count;
@@ -51,19 +52,20 @@ namespace MyDLPEP
 		}
 
 		return activeList;
-	}
+	}*/
 
-	LogonSession^ SessionUtils::GetActiveSession()
+	List<LogonSession^>^ SessionUtils::GetActiveSessions()
 	{
 		DWORD sessionId;
 		ULONG sessionCount;
 		PLUID sessionList;
 		NTSTATUS retval;
 		LogonSession^ session = nullptr;
-		List<int>^ activeSessionIds;
+		//List<int>^ activeSessionIds;
 		int i;
-
-		activeSessionIds = EnumerateActiveSessionIds();
+		List<LogonSession^>^ logonList = gcnew List<LogonSession^>();
+		
+		/*activeSessionIds = EnumerateActiveSessionIds();
 
 		if (activeSessionIds->Count == 0)
 		{
@@ -76,8 +78,10 @@ namespace MyDLPEP
 		}
 
 		sessionId = activeSessionIds[0];
+		*/
 
-		Logger::GetInstance()->Debug("EnumerateActiveSessionIds[0] sessionId:" + sessionId);
+
+		//Logger::GetInstance()->Debug("EnumerateActiveSessionIds[0] sessionId:" + sessionId);
 
 		retval = LsaEnumerateLogonSessions( &sessionCount, &sessionList);
 		if (retval != STATUS_SUCCESS)
@@ -96,10 +100,10 @@ namespace MyDLPEP
 				continue;
 			}
 
-			if (newSession->sessionId != sessionId)
+			/*if (newSession->sessionId != sessionId)
 			{
 				continue;
-			}
+			}*/
 
 			if (newSession->type != Interactive
 				&& newSession->type != RemoteInteractive
@@ -109,7 +113,9 @@ namespace MyDLPEP
 				continue;
 			}
 
-			if (session == nullptr)
+			logonList->Add(newSession);
+
+			/*if (session == nullptr)
 			{
 				session = newSession;
 			}
@@ -117,10 +123,10 @@ namespace MyDLPEP
 			{
 				Logger::GetInstance()->Debug("Session data is old setting new session");
 				session = newSession;
-			}
+			}*/
 		}
 		LsaFreeReturnBuffer(sessionList);
-		return session;
+		return logonList;
 	}
 
 
@@ -253,7 +259,7 @@ namespace MyDLPEP
 		if (System::Environment::UserInteractive)
 			return true;
 
-		LogonSession^ session = GetActiveSession();
+		LogonSession^ session = GetActiveSessions()[0];
 		DWORD dwSessionId = (DWORD)session->sessionId;
 
 		HANDLE hTokenNew = NULL, hTokenDup = NULL;

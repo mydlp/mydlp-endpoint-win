@@ -73,10 +73,10 @@ namespace MyDLPEP
 
 	public:
 		static LogonSession^ GetSessionData(PLUID);
-		static LogonSession^ GetActiveSession();
+		static List<LogonSession^>^ GetActiveSessions();
 		static bool ImpersonateActiveUser();
 		static bool StopImpersonation();
 		static int GetPhysicalMemory();
-		static List<int>^ EnumerateActiveSessionIds();
+		//static List<int>^ EnumerateActiveSessionIds();
 	};
 }
