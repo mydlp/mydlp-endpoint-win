@@ -24,7 +24,7 @@ using namespace System::Collections::Generic;
 
 namespace MyDLPEP
 {
-	/*
+
 	List<int>^ SessionUtils::EnumerateActiveSessionIds()
 	{		
 		List<int>^ activeList = gcnew List<int>();
@@ -52,7 +52,7 @@ namespace MyDLPEP
 		}
 
 		return activeList;
-	}*/
+	}
 
 	List<LogonSession^>^ SessionUtils::GetActiveSessions()
 	{
@@ -65,23 +65,6 @@ namespace MyDLPEP
 		int i;
 		List<LogonSession^>^ logonList = gcnew List<LogonSession^>();
 		
-		/*activeSessionIds = EnumerateActiveSessionIds();
-
-		if (activeSessionIds->Count == 0)
-		{
-			Logger::GetInstance()->Debug("EnumerateActiveSessionIds returns no id");
-			return nullptr;
-		}
-		else if (activeSessionIds->Count > 1)
-		{
-			Logger::GetInstance()->Debug("EnumerateActiveSessionIds returns multiple id, using first one");
-		}
-
-		sessionId = activeSessionIds[0];
-		*/
-
-
-		//Logger::GetInstance()->Debug("EnumerateActiveSessionIds[0] sessionId:" + sessionId);
 
 		retval = LsaEnumerateLogonSessions( &sessionCount, &sessionList);
 		if (retval != STATUS_SUCCESS)
@@ -100,11 +83,6 @@ namespace MyDLPEP
 				continue;
 			}
 
-			/*if (newSession->sessionId != sessionId)
-			{
-				continue;
-			}*/
-
 			if (newSession->type != Interactive
 				&& newSession->type != RemoteInteractive
 				&& newSession->type != CachedInteractive
@@ -112,18 +90,8 @@ namespace MyDLPEP
 			{
 				continue;
 			}
-
+			
 			logonList->Add(newSession);
-
-			/*if (session == nullptr)
-			{
-				session = newSession;
-			}
-			else if (session->logonTime < newSession->logonTime)
-			{
-				Logger::GetInstance()->Debug("Session data is old setting new session");
-				session = newSession;
-			}*/
 		}
 		LsaFreeReturnBuffer(sessionList);
 		return logonList;
@@ -239,6 +207,7 @@ namespace MyDLPEP
 		if (ConvertSidToStringSid(sessionData->Sid, &stringSid))
 		{
 			iSession->sid = gcnew String(stringSid);
+			LocalFree(stringSid);
 		}
 		else
 		{

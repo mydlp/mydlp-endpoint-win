@@ -25,32 +25,33 @@ namespace MyDLP.EndPoint.Service
 
         public static String GetCurrentUser()
         {
-            List<MyDLPEP.LogonSession>sessions = MyDLPEP.SessionUtils.GetActiveSessions();
-            Dictionary<int,int> sessionDic = new Dictionary<int,int>();
-            MyDLPEP.LogonSession activeSession = null;
+            List<MyDLPEP.LogonSession> sessions = MyDLPEP.SessionUtils.GetActiveSessions();
+            List<int> sessionIds = MyDLPEP.SessionUtils.EnumerateActiveSessionIds();
             
-            Process[] processlist = Process.GetProcesses();
-            foreach (Process process in processlist)
+            MyDLPEP.LogonSession activeSession = null;
+                     
+            //just debugging
+            foreach (int sessionId in sessionIds) 
             {
-                if (sessionDic.ContainsKey(process.SessionId)){
-                    sessionDic[process.SessionId] = sessionDic[process.SessionId] + 1;                
-                }
-                else
-                {
-                    sessionDic.Add(process.SessionId, 1); 
-                }
-            } 
-                        
-            int sessionWithMostProcesses = 0;
+                Logger.GetInstance().Debug("EnumerateActiveSessionId: " + sessionId);
+            }
 
+
+            //this works reliable in Win 7
             foreach (MyDLPEP.LogonSession session in sessions)
             {
-                if (sessionDic[session.sessionId] >= sessionDic[sessionWithMostProcesses])
+                Logger.GetInstance().Debug("Logon Session:" + session);
+                if (sessionIds.Contains(session.sessionId)) 
                 {
-                    sessionWithMostProcesses = session.sessionId;
                     activeSession = session;
                 }
             }
+
+            if (activeSession == null && sessions.Count > 0) 
+            {
+                //last resort
+                activeSession = sessions[0];            
+            }                       
 
             if (activeSession != null)
             {

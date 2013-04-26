@@ -66,6 +66,11 @@ namespace MyDLPEP
 			this->logonTime = 0;
 			this->type = SECURITY_LOGON_TYPE::UndefinedLogonType;
 		}
+		
+		virtual String^ ToString() override
+		{
+			return "upn:" + upn + " sid: " + sid + " name:" + name + " domain:" + domain + " sessionId:" + Convert::ToString((int)sessionId);
+		}
 	};
 
 	public ref class SessionUtils
@@ -77,6 +82,7 @@ namespace MyDLPEP
 		static bool ImpersonateActiveUser();
 		static bool StopImpersonation();
 		static int GetPhysicalMemory();
-		//static List<int>^ EnumerateActiveSessionIds();
+		static List<int>^ EnumerateActiveSessionIds();
 	};
+
 }
