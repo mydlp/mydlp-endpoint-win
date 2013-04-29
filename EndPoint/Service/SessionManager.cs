@@ -25,31 +25,42 @@ namespace MyDLP.EndPoint.Service
 
         public static String GetCurrentUser()
         {
-            List<MyDLPEP.LogonSession>sessions = MyDLPEP.SessionUtils.GetActiveSessions();
-            Dictionary<int,int> sessionDic = new Dictionary<int,int>();
             MyDLPEP.LogonSession activeSession = null;
-            
-            Process[] processlist = Process.GetProcesses();
-            foreach (Process process in processlist)
-            {
-                if (sessionDic.ContainsKey(process.SessionId)){
-                    sessionDic[process.SessionId] = sessionDic[process.SessionId] + 1;                
-                }
-                else
-                {
-                    sessionDic.Add(process.SessionId, 1); 
-                }
-            } 
-                        
-            int sessionWithMostProcesses = 0;
 
-            foreach (MyDLPEP.LogonSession session in sessions)
+            try
             {
-                if (sessionDic[session.sessionId] >= sessionDic[sessionWithMostProcesses])
+
+                List<MyDLPEP.LogonSession> sessions = MyDLPEP.SessionUtils.GetActiveSessions();
+                List<int> sessionIds = MyDLPEP.SessionUtils.EnumerateActiveSessionIds();
+
+
+
+                //just debugging
+                foreach (int sessionId in sessionIds)
                 {
-                    sessionWithMostProcesses = session.sessionId;
-                    activeSession = session;
+                    Logger.GetInstance().Debug("EnumerateActiveSessionId: " + sessionId);
                 }
+
+
+                //this works reliable in Win 7
+                foreach (MyDLPEP.LogonSession session in sessions)
+                {
+                    Logger.GetInstance().Debug("Logon Session:" + session);
+                    if (sessionIds.Contains(session.sessionId))
+                    {
+                        activeSession = session;
+                    }
+                }
+
+                if (activeSession == null && sessions.Count > 0)
+                {
+                    //last resort
+                    activeSession = sessions[0];
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.GetInstance().Error("GetUSer error:" + e);
             }
 
             if (activeSession != null)
@@ -71,7 +82,7 @@ namespace MyDLP.EndPoint.Service
             sessionManager = null;
         }
 
-         private SessionManager()
+        private SessionManager()
         {
             sessions = new ArrayList();
 
