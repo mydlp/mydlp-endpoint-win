@@ -44,7 +44,6 @@ namespace MyDLPEP
 		Int64 logonTime;
 		SECURITY_LOGON_TYPE type;
 
-
 		LogonSession(const LogonSession^ iSession)
 		{
 			this->upn = iSession->upn;
@@ -69,20 +68,41 @@ namespace MyDLPEP
 		
 		virtual String^ ToString() override
 		{
-			return "upn:" + upn + " sid: " + sid + " name:" + name + " domain:" + domain + " sessionId:" + Convert::ToString((int)sessionId);
+			return "upn:" + upn + " sid: " + sid + " name:" + name + " domain:" + domain + " sessionId:" + Convert::ToString((int)sessionId) + " type: " + Convert::ToString((int)type) ;
 		}
 	};
 
+		public ref class ActiveSession
+	{
+	public:
+		String^ name;
+		String^ domain;
+		int sessionId;
+
+		ActiveSession(const ActiveSession^ item)
+		{
+			this->name = item->name;
+			this->domain = item->domain;
+			this->sessionId = item->sessionId;		
+		}
+
+		ActiveSession()
+		{
+			this->name = "";
+			this->domain = "";
+			this->sessionId = 0;		
+		}
+	};
+
+
 	public ref class SessionUtils
 	{
-
 	public:
 		static LogonSession^ GetSessionData(PLUID);
-		static List<LogonSession^>^ GetActiveSessions();
+		static List<LogonSession^>^ GetLogonSessions();
 		static bool ImpersonateActiveUser();
 		static bool StopImpersonation();
 		static int GetPhysicalMemory();
-		static List<int>^ EnumerateActiveSessionIds();
+		static List<ActiveSession^>^ EnumerateActiveSessionIds();		
 	};
-
 }

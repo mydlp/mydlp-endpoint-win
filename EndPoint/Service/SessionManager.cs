@@ -25,56 +25,56 @@ namespace MyDLP.EndPoint.Service
 
         public static String GetCurrentUser()
         {
-            MyDLPEP.LogonSession activeSession = null;
+            String upn = "No Session";
+            String sid = "";
+
+            List<MyDLPEP.ActiveSession> consoleSessions = null;
+            List<MyDLPEP.LogonSession> logonSessions = null;
 
             try
             {
-
-                List<MyDLPEP.LogonSession> sessions = MyDLPEP.SessionUtils.GetActiveSessions();
-                List<int> sessionIds = MyDLPEP.SessionUtils.EnumerateActiveSessionIds();
-
-
+                consoleSessions = MyDLPEP.SessionUtils.EnumerateActiveSessionIds();
+                logonSessions = MyDLPEP.SessionUtils.GetLogonSessions();
 
                 //just debugging
-                foreach (int sessionId in sessionIds)
+                foreach (MyDLPEP.ActiveSession session in consoleSessions)
                 {
-                    Logger.GetInstance().Debug("EnumerateActiveSessionId: " + sessionId);
+                    Logger.GetInstance().Debug("ConsoleSession: name=" + session.name + " domain=" + session.domain + " sessionId=" + session.sessionId);
                 }
 
-
-                //this works reliable in Win 7
-                foreach (MyDLPEP.LogonSession session in sessions)
+                foreach (MyDLPEP.LogonSession session in logonSessions)
                 {
-                    Logger.GetInstance().Debug("Logon Session:" + session);
-                    if (sessionIds.Contains(session.sessionId))
+                    Logger.GetInstance().Debug("LogonSession: " + session);
+                }
+
+                foreach (MyDLPEP.ActiveSession cSession in consoleSessions)
+                {
+                    foreach (MyDLPEP.LogonSession lSession in logonSessions)
                     {
-                        activeSession = session;
+                        if (cSession.sessionId == lSession.sessionId && cSession.name == lSession.name)
+                        {
+                            upn = lSession.name + "@" + lSession.domain;
+                            sid = lSession.sid;
+                        }
                     }
                 }
 
-                if (activeSession == null && sessions.Count > 0)
-                {
-                    //last resort
-                    activeSession = sessions[0];
-                }
             }
             catch (Exception e)
             {
                 Logger.GetInstance().Error("GetUSer error:" + e);
             }
 
-            if (activeSession != null)
+
+            if (sid != "")
             {
-                Logger.GetInstance().Debug("Sid:" + activeSession.sid);
+                Logger.GetInstance().Debug("Sid:" + sid);
                 //Update secure printers for shared printers
                 if (Configuration.PrinterMonitor)
-                    PrinterController.getInstance().ListenPrinterConnections(activeSession.sid);
-                return activeSession.name + "@" + activeSession.domain;
+                    PrinterController.getInstance().ListenPrinterConnections(sid);
             }
-            else
-            {
-                return "No Session";
-            }
+
+            return upn;
         }
 
         public static void Stop()

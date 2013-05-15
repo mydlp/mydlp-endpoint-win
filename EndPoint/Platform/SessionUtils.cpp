@@ -24,25 +24,53 @@ using namespace System::Collections::Generic;
 
 namespace MyDLPEP
 {
-
-	List<int>^ SessionUtils::EnumerateActiveSessionIds()
+	List<ActiveSession^>^ SessionUtils::EnumerateActiveSessionIds()
 	{		
-		List<int>^ activeList = gcnew List<int>();
-		WTS_SESSION_INFO* ppSessionInfo = NULL;
+		List<ActiveSession^>^ activeList = gcnew List<ActiveSession^>();
+		WTS_SESSION_INFO* ppSessionInfo = NULL;		
 		DWORD count;
-		BOOL retval; 
-		retval = WTSEnumerateSessions(WTS_CURRENT_SERVER_HANDLE,
+		BOOL bStatus; 
+		DWORD dwLen;
+		
+		LPTSTR szUserName = NULL;
+		LPTSTR szDomainName = NULL;
+
+
+		bStatus = WTSEnumerateSessions(WTS_CURRENT_SERVER_HANDLE,
 			0,1,
 			&ppSessionInfo,
 			&count);
 
-		if (retval)
+		if (bStatus)
 		{
 			for (int i = 0; i < count; i++)
 			{
 				if (ppSessionInfo[i].State == WTSActive)
 				{
-					activeList->Add(ppSessionInfo[i].SessionId);
+					ActiveSession^ session = gcnew ActiveSession();				
+						
+					session->sessionId = ppSessionInfo[i].SessionId;
+					
+					bStatus = WTSQuerySessionInformation(WTS_CURRENT_SERVER_HANDLE,
+						session->sessionId,
+						WTSDomainName,
+						&szDomainName,
+						&dwLen);
+
+					if (bStatus)
+					{
+						session->domain = gcnew String(szDomainName);						
+					}
+					bStatus = WTSQuerySessionInformation(WTS_CURRENT_SERVER_HANDLE,
+						session->sessionId,
+						WTSUserName,
+						&szUserName,
+						&dwLen);
+					if (bStatus)
+					{
+						session->name = gcnew String(szUserName);
+					}
+					activeList->Add(session);
 				}
 			}
 		}
@@ -50,18 +78,85 @@ namespace MyDLPEP
 		{
 			WTSFreeMemory(ppSessionInfo);
 		}
+		
+		if (szDomainName != NULL)
+		{
+			WTSFreeMemory(szDomainName);
+		}
+		
+		if (szUserName != NULL)
+		{
+			WTSFreeMemory(szUserName);
+		}
 
 		return activeList;
 	}
 
-	List<LogonSession^>^ SessionUtils::GetActiveSessions()
+	
+	bool SessionUtils::ImpersonateActiveUser()
+	{
+		if (System::Environment::UserInteractive)
+			return true;
+
+		List<ActiveSession^>^ activeList;
+		activeList = EnumerateActiveSessionIds();
+
+		if (activeList->Count < 1) 
+		{
+			return false;			
+		}
+
+	
+
+		DWORD dwSessionId = (DWORD)(activeList[0])->sessionId;
+
+		HANDLE hTokenNew = NULL, hTokenDup = NULL;
+
+		if (!WTSQueryUserToken(dwSessionId, &hTokenNew))
+		{
+			Logger::GetInstance()->Error("WTSQueryUserToken failed" + (gcnew Win32Exception(GetLastError()))->Message );
+			return false;
+		}
+
+		DuplicateTokenEx(hTokenNew,MAXIMUM_ALLOWED,NULL,SecurityIdentification,TokenPrimary,&hTokenDup);
+		if (!ImpersonateLoggedOnUser (hTokenDup))
+		{
+			Logger::GetInstance()->Error("ImpersonateLoggedOnUser failed" + (gcnew Win32Exception(GetLastError()))->Message );
+			return false;
+		}
+
+		return true;
+	}
+
+
+	bool SessionUtils::StopImpersonation()
+	{
+		if (System::Environment::UserInteractive)
+			return true;
+
+		return RevertToSelf();
+	}
+
+
+	int SessionUtils::GetPhysicalMemory()
+	{
+		MEMORYSTATUSEX statex;
+		statex.dwLength = sizeof (statex);
+
+		GlobalMemoryStatusEx (&statex);
+
+		return statex.ullTotalPhys / (1024 * 1024);
+
+	}
+
+	List<LogonSession^>^ SessionUtils::GetLogonSessions()
 	{
 		DWORD sessionId;
 		ULONG sessionCount;
 		PLUID sessionList;
 		NTSTATUS retval;
 		LogonSession^ session = nullptr;
-		//List<int>^ activeSessionIds;
+
 		int i;
 		List<LogonSession^>^ logonList = gcnew List<LogonSession^>();
 		
@@ -220,53 +315,5 @@ namespace MyDLPEP
 		iSession->type = (SECURITY_LOGON_TYPE) sessionData->LogonType;
 		LsaFreeReturnBuffer(sessionData);
 		return iSession;
-	}
-
-
-	bool SessionUtils::ImpersonateActiveUser()
-	{
-		if (System::Environment::UserInteractive)
-			return true;
-
-		LogonSession^ session = GetActiveSessions()[0];
-		DWORD dwSessionId = (DWORD)session->sessionId;
-
-		HANDLE hTokenNew = NULL, hTokenDup = NULL;
-
-		if (!WTSQueryUserToken(dwSessionId, &hTokenNew))
-		{
-			Logger::GetInstance()->Error("WTSQueryUserToken failed" + (gcnew Win32Exception(GetLastError()))->Message );
-			return false;
-		}
-
-		DuplicateTokenEx(hTokenNew,MAXIMUM_ALLOWED,NULL,SecurityIdentification,TokenPrimary,&hTokenDup);
-		if (!ImpersonateLoggedOnUser (hTokenDup))
-		{
-			Logger::GetInstance()->Error("ImpersonateLoggedOnUser failed" + (gcnew Win32Exception(GetLastError()))->Message );
-			return false;
-		}
-
-		return true;
-	}
-
-
-	bool SessionUtils::StopImpersonation()
-	{
-		if (System::Environment::UserInteractive)
-			return true;
-
-		return RevertToSelf();
-	}
-
-
-	int SessionUtils::GetPhysicalMemory()
-	{
-		MEMORYSTATUSEX statex;
-		statex.dwLength = sizeof (statex);
-
-		GlobalMemoryStatusEx (&statex);
-
-		return statex.ullTotalPhys / (1024 * 1024);
-
 	}
 }

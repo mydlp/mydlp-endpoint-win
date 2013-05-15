@@ -92,7 +92,6 @@ namespace MyDLP.EndPoint.Core
                 Logger.GetInstance().Error("Error at SessionServer stop:" + e);
             }
         }
-
         
         protected static void closeSocket(TcpClient client) 
         {
