@@ -41,18 +41,15 @@ namespace MyDLP.EndPoint.Service
             MainController controller =
                 MainController.GetInstance();
             controller.Start();
-
-            myDLPEventLog.WriteEntry("MyDLP-EP-Win service started");
+            //myDLPEventLog.WriteEntry("MyDLP-EP-Win service started");
         }
 
         protected override void OnStop()
         {
             MainController controller =
                 MainController.GetInstance();
-
             controller.Stop();
-
-            myDLPEventLog.WriteEntry("MyDLP-EP-Win service stopped");
+            //myDLPEventLog.WriteEntry("MyDLP-EP-Win service stopped");
         }
 
         private void InitializeLogSource()

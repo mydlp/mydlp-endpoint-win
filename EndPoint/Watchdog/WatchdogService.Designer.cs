@@ -35,7 +35,7 @@
             // 
             this.myDLPEventLog.EnableRaisingEvents = true;
             this.myDLPEventLog.Log = "Application";
-            this.myDLPEventLog.Source = "MyDLPEPWatchdog";
+            this.myDLPEventLog.Source = "MyDLPEP";
             // 
             // WatchdogService
             // 

@@ -34,11 +34,11 @@
             // myDLPEventLog
             // 
             this.myDLPEventLog.Log = "Application";
-            this.myDLPEventLog.Source = "MyDLPEPWIN";
+            this.myDLPEventLog.Source = "MyDLPEP";
             // 
             // MyDLPService
             // 
-            this.ServiceName = "MyDLPEP";
+            this.ServiceName = "mydlpepwin";
             ((System.ComponentModel.ISupportInitialize)(this.myDLPEventLog)).EndInit();
 
         }
