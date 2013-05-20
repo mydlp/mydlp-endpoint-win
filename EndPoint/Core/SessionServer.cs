@@ -29,284 +29,199 @@ using System.Collections;
 
 namespace MyDLP.EndPoint.Core
 {
-    public class SessionServer
+    public class AsyncTcpServer
     {
-        public static bool stopFlag = false;
-        public static Hashtable socketTable;
-        
-        private static TcpListener tcpListener = null;
-        private static Thread listenThread;
+        private TcpListener tcpListener;
+        private List<Client> clients;
 
-        public static void Start()
+        public AsyncTcpServer(IPAddress localaddr, int port)
+            : this()
         {
-            try
-            {
-                Logger.GetInstance().Debug("Started Session Server");               
-                listenThread = new Thread(new ThreadStart(ListenConnections));
-                listenThread.Start();
-                socketTable = new Hashtable();
-
-                try
-                {
-                    if (!Environment.UserInteractive)
-                    {
-                        RegistryKey runKey = Registry.LocalMachine.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run", true);
-                        bool exist = false;
-                        foreach (String name in runKey.GetValueNames())
-                        {
-                            if (name == "mydlp_agent")
-                            {
-                                exist = true;
-                            }
-                        }
-
-                        if (!exist)
-                        {
-                            runKey.SetValue("mydlp_agent", "\"" + Configuration.AppPath + "mydlpui.exe\"");
-                        }
-                    }
-                }
-                catch (Exception e)
-                {
-                    Logger.GetInstance().Error("Unable to add Notification Agent:" + e);
-                }
-            }
-            catch (Exception e)
-            {
-                Logger.GetInstance().Error("Unable to start session server :" + e);
-            }
+            tcpListener = new TcpListener(localaddr, port);
         }
 
 
-        public static void Stop()
+        private AsyncTcpServer()
         {
-            try
+            this.clients = new List<Client>();
+        }
+
+        public IEnumerable<TcpClient> TcpClients
+        {
+            get
             {
-                tcpListener.Server.Close();
-                tcpListener.Stop();
-                stopFlag = true;
-                closeAllSockets();
-            }
-            catch (Exception e)
-            {
-                Logger.GetInstance().Error("Error at SessionServer stop:" + e);
+                foreach (Client client in this.clients)
+                {
+                    yield return client.TcpClient;
+                }
             }
         }
-        
-        protected static void closeSocket(TcpClient client) 
+
+        public void Start()
         {
+            this.tcpListener.Start();
+            this.tcpListener.BeginAcceptTcpClient(AcceptTcpClientCallback, null);
+        }
+
+        public void Stop()
+        {
+            this.tcpListener.Stop();
+            lock (this.clients)
+            {
+                foreach (Client client in this.clients)
+                {
+                    client.TcpClient.Client.Disconnect(false);
+                }
+                this.clients.Clear();
+            }
+        }
+
+        public void Write(TcpClient tcpClient, string data)
+        {
+            Logger.GetInstance().Debug("SessionManager response <" + data + ">");
+            byte[] bytes = Encoding.ASCII.GetBytes(data + "\r\n");
+            Write(tcpClient, bytes);
+        }
+
+        public void Write(TcpClient tcpClient, byte[] bytes)
+        {
+            NetworkStream networkStream = tcpClient.GetStream();
+            networkStream.BeginWrite(bytes, 0, bytes.Length, WriteCallback, tcpClient);
+        }
+
+        private void WriteCallback(IAsyncResult result)
+        {
+            TcpClient tcpClient = result.AsyncState as TcpClient;
+            NetworkStream networkStream = tcpClient.GetStream();
+            networkStream.EndWrite(result);
+        }
+
+        private void AcceptTcpClientCallback(IAsyncResult result)
+        {
+            TcpClient tcpClient = tcpListener.EndAcceptTcpClient(result);
+            byte[] buffer = new byte[tcpClient.ReceiveBufferSize];
+            Client client = new Client(tcpClient, buffer);
+            lock (this.clients)
+            {
+                this.clients.Add(client);
+            }
+            NetworkStream networkStream = client.NetworkStream;
+            networkStream.BeginRead(client.Buffer, 0, client.Buffer.Length, ReadCallback, client);
+            tcpListener.BeginAcceptTcpClient(AcceptTcpClientCallback, null);
+        }
+
+        private void ReadCallback(IAsyncResult result)
+        {
+            Client client = result.AsyncState as Client;
             if (client == null) return;
-            if (socketTable == null) return;
-            if (!socketTable.Contains(client)) return;
-
+            NetworkStream networkStream = client.NetworkStream;
             try
             {
-                client.Close();
+                int read = networkStream.EndRead(result);
+                if (read == 0)
+                {
+                    lock (this.clients)
+                    {
+                        this.clients.Remove(client);
+                        return;
+                    }
+                }
+                string data = Encoding.ASCII.GetString(client.Buffer, 0, read);
+                data = data.Trim();
+                if (data != "")
+                {
+                    Logger.GetInstance().Debug("SessionManager request <" + data + ">");
+                    HandleData(data, client);
+                }
+
+                networkStream.BeginRead(client.Buffer, 0, client.Buffer.Length, ReadCallback, client);
             }
             catch (Exception e)
             {
-                Logger.GetInstance().Error("Error at client socket close:" + e);
-            }
-            finally
-            {
-                socketTable.Remove(client);
+                Logger.GetInstance().Error("Session Manager ReadCallback error:" + e);
             }
         }
 
-        protected static void closeAllSockets()
+        internal class Client
         {
-            if (socketTable == null) return;
-
-            foreach (TcpClient client in socketTable.Keys)
+            public Client(TcpClient tcpClient, byte[] buffer)
             {
-                try
-                {
-                    client.Close();
-                }
-                catch (Exception e)
-                {
-                    Logger.GetInstance().Error("Error at client socket close:" + e);
-                }
+                if (tcpClient == null) throw new ArgumentNullException("tcpClient");
+                if (buffer == null) throw new ArgumentNullException("buffer");
+                this.TcpClient = tcpClient;
+                this.Buffer = buffer;
             }
-
-            socketTable = new Hashtable();
+            public TcpClient TcpClient { get; private set; }
+            public byte[] Buffer { get; private set; }
+            public NetworkStream NetworkStream { get { return TcpClient.GetStream(); } }
         }
 
-        private static void ListenConnections()
+        private void HandleData(String request, Client client)
         {
-            int errorCount = 0;
-            while (!stopFlag && errorCount < 5)
-            {
-                try
-                {
-                    try
-                    {
-                        if (tcpListener != null) 
-                        {
-                            tcpListener.Server.Close();
-                            tcpListener.Stop(); 
-                            closeAllSockets();                                                    
-                        }
-                    }
-                    catch (Exception e){
-                        Logger.GetInstance().Error("Try to close previous listener error:" + e);
-                    }
-
-                    tcpListener = new TcpListener(IPAddress.Parse("127.0.0.1"), 9098);
-                    tcpListener.Start();
-
-                    while (!stopFlag)
-                    {
-                        TcpClient client = null;
-                        try
-                        {
-                            client = tcpListener.AcceptTcpClient();                            
-                        }
-                        catch
-                        {
-                            throw;
-                        }
-
-                        try
-                        {
-                            socketTable.Add(client, null);
-                            Logger.GetInstance().Debug("Hashcode client:" + client.GetHashCode());
-                            Thread clientThread = new Thread(new ParameterizedThreadStart(HandleClient));
-                            clientThread.Start(client);
-                        }
-                        catch (Exception e)
-                        {
-                            Logger.GetInstance().Error("SessionServer ListenClient error:" + e);
-                            closeSocket(client);
-                        }
-                    }
-                }
-                catch (Exception e)
-                {
-                    errorCount++;
-                    closeAllSockets();
-                    Logger.GetInstance().Error("SessionServer ListenClient, restart listener:" + e);
-                }
-            }
-            if (errorCount > 5) 
-            {
-                Logger.GetInstance().Error("SessionServer ListenClient, stopped listener due to too much error"); 
-            }
-        }
-
-        private static void HandleClient(object client)
-        {
-            TcpClient tcpClient = (TcpClient)client;
-            NetworkStream clientStream = tcpClient.GetStream();
-            StreamReader reader = new StreamReader(clientStream, System.Text.Encoding.ASCII);
-            StreamWriter writer = new StreamWriter(clientStream, System.Text.Encoding.ASCII);
-
-            String request;
-            String driveLetter;
- 
-            String format;
-
-            while (!stopFlag)
-            {
-                try
-                {
-                    request = ReadMessage(reader);
-                    if (request.StartsWith("BEGIN"))
-                    {
-                        WriteMessage(writer, "OK");
-                    }
-
-                    else if (request.StartsWith("HASKEY"))
-                    {
-                        if (Configuration.HasEncryptionKey)
-                        {
-                            WriteMessage(writer, "OK YES");
-                        }
-                        else
-                        {
-                            WriteMessage(writer, "OK NO");
-                        }
-                    }
-
-                    else if (request.StartsWith("NEWVOLUME"))
-                    {
-                        
-                            driveLetter = request.Split(' ')[1];
-
-                            if (!DiskCryptor.DoesDriveLetterNeedsFormatting(driveLetter) || !Configuration.RemovableStorageEncryption)
-                            {
-                                WriteMessage(writer, "OK NOFORMAT");
-
-                            }
-                            else
-                            {
-                                WriteMessage(writer, "OK NEEDFORMAT");
-                            }
-                    }
-                    else if (request.StartsWith("FORMAT"))
-                    {
-                        driveLetter = request.Split(' ')[1];
-                        format = request.Split(' ')[2];
-                        DiskCryptor.FormatDriveLetter(driveLetter, format);
-                        WriteMessage(writer, "OK FINISHED");
-                    }
-                    else 
-                    {
-                        Logger.GetInstance().Error("SessionServer HandleClient invalid request" + request);
-                        throw new InvalidRequestException("Expected valid request received:" + request);                        
-                    }
-                }
-
-                catch (InvalidRequestException e)
-                {
-                    WriteMessage(writer, "ERROR message:" + e);
-                    reader.DiscardBufferedData();
-                    Logger.GetInstance().Error("SessionServer HandleClient error:" + e);
-                }
-
-                catch (Exception e)
-                {                   
-                    Logger.GetInstance().Error("SessionServer HandleClient error:" + e);
-                    break;
-                }                
-            }
-            
-            SessionServer.closeSocket(tcpClient);
-        }
-
-
-        private static String ReadMessage(StreamReader reader)
-        {
+            String driveLetter = "";
+            String format = "";
             try
             {
-                String message = "";
+                if (request.StartsWith("BEGIN"))
+                {
+                    Write(client.TcpClient, "OK");
+                }
 
-                message = reader.ReadLine().Trim();
-                Logger.GetInstance().Debug("ReadMessage <" + message + ">");
+                else if (request.StartsWith("HASKEY"))
+                {
+                    if (Configuration.HasEncryptionKey)
+                    {
+                        Write(client.TcpClient, "OK YES");
+                    }
+                    else
+                    {
+                        Write(client.TcpClient, "OK NO");
+                    }
+                }
 
-                return message;
+                else if (request.StartsWith("NEWVOLUME"))
+                {
+
+                    driveLetter = request.Split(' ')[1];
+
+                    if (!DiskCryptor.DoesDriveLetterNeedsFormatting(driveLetter) || !Configuration.RemovableStorageEncryption)
+                    {
+                        Write(client.TcpClient, "OK NOFORMAT");
+
+                    }
+                    else
+                    {
+                        Write(client.TcpClient, "OK NEEDFORMAT");
+                    }
+                }
+                else if (request.StartsWith("FORMAT"))
+                {
+                    driveLetter = request.Split(' ')[1];
+                    format = request.Split(' ')[2];
+                    DiskCryptor.FormatDriveLetter(driveLetter, format);
+                    Write(client.TcpClient, "OK FINISHED");
+                }
+                else
+                {
+                    Logger.GetInstance().Error("SessionServer HandleData invalid request" + request);
+                    throw new InvalidRequestException("HandleData Expected valid request received:" + request);
+                }
             }
-            catch 
+
+            catch (InvalidRequestException e)
             {
-                throw;
+                Write(client.TcpClient, "ERROR message:" + e);
+                Logger.GetInstance().Error("SessionServer HandleData error:" + e);
             }
+
+            catch (Exception e)
+            {
+                Logger.GetInstance().Error("SessionServer HandleData error:" + e);
+            }
+
         }
 
-        private static void WriteMessage(StreamWriter writer, String message)
-        {
-            try
-            {
-                Logger.GetInstance().Debug("WriteMessage <" + message + ">");
-                writer.WriteLine(message);
-                writer.Flush();
-            }
-            catch 
-            {
-                throw;
-            }
-        }
-
-        public class InvalidRequestException : Exception
+        internal class InvalidRequestException : Exception
         {
             public InvalidRequestException()
                 : base()
@@ -320,6 +235,77 @@ namespace MyDLP.EndPoint.Core
                 : base(message, InnerException)
             {
             }
+        }
+    }
+
+    public class SessionServer
+    {
+        private static AsyncTcpServer sessionServer = null;
+        private static bool started = false;
+
+        public static void Start()
+        {
+            try
+            {
+                AddAgent();
+                if (sessionServer == null)
+                {
+                    sessionServer = new AsyncTcpServer(IPAddress.Parse("127.0.0.1"), 9098);
+                }
+                if (started == false)
+                {
+                    Logger.GetInstance().Debug("Started Session Server");
+                    sessionServer.Start();
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.GetInstance().Error("SessionServer Start:" + e);
+            }
+        }
+
+        public static void Stop()
+        {
+            try
+            {
+                if (sessionServer != null && started)
+                {
+                    sessionServer.Stop();
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.GetInstance().Error("SessionServer Stop:" + e);
+            }
+        }
+
+        public static void AddAgent()
+        {
+            try
+            {
+                if (!Environment.UserInteractive)
+                {
+                    RegistryKey runKey = Registry.LocalMachine.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run", true);
+                    bool exist = false;
+                    foreach (String name in runKey.GetValueNames())
+                    {
+                        if (name == "mydlp_agent")
+                        {
+                            exist = true;
+                        }
+                    }
+
+                    if (!exist)
+                    {
+                        runKey.SetValue("mydlp_agent", "\"" + Configuration.AppPath + "mydlpui.exe\"");
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.GetInstance().Error("Session Server: Unable to add Notification Agent:" + e);
+            }
+
         }
     }
 }
