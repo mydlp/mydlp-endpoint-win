@@ -55,7 +55,7 @@
     <InstallExecuteSequence>
       <Custom Action='NoDowngrade' After='FindRelatedProducts'>NEWERFOUND</Custom>
       <Custom Action='AlreadyUpdated' After='FindRelatedProducts'>SELFFOUND</Custom>
-      <RemoveExistingProducts After="InstallInitialize" />
+      <RemoveExistingProducts After="InstallValidate" />
     </InstallExecuteSequence>
     
     <CustomAction Id='NoDowngrade' Error='A later version of [ProductName] is already installed.' />
@@ -63,6 +63,7 @@
     
     <Property Id="ALLUSERS" Value="1" />
     <Property Id="REBOOT" Value="ReallySuppress" />
+    <Property Id="MSIRESTARTMANAGERCONTROL" Value="Disable" />
 
     <ComponentGroup Id ="MainComponent">
       <Component Id="MyDLP.EndPoint.Platform.dll" Directory="INSTALLLOCATION" Guid="*">
